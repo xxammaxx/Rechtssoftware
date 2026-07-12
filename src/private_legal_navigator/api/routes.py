@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/v1/cases", tags=["cases"])
 
 def get_repository(request: Request) -> CaseRepository:
     """Dependency: provide the CaseRepository from app state."""
-    repo = request.app.state.repository
+    repo = request.app.state.case_repository
     assert isinstance(repo, CaseRepository)
     return repo
 

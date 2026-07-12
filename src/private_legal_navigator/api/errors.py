@@ -19,3 +19,7 @@ def case_not_found_handler(request: Request, exc: Exception) -> JSONResponse:
 
 class CaseNotFoundError(Exception):
     """Raised when a case is not found."""
+
+
+class DocumentNotFoundError(Exception):
+    """Raised when a document is not found."""

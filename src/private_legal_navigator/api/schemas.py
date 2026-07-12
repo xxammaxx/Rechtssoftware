@@ -56,3 +56,23 @@ class ErrorResponse(BaseModel):
     """Standard error response envelope."""
 
     error: ErrorDetail
+
+
+class DocumentResponse(BaseModel):
+    """Response body for a single document."""
+
+    document_id: UUID
+    case_id: UUID
+    filename: str
+    mime_type: str
+    size_bytes: int
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class DocumentListResponse(BaseModel):
+    """Response body for listing documents."""
+
+    items: list[DocumentResponse]
+    count: int
