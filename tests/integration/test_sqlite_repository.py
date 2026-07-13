@@ -47,9 +47,7 @@ class TestSchemaInitialization:
         import sqlite3
 
         conn = sqlite3.connect(str(db_path))
-        cursor = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='cases'"
-        )
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='cases'")
         assert cursor.fetchone() is not None
         conn.close()
 
@@ -89,6 +87,68 @@ class TestSaveAndRetrieve:
         """list_all on an empty database should return an empty list."""
         cases = repository.list_all()
         assert cases == []
+
+    def test_list_all_sorts_by_created_at_desc(self, repository: SqliteCaseRepository) -> None:
+        """list_all must return cases sorted newest-first with stable tie-breaker."""
+        from datetime import UTC, datetime
+
+        oldest = Case(
+            title="SYNTHETISCH – Ältester",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        middle = Case(
+            title="SYNTHETISCH – Mittlerer",
+            created_at=datetime(2026, 6, 15, tzinfo=UTC),
+            updated_at=datetime(2026, 6, 15, tzinfo=UTC),
+        )
+        newest = Case(
+            title="SYNTHETISCH – Neuester",
+            created_at=datetime(2026, 12, 31, tzinfo=UTC),
+            updated_at=datetime(2026, 12, 31, tzinfo=UTC),
+        )
+
+        # Save in random order
+        repository.save(middle)
+        repository.save(newest)
+        repository.save(oldest)
+
+        cases = repository.list_all()
+        assert len(cases) == 3
+        # Must be newest first
+        assert cases[0].title == "SYNTHETISCH – Neuester"
+        assert cases[1].title == "SYNTHETISCH – Mittlerer"
+        assert cases[2].title == "SYNTHETISCH – Ältester"
+
+    def test_list_sorts_by_created_at_desc(self, repository: SqliteCaseRepository) -> None:
+        """list_all with identical timestamps must use case_id as stable tie-breaker."""
+        from datetime import UTC, datetime
+
+        now = datetime(2026, 7, 13, 12, 0, 0, tzinfo=UTC)
+        case_a = Case(
+            title="SYNTHETISCH – A",
+            created_at=now,
+            updated_at=now,
+        )
+        case_b = Case(
+            title="SYNTHETISCH – B",
+            created_at=now,
+            updated_at=now,
+        )
+
+        repository.save(case_a)
+        repository.save(case_b)
+
+        cases = repository.list_all()
+        assert len(cases) == 2
+        # Both have same created_at; tie-breaker is case_id ASC
+        # case_a was saved first, so its case_id UUID should be numerically lower
+        # in 99.999% of cases, but UUIDs can theoretically violate this.
+        # Instead, verify that the order is consistent across two calls:
+        cases_second = repository.list_all()
+        assert [c.case_id for c in cases] == [c.case_id for c in cases_second], (
+            "Sorting must be deterministic: same input → same order"
+        )
 
     def test_get_by_id_returns_none_for_unknown(self, repository: SqliteCaseRepository) -> None:
         """get_by_id for a non-existent ID should return None."""

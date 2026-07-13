@@ -5,15 +5,16 @@ behördlichen Angelegenheiten.
 
 ## Status
 
-**M3 — Dokumenttextgewinnung** — abgeschlossen.
+**M4 — Regelbasierte Dokumentklassifikation** — abgeschlossen.
 
 Aktuell implementiert:
-- Case-Management: Fall anlegen, auflisten, Details abrufen
-- Dokument-Upload (PDF) mit MIME-Type-Prüfung und Größenlimit (20 MB)
-- Automatische PDF-Textextraktion (pymupdf, vollständig lokal)
-- Textabruf pro Dokument über API
+- Case-Management: Fall anlegen, auflisten, Details abrufen (M1)
+- Dokument-Upload (PDF) mit MIME-Type-Prüfung und Größenlimit (20 MB) (M2)
+- Sichere lokale Dateiablage (UUID-basierte Pfade, Path-Traversal-Schutz) (M2)
+- Automatische PDF-Textextraktion (pymupdf, vollständig lokal) (M3)
+- Textabruf pro Dokument über API (M3)
+- Regelbasierte Dokumentklassifikation (Bescheid, Rechnung, Mahnung, etc.) (M4)
 - Dokument-Download und -Auflistung pro Fall
-- Sichere lokale Dateiablage (UUID-basierte Pfade, Path-Traversal-Schutz)
 - Lokale FastAPI-Anwendung auf 127.0.0.1:8000
 - SQLite-Persistenz mit automatischer Schema-Initialisierung
 - Health-Check-Endpunkt
@@ -25,10 +26,11 @@ automatischen Rechtsentscheidungen. Jede rechtlich relevante Ausgabe
 erfordert menschliche Prüfung.
 
 Noch **nicht** implementiert:
-- Dokumentimport (PDF, Scans, OCR)
+- OCR (optische Texterkennung für gescannte Dokumente)
 - Fristberechnung
 - Rechtsbewertung
 - Handlungsempfehlungen
+- Entwurfserstellung / Schreiben
 - Frontend
 - Authentifizierung / Mehrbenutzer
 - Verschlüsselung

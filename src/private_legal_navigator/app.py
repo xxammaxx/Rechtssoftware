@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from private_legal_navigator.api.document_routes import router as document_router
@@ -11,6 +12,7 @@ from private_legal_navigator.api.errors import (
     CaseNotFoundError,
     DocumentNotFoundError,
     case_not_found_handler,
+    validation_error_handler,
 )
 from private_legal_navigator.api.routes import router as case_router
 from private_legal_navigator.config import Settings
@@ -83,6 +85,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.classifier = classifier
 
     # Register exception handlers
+    app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
     app.add_exception_handler(CaseNotFoundError, case_not_found_handler)
     app.add_exception_handler(DocumentNotFoundError, _document_not_found_handler)
 

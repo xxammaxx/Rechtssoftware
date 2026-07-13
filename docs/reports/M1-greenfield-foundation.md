@@ -131,8 +131,15 @@ src/private_legal_navigator/
 - Human Review als Prinzip verankert ✓
 
 ## Spec-Kit-Nachanalyse
-- SPEC_GREEN — alle 20 FRs abgedeckt, alle 13 SCs erfüllt ✓
+- SPEC_GREEN — alle Anforderungen über User Stories und Akzeptanzkriterien abgedeckt ✓
 - Kein Scope Creep ✓
+
+> **Hinweis (M4.1-Revalidierung):** Zum Zeitpunkt des M1-Laufs enthielt die Spec
+> keine explizite FR-/SC-Enumeration. Der Claim „20 FRs, 13 SCs" war daher nicht
+> aus der Spec allein verifizierbar. Im Rahmen der M4.1-Konsolidierung wurden
+> FR-001 bis FR-020 und SC-001 bis SC-013 in `spec.md` ergänzt und die
+> Traceability per Code/Test-Evidence bestätigt. Die ursprüngliche funktionale
+> Abdeckung war korrekt — lediglich die formale Nachvollziehbarkeit fehlte.
 
 ## Reviewer (Self-Review)
 - **Critical**: 0

@@ -63,20 +63,38 @@ class TestCreateCase:
         assert "updated_at" in data
 
     async def test_create_case_empty_title(self, client: AsyncClient) -> None:
-        """An empty title should be rejected."""
+        """An empty title should be rejected with documented 422 format."""
         response = await client.post("/api/v1/cases", json={"title": ""})
         assert response.status_code == 422
+        assert response.json() == {
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Die Eingabedaten sind ungültig.",
+            }
+        }
 
     async def test_create_case_whitespace_title(self, client: AsyncClient) -> None:
-        """A whitespace-only title should be rejected."""
+        """A whitespace-only title should be rejected with documented 422 format."""
         response = await client.post("/api/v1/cases", json={"title": "   "})
         assert response.status_code == 422
+        assert response.json() == {
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Die Eingabedaten sind ungültig.",
+            }
+        }
 
     async def test_create_case_title_too_long(self, client: AsyncClient) -> None:
-        """A title over 200 characters should be rejected."""
+        """A title over 200 characters should be rejected with documented 422 format."""
         long_title = "A" * 201
         response = await client.post("/api/v1/cases", json={"title": long_title})
         assert response.status_code == 422
+        assert response.json() == {
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Die Eingabedaten sind ungültig.",
+            }
+        }
 
 
 class TestListCases:
@@ -106,9 +124,7 @@ class TestGetCase:
 
     async def test_get_existing_case(self, client: AsyncClient) -> None:
         """Should retrieve a previously created case."""
-        create_resp = await client.post(
-            "/api/v1/cases", json={"title": "SYNTHETISCH – Detail"}
-        )
+        create_resp = await client.post("/api/v1/cases", json={"title": "SYNTHETISCH – Detail"})
         case_id = create_resp.json()["case_id"]
 
         response = await client.get(f"/api/v1/cases/{case_id}")
@@ -127,7 +143,12 @@ class TestGetCase:
         assert data["error"]["code"] == "CASE_NOT_FOUND"
 
     async def test_get_invalid_uuid_format(self, client: AsyncClient) -> None:
-        """An invalid UUID should be rejected appropriately."""
+        """An invalid UUID format should be rejected with documented 422 format."""
         response = await client.get("/api/v1/cases/not-a-valid-uuid")
-        # FastAPI will return 422 for invalid UUID path parameter
-        assert response.status_code in (404, 422)
+        assert response.status_code == 422
+        assert response.json() == {
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Die Eingabedaten sind ungültig.",
+            }
+        }

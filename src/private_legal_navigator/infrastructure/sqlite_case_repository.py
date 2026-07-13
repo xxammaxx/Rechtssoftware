@@ -67,12 +67,12 @@ class SqliteCaseRepository(CaseRepository):
         return self._row_to_case(row)
 
     def list_all(self) -> list[Case]:
-        """Return all cases sorted by created_at descending."""
+        """Return all cases sorted by created_at DESC, case_id ASC (stable)."""
         conn = get_connection(self._db_path)
         try:
             rows = conn.execute(
                 "SELECT case_id, title, status, created_at, updated_at "
-                "FROM cases ORDER BY created_at DESC"
+                "FROM cases ORDER BY created_at DESC, case_id ASC"
             ).fetchall()
         finally:
             conn.close()
