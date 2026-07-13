@@ -67,6 +67,8 @@ class DocumentResponse(BaseModel):
     mime_type: str
     size_bytes: int
     created_at: datetime
+    doc_type: str = "sonstiges"
+    classification_confidence: float = 0.0
 
     model_config = {"from_attributes": True}
 

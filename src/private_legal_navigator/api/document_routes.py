@@ -12,6 +12,7 @@ from private_legal_navigator.api.schemas import (
     DocumentTextResponse,
 )
 from private_legal_navigator.application.case_repository import CaseRepository
+from private_legal_navigator.application.document_classifier import DocumentClassifier
 from private_legal_navigator.application.document_repository import DocumentRepository
 from private_legal_navigator.application.document_service import DocumentService
 from private_legal_navigator.application.file_storage import FileStorage
@@ -45,13 +46,20 @@ def get_text_extractor(request: Request) -> TextExtractor:
     return extractor
 
 
+def get_classifier(request: Request) -> DocumentClassifier:
+    classifier = request.app.state.classifier
+    assert isinstance(classifier, DocumentClassifier)
+    return classifier
+
+
 def get_document_service(
     doc_repo: DocumentRepository = Depends(get_document_repository),  # noqa: B008
     file_storage: FileStorage = Depends(get_file_storage),  # noqa: B008
     case_repo: CaseRepository = Depends(get_case_repository),  # noqa: B008
     text_extractor: TextExtractor = Depends(get_text_extractor),  # noqa: B008
+    classifier: DocumentClassifier = Depends(get_classifier),  # noqa: B008
 ) -> DocumentService:
-    return DocumentService(doc_repo, file_storage, case_repo, text_extractor)
+    return DocumentService(doc_repo, file_storage, case_repo, text_extractor, classifier)
 
 
 def _doc_to_response(doc: Document) -> DocumentResponse:
@@ -62,6 +70,8 @@ def _doc_to_response(doc: Document) -> DocumentResponse:
         mime_type=doc.mime_type,
         size_bytes=doc.size_bytes,
         created_at=doc.created_at,
+        doc_type=doc.doc_type,
+        classification_confidence=doc.classification_confidence,
     )
 
 

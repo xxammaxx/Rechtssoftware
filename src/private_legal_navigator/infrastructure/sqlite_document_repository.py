@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS documents (
     size_bytes INTEGER NOT NULL,
     storage_path TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    text_content TEXT NOT NULL DEFAULT ''
+    text_content TEXT NOT NULL DEFAULT '',
+    doc_type TEXT NOT NULL DEFAULT 'sonstiges',
+    classification_confidence REAL NOT NULL DEFAULT 0.0
 )
 """
 
@@ -56,8 +58,8 @@ class SqliteDocumentRepository(DocumentRepository):
                 INSERT INTO documents
                     (document_id, case_id, filename,
                      mime_type, size_bytes, storage_path, created_at,
-                     text_content)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                     text_content, doc_type, classification_confidence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(document.document_id),
@@ -68,6 +70,8 @@ class SqliteDocumentRepository(DocumentRepository):
                     document.storage_path,
                     document.created_at.isoformat(),
                     document.text_content,
+                    document.doc_type,
+                    document.classification_confidence,
                 ),
             )
             conn.commit()
@@ -80,7 +84,8 @@ class SqliteDocumentRepository(DocumentRepository):
         try:
             row = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
-                "size_bytes, storage_path, created_at, text_content "
+                "size_bytes, storage_path, created_at, text_content, "
+                "doc_type, classification_confidence "
                 "FROM documents WHERE document_id = ?",
                 (str(document_id),),
             ).fetchone()
@@ -97,7 +102,8 @@ class SqliteDocumentRepository(DocumentRepository):
         try:
             rows = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
-                "size_bytes, storage_path, created_at, text_content "
+                "size_bytes, storage_path, created_at, text_content, "
+                "doc_type, classification_confidence "
                 "FROM documents WHERE case_id = ? "
                 "ORDER BY created_at DESC",
                 (str(case_id),),
@@ -123,4 +129,6 @@ class SqliteDocumentRepository(DocumentRepository):
             storage_path=row["storage_path"],
             created_at=datetime.fromisoformat(row["created_at"]),
             text_content=row["text_content"],
+            doc_type=row["doc_type"],
+            classification_confidence=row["classification_confidence"],
         )

@@ -55,6 +55,8 @@ class TestDocumentUpload:
         assert data["mime_type"] == "application/pdf"
         assert "document_id" in data
         assert data["case_id"] == case_id
+        assert "doc_type" in data
+        assert "classification_confidence" in data
 
     async def test_upload_to_nonexistent_case(self, client: AsyncClient) -> None:
         """Upload to nonexistent case should return 404."""

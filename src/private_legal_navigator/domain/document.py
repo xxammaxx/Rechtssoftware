@@ -30,6 +30,8 @@ class Document:
         storage_path: str | None = None,
         created_at: datetime | None = None,
         text_content: str = "",
+        doc_type: str = "sonstiges",
+        classification_confidence: float = 0.0,
     ) -> None:
         self._validate_mime_type(mime_type)
         self._validate_size(size_bytes)
@@ -42,6 +44,8 @@ class Document:
         self.storage_path = storage_path or f"{self.document_id}.bin"
         self.created_at = created_at or datetime.now(UTC)
         self.text_content = text_content
+        self.doc_type = doc_type
+        self.classification_confidence = classification_confidence
 
     @classmethod
     def _validate_mime_type(cls, mime_type: str) -> None:

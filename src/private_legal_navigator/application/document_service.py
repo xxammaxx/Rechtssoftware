@@ -3,6 +3,7 @@
 import uuid
 
 from private_legal_navigator.application.case_repository import CaseRepository
+from private_legal_navigator.application.document_classifier import DocumentClassifier
 from private_legal_navigator.application.document_repository import DocumentRepository
 from private_legal_navigator.application.file_storage import FileStorage
 from private_legal_navigator.application.text_extractor import TextExtractor
@@ -10,7 +11,8 @@ from private_legal_navigator.domain.document import Document
 
 
 class DocumentService:
-    """Application service for document upload, listing, text extraction, and retrieval."""
+    """Application service for document upload, listing, text extraction,
+    classification, and retrieval."""
 
     def __init__(
         self,
@@ -18,11 +20,13 @@ class DocumentService:
         file_storage: FileStorage,
         case_repo: CaseRepository,
         text_extractor: TextExtractor,
+        classifier: DocumentClassifier,
     ) -> None:
         self._doc_repo = document_repo
         self._file_storage = file_storage
         self._case_repo = case_repo
         self._text_extractor = text_extractor
+        self._classifier = classifier
 
     def upload_document(
         self,
@@ -32,15 +36,12 @@ class DocumentService:
         mime_type: str,
         size_bytes: int,
     ) -> Document:
-        """Upload a document to a case with automatic text extraction.
-
-        Raises ValueError if the case doesn't exist or the document is invalid.
-        """
+        """Upload a document with text extraction and classification."""
         if self._case_repo.get_by_id(case_id) is None:
             raise ValueError("Der Fall wurde nicht gefunden.")
 
-        # Extract text before persisting
         text_content = self._text_extractor.extract(content)
+        classification = self._classifier.classify(text_content)
 
         doc = Document(
             filename=filename,
@@ -48,6 +49,8 @@ class DocumentService:
             size_bytes=size_bytes,
             case_id=case_id,
             text_content=text_content,
+            doc_type=classification.doc_type,
+            classification_confidence=classification.confidence,
         )
 
         self._file_storage.store(doc.storage_path, content)
@@ -55,7 +58,7 @@ class DocumentService:
         return doc
 
     def get_document(self, document_id: uuid.UUID) -> tuple[Document, bytes] | None:
-        """Retrieve document metadata and content. Returns None if not found."""
+        """Retrieve document metadata and content."""
         doc = self._doc_repo.get_by_id(document_id)
         if doc is None:
             return None
@@ -63,7 +66,7 @@ class DocumentService:
         return doc, content
 
     def get_document_text(self, document_id: uuid.UUID) -> Document | None:
-        """Retrieve document with extracted text. Returns None if not found."""
+        """Retrieve document with extracted text and classification."""
         return self._doc_repo.get_by_id(document_id)
 
     def list_case_documents(self, case_id: uuid.UUID) -> list[Document]:
