@@ -5,11 +5,13 @@ behördlichen Angelegenheiten.
 
 ## Status
 
-**M2 — Lokaler Dokumentimport** — abgeschlossen.
+**M3 — Dokumenttextgewinnung** — abgeschlossen.
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen
-- Dokument-Upload (PDF) zu Fällen mit MIME-Type-Prüfung und Größenlimit (20 MB)
+- Dokument-Upload (PDF) mit MIME-Type-Prüfung und Größenlimit (20 MB)
+- Automatische PDF-Textextraktion (pymupdf, vollständig lokal)
+- Textabruf pro Dokument über API
 - Dokument-Download und -Auflistung pro Fall
 - Sichere lokale Dateiablage (UUID-basierte Pfade, Path-Traversal-Schutz)
 - Lokale FastAPI-Anwendung auf 127.0.0.1:8000
@@ -90,6 +92,7 @@ Konfiguration über Umgebungsvariablen:
 | POST | `/api/v1/cases/{case_id}/documents` | PDF-Dokument zu Fall hochladen |
 | GET | `/api/v1/cases/{case_id}/documents` | Dokumente eines Falls auflisten |
 | GET | `/api/v1/cases/{case_id}/documents/{doc_id}` | Dokument herunterladen |
+| GET | `/api/v1/cases/{case_id}/documents/{doc_id}/text` | Extrahierten Text abrufen |
 
 Vollständige API-Dokumentation: [contracts/api.md](specs/001-greenfield-case-core/contracts/api.md)
 

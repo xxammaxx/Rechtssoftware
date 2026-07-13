@@ -128,3 +128,34 @@ class TestDocumentDownload:
         fake_doc_id = str(uuid.uuid4())
         resp = await client.get(f"/api/v1/cases/{case_id}/documents/{fake_doc_id}")
         assert resp.status_code == 404
+
+
+class TestDocumentText:
+    """Tests for GET .../documents/{id}/text."""
+
+    async def test_get_text(self, client: AsyncClient) -> None:
+        """Get extracted text from an uploaded document."""
+        case_id = await _create_case(client)
+        upload_resp = await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("doc.pdf", b"%PDF-1.4 content", "application/pdf")},
+        )
+        doc_id = upload_resp.json()["document_id"]
+
+        resp = await client.get(
+            f"/api/v1/cases/{case_id}/documents/{doc_id}/text"
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["document_id"] == doc_id
+        assert "text_content" in data
+        assert "text_length" in data
+
+    async def test_get_text_nonexistent(self, client: AsyncClient) -> None:
+        """Get text for nonexistent document returns 404."""
+        case_id = await _create_case(client)
+        fake_id = str(uuid.uuid4())
+        resp = await client.get(
+            f"/api/v1/cases/{case_id}/documents/{fake_id}/text"
+        )
+        assert resp.status_code == 404

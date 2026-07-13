@@ -6,11 +6,16 @@ from fastapi import APIRouter, Depends, Request, UploadFile, status
 from fastapi.responses import Response
 
 from private_legal_navigator.api.errors import CaseNotFoundError, DocumentNotFoundError
-from private_legal_navigator.api.schemas import DocumentListResponse, DocumentResponse
+from private_legal_navigator.api.schemas import (
+    DocumentListResponse,
+    DocumentResponse,
+    DocumentTextResponse,
+)
 from private_legal_navigator.application.case_repository import CaseRepository
 from private_legal_navigator.application.document_repository import DocumentRepository
 from private_legal_navigator.application.document_service import DocumentService
 from private_legal_navigator.application.file_storage import FileStorage
+from private_legal_navigator.application.text_extractor import TextExtractor
 from private_legal_navigator.domain.document import Document
 
 router = APIRouter(prefix="/api/v1/cases", tags=["documents"])
@@ -34,12 +39,19 @@ def get_file_storage(request: Request) -> FileStorage:
     return storage
 
 
+def get_text_extractor(request: Request) -> TextExtractor:
+    extractor = request.app.state.text_extractor
+    assert isinstance(extractor, TextExtractor)
+    return extractor
+
+
 def get_document_service(
     doc_repo: DocumentRepository = Depends(get_document_repository),  # noqa: B008
     file_storage: FileStorage = Depends(get_file_storage),  # noqa: B008
     case_repo: CaseRepository = Depends(get_case_repository),  # noqa: B008
+    text_extractor: TextExtractor = Depends(get_text_extractor),  # noqa: B008
 ) -> DocumentService:
-    return DocumentService(doc_repo, file_storage, case_repo)
+    return DocumentService(doc_repo, file_storage, case_repo, text_extractor)
 
 
 def _doc_to_response(doc: Document) -> DocumentResponse:
@@ -131,4 +143,24 @@ async def get_document(
         headers={
             "Content-Disposition": f'inline; filename="{doc.filename}"',
         },
+    )
+
+
+@router.get(
+    "/{case_id}/documents/{document_id}/text",
+    response_model=DocumentTextResponse,
+)
+def get_document_text(
+    case_id: uuid.UUID,
+    document_id: uuid.UUID,
+    service: DocumentService = Depends(get_document_service),  # noqa: B008
+) -> DocumentTextResponse:
+    """Get extracted text for a document."""
+    doc = service.get_document_text(document_id)
+    if doc is None:
+        raise DocumentNotFoundError()
+    return DocumentTextResponse(
+        document_id=doc.document_id,
+        text_content=doc.text_content,
+        text_length=len(doc.text_content),
     )

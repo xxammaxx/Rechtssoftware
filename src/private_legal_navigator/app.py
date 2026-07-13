@@ -15,6 +15,7 @@ from private_legal_navigator.api.errors import (
 from private_legal_navigator.api.routes import router as case_router
 from private_legal_navigator.config import Settings
 from private_legal_navigator.infrastructure.local_file_storage import LocalFileStorage
+from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
 from private_legal_navigator.infrastructure.sqlite_case_repository import (
     SqliteCaseRepository,
 )
@@ -63,6 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     document_repository = SqliteDocumentRepository(settings.database_path)
     document_repository.initialize_schema()
     file_storage = LocalFileStorage(docs_dir)
+    text_extractor = PdfTextExtractor()
 
     app = FastAPI(
         title="PrivateLegalNavigator",
@@ -75,6 +77,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.case_repository = case_repository
     app.state.document_repository = document_repository
     app.state.file_storage = file_storage
+    app.state.text_extractor = text_extractor
 
     # Register exception handlers
     app.add_exception_handler(CaseNotFoundError, case_not_found_handler)

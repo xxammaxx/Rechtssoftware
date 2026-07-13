@@ -29,6 +29,7 @@ class Document:
         document_id: uuid.UUID | None = None,
         storage_path: str | None = None,
         created_at: datetime | None = None,
+        text_content: str = "",
     ) -> None:
         self._validate_mime_type(mime_type)
         self._validate_size(size_bytes)
@@ -40,6 +41,7 @@ class Document:
         self.size_bytes = size_bytes
         self.storage_path = storage_path or f"{self.document_id}.bin"
         self.created_at = created_at or datetime.now(UTC)
+        self.text_content = text_content
 
     @classmethod
     def _validate_mime_type(cls, mime_type: str) -> None:

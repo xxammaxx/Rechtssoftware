@@ -76,3 +76,11 @@ class DocumentListResponse(BaseModel):
 
     items: list[DocumentResponse]
     count: int
+
+
+class DocumentTextResponse(BaseModel):
+    """Response body for extracted document text."""
+
+    document_id: UUID
+    text_content: str
+    text_length: int

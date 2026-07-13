@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS documents (
     mime_type TEXT NOT NULL,
     size_bytes INTEGER NOT NULL,
     storage_path TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    text_content TEXT NOT NULL DEFAULT ''
 )
 """
 
@@ -54,8 +55,9 @@ class SqliteDocumentRepository(DocumentRepository):
                 """
                 INSERT INTO documents
                     (document_id, case_id, filename,
-                     mime_type, size_bytes, storage_path, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                     mime_type, size_bytes, storage_path, created_at,
+                     text_content)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(document.document_id),
@@ -65,6 +67,7 @@ class SqliteDocumentRepository(DocumentRepository):
                     document.size_bytes,
                     document.storage_path,
                     document.created_at.isoformat(),
+                    document.text_content,
                 ),
             )
             conn.commit()
@@ -77,7 +80,7 @@ class SqliteDocumentRepository(DocumentRepository):
         try:
             row = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
-                "size_bytes, storage_path, created_at "
+                "size_bytes, storage_path, created_at, text_content "
                 "FROM documents WHERE document_id = ?",
                 (str(document_id),),
             ).fetchone()
@@ -94,7 +97,7 @@ class SqliteDocumentRepository(DocumentRepository):
         try:
             rows = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
-                "size_bytes, storage_path, created_at "
+                "size_bytes, storage_path, created_at, text_content "
                 "FROM documents WHERE case_id = ? "
                 "ORDER BY created_at DESC",
                 (str(case_id),),
@@ -119,4 +122,5 @@ class SqliteDocumentRepository(DocumentRepository):
             document_id=uuid.UUID(row["document_id"]),
             storage_path=row["storage_path"],
             created_at=datetime.fromisoformat(row["created_at"]),
+            text_content=row["text_content"],
         )
