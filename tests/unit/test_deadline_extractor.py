@@ -344,6 +344,42 @@ class TestWarnings:
         warning_codes = {w.code for w in result.warnings}
         assert DeadlineWarningCode.NO_DEADLINE_CANDIDATE in warning_codes
 
+    def test_ambiguous_date_warning_for_invalid_calendar_date(
+        self, extractor: DeterministicDeadlineExtractor
+    ) -> None:
+        """31.02.2026 does not exist — should produce AMBIGUOUS_DATE warning."""
+        result = extractor.extract("Frist bis 31.02.2026")
+        warning_codes = {w.code for w in result.warnings}
+        assert DeadlineWarningCode.AMBIGUOUS_DATE in warning_codes, (
+            "Invalid calendar date 31.02.2026 should trigger AMBIGUOUS_DATE warning"
+        )
+
+    def test_ambiguous_date_warning_for_invalid_month(
+        self, extractor: DeterministicDeadlineExtractor
+    ) -> None:
+        """31.04.2026 — April has only 30 days. Should produce AMBIGUOUS_DATE."""
+        result = extractor.extract("Frist bis 31.04.2026")
+        warning_codes = {w.code for w in result.warnings}
+        assert DeadlineWarningCode.AMBIGUOUS_DATE in warning_codes
+
+    def test_no_ambiguous_warning_for_valid_date(
+        self, extractor: DeterministicDeadlineExtractor
+    ) -> None:
+        """Valid date should NOT produce AMBIGUOUS_DATE warning."""
+        result = extractor.extract("Frist bis 31.07.2026")
+        warning_codes = {w.code for w in result.warnings}
+        assert DeadlineWarningCode.AMBIGUOUS_DATE not in warning_codes
+
+    def test_ambiguous_date_with_textual_month(
+        self, extractor: DeterministicDeadlineExtractor
+    ) -> None:
+        """31. Februar 2026 is invalid in textual form — should produce AMBIGUOUS_DATE."""
+        result = extractor.extract("Frist bis 31. Februar 2026")
+        warning_codes = {w.code for w in result.warnings}
+        assert DeadlineWarningCode.AMBIGUOUS_DATE in warning_codes, (
+            "Invalid textual date should trigger AMBIGUOUS_DATE"
+        )
+
 
 # ======================================================================
 # Error and Edge Cases

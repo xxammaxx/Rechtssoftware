@@ -293,12 +293,17 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
     def _extract_impl(self, text: str, document_id: str) -> DeadlineExtractionResult:
         """Internal extraction implementation (called with timeout wrapper)."""
         candidates: list[DeadlineCandidate] = []
+        has_ambiguous_dates = False
 
         # R1: Numeric dates
-        candidates.extend(self._extract_numeric_dates(text))
+        r1_candidates, r1_ambiguous = self._extract_numeric_dates(text)
+        candidates.extend(r1_candidates)
+        has_ambiguous_dates = has_ambiguous_dates or r1_ambiguous
 
         # R2: Written-out month dates
-        candidates.extend(self._extract_textual_dates(text))
+        r2_candidates, r2_ambiguous = self._extract_textual_dates(text)
+        candidates.extend(r2_candidates)
+        has_ambiguous_dates = has_ambiguous_dates or r2_ambiguous
 
         # R3: Relative numeric periods
         candidates.extend(self._extract_relative_numeric(text))
@@ -316,7 +321,7 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
         candidates.sort(key=lambda c: c.start_offset)
 
         # Generate warnings
-        warnings = self._generate_warnings(candidates)
+        warnings = self._generate_warnings(candidates, has_ambiguous_dates)
 
         return DeadlineExtractionResult(
             document_id=document_id,
@@ -328,16 +333,22 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
     # R1: Numeric dates (TT.MM.JJJJ)
     # ------------------------------------------------------------------
 
-    def _extract_numeric_dates(self, text: str) -> list[DeadlineCandidate]:
-        """Extract numeric German dates from text."""
+    def _extract_numeric_dates(self, text: str) -> tuple[list[DeadlineCandidate], bool]:
+        """Extract numeric German dates from text.
+
+        Returns:
+            Tuple of (valid candidates, has_ambiguous_dates).
+        """
         candidates: list[DeadlineCandidate] = []
+        has_ambiguous = False
         for match in _NUMERIC_DATE_RE.finditer(text):
             raw = match.group(0)
             day_str, month_str, year_str = match[1], match[2], match[3]
             try:
                 normalized = date(int(year_str), int(month_str), int(day_str))
             except ValueError:
-                # Invalid calendar date — skip but don't crash
+                # Invalid calendar date — track as ambiguous
+                has_ambiguous = True
                 continue
 
             # Check for Fristkontext prefix to extend raw_text
@@ -361,15 +372,20 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
                     rule_id="DEADLINE_DATE_NUMERIC_DE_V1",
                 )
             )
-        return candidates
+        return candidates, has_ambiguous
 
     # ------------------------------------------------------------------
     # R2: Written-out month dates
     # ------------------------------------------------------------------
 
-    def _extract_textual_dates(self, text: str) -> list[DeadlineCandidate]:
-        """Extract dates with written-out German month names."""
+    def _extract_textual_dates(self, text: str) -> tuple[list[DeadlineCandidate], bool]:
+        """Extract dates with written-out German month names.
+
+        Returns:
+            Tuple of (valid candidates, has_ambiguous_dates).
+        """
         candidates: list[DeadlineCandidate] = []
+        has_ambiguous = False
         for match in _TEXTUAL_DATE_RE.finditer(text):
             raw = match.group(0)
             day_str = match[1]
@@ -383,6 +399,7 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
             try:
                 normalized = date(int(year_str), month_num, int(day_str))
             except ValueError:
+                has_ambiguous = True
                 continue  # Invalid date
 
             # Extend with Fristkontext prefix
@@ -406,7 +423,7 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
                     rule_id="DEADLINE_DATE_TEXTUAL_DE_V1",
                 )
             )
-        return candidates
+        return candidates, has_ambiguous
 
     # ------------------------------------------------------------------
     # R3: Relative numeric periods
@@ -529,6 +546,7 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
     @staticmethod
     def _generate_warnings(
         candidates: list[DeadlineCandidate],
+        has_ambiguous_dates: bool = False,
     ) -> list[DeadlineWarning]:
         """Generate structured warnings for the extraction result."""
         warnings: list[DeadlineWarning] = []
@@ -540,6 +558,16 @@ class DeterministicDeadlineExtractor(DeadlineExtractor):
                 message="Es wurde keine rechtliche Frist berechnet. Nur Textstellen erkannt.",
             )
         )
+
+        # Ambiguous dates found (pattern matched but calendar-invalid)
+        if has_ambiguous_dates:
+            warnings.append(
+                DeadlineWarning(
+                    code=DeadlineWarningCode.AMBIGUOUS_DATE,
+                    message="Mindestens ein Datumsmuster wurde erkannt, "
+                    "konnte aber kalendarisch nicht validiert werden.",
+                )
+            )
 
         # No candidates found
         if len(candidates) == 0:

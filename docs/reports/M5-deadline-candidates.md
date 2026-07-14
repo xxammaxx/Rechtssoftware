@@ -140,7 +140,9 @@ REMOTE_BASELINE_GREEN
 
 ## 9. Files Changed
 
-### New Files (13)
+**Total: 18 files** (14 new + 4 modified)
+
+### New Files (14)
 ```
 specs/005-deadline-candidates/spec.md
 specs/005-deadline-candidates/data-model.md
@@ -155,6 +157,7 @@ tests/unit/test_domain_deadline.py
 tests/unit/test_deadline_extractor.py
 tests/unit/test_deadline_service.py
 tests/api/test_deadline_api.py
+docs/reports/M5-deadline-candidates.md
 ```
 
 ### Modified Files (4)
@@ -171,10 +174,10 @@ src/private_legal_navigator/app.py
 
 | Gate | Result |
 |------|--------|
-| **Total tests** | **161** (83 regression + 78 new M5) |
-| **Passed** | **161** ✅ |
+| **Total tests** | **165** (83 regression + 82 new M5) |
+| **Passed** | **165** ✅ |
 | **Failed** | 0 |
-| **Coverage** | **95.50%** ≥ 90% |
+| **Coverage** | **95.82%** ≥ 90% |
 | **Ruff** | All checks passed |
 | **Mypy** | No issues (33 source files) |
 | **pip check** | No broken requirements |
@@ -208,6 +211,7 @@ src/private_legal_navigator/app.py
 | No text in logs | ✅ |
 | No path leaks | ✅ |
 | LEGAL_CALCULATION_NOT_PERFORMED mandatory | ✅ |
+| AMBIGUOUS_DATE warning for invalid dates | ✅ |
 | human_review_required always true | ✅ |
 | Relative dates unresolved | ✅ |
 | No automated legal decisions | ✅ |
@@ -249,7 +253,7 @@ Feature-Branches gelöscht: NEIN
 5. **Scan extracted text for potential deadline references — M5**
 6. **Return normalized dates for explicit date mentions — M5**
 7. **Flag relative periods as unresolved — M5**
-8. **Provide evidence (offsets, rule IDs, confidence) — M5**
+8. **Provide evidence (offsets, rule IDs, certainty) — M5**
 9. **Warn when no candidates found — M5**
 10. **Enforce human review for all results — M5**
 
