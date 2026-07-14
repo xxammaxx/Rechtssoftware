@@ -5,7 +5,7 @@ behördlichen Angelegenheiten.
 
 ## Status
 
-**M4 — Regelbasierte Dokumentklassifikation** — abgeschlossen.
+**M5 — Deterministische Fristkandidaten-Erkennung** — abgeschlossen.
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)
@@ -14,6 +14,7 @@ Aktuell implementiert:
 - Automatische PDF-Textextraktion (pymupdf, vollständig lokal) (M3)
 - Textabruf pro Dokument über API (M3)
 - Regelbasierte Dokumentklassifikation (Bescheid, Rechnung, Mahnung, etc.) (M4)
+- Deterministische Fristkandidaten-Erkennung aus extrahiertem Text (M5)
 - Dokument-Download und -Auflistung pro Fall
 - Lokale FastAPI-Anwendung auf 127.0.0.1:8000
 - SQLite-Persistenz mit automatischer Schema-Initialisierung
@@ -27,7 +28,7 @@ erfordert menschliche Prüfung.
 
 Noch **nicht** implementiert:
 - OCR (optische Texterkennung für gescannte Dokumente)
-- Fristberechnung
+- Verbindliche Rechtsfristberechnung (M5 erkennt nur Textstellen)
 - Rechtsbewertung
 - Handlungsempfehlungen
 - Entwurfserstellung / Schreiben
@@ -95,8 +96,14 @@ Konfiguration über Umgebungsvariablen:
 | GET | `/api/v1/cases/{case_id}/documents` | Dokumente eines Falls auflisten |
 | GET | `/api/v1/cases/{case_id}/documents/{doc_id}` | Dokument herunterladen |
 | GET | `/api/v1/cases/{case_id}/documents/{doc_id}/text` | Extrahierten Text abrufen |
+| POST | `/api/v1/cases/{case_id}/documents/{doc_id}/deadline-candidates` | Fristkandidaten erkennen (M5) |
 
 Vollständige API-Dokumentation: [contracts/api.md](specs/001-greenfield-case-core/contracts/api.md)
+
+> **M5-Hinweis:** Der Deadline-Candidates-Endpunkt erkennt ausschließlich
+> mögliche Frist- und Terminangaben im Text. Er berechnet keine verbindliche
+> Rechtsfrist und ersetzt keine anwaltliche oder behördliche Prüfung.
+> Siehe [M5-Spec](specs/005-deadline-candidates/spec.md).
 
 ## Datenschutz
 

@@ -15,17 +15,23 @@
 └──────────┬─────────────────┘
            │
 ┌──────────▼─────────────────┐
-│  Application Services      │
-│  - CaseService             │
-│  - Repository Port (ABC)   │
-└──────────┬─────────────────┘
-           │
-┌──────────▼─────────────────┐
-│  Domain Model              │
-│  - Case Entity             │
-│  - CaseStatus (StrEnum)    │
-│  - Fachliche Invarianten   │
-└──────────┬─────────────────┘
+  │  Application Services      │
+  │  - CaseService             │
+  │  - DocumentService         │
+  │  - DeadlineService (M5)    │
+  │  - Repository Port (ABC)   │
+  │  - DeadlineExtractor (ABC) │
+  └──────────┬─────────────────┘
+            │
+  ┌──────────▼─────────────────┐
+  │  Domain Model              │
+  │  - Case Entity             │
+  │  - Document Entity         │
+  │  - ClassificationResult    │
+  │  - DeadlineCandidate (M5)  │
+  │  - CaseStatus (StrEnum)    │
+  │  - Fachliche Invarianten   │
+  └──────────┬─────────────────┘
            │
 ┌──────────▼─────────────────┐
 │  Infrastructure            │
