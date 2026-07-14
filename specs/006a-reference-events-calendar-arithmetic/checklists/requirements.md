@@ -5,7 +5,7 @@
 | # | Item | Status |
 |---|------|--------|
 | 1 | Research questions answered (RQ-01–RQ-10) | PASS |
-| 2 | Primary sources documented (20+ sources) | PASS |
+| 2 | Primary sources documented (5 primary norm, 1 technical, 1 secondary = 8 documents) | PASS |
 | 3 | Legal and mathematical layers separated | PASS |
 | 4 | User Stories with acceptance criteria (6) | PASS |
 | 5 | Functional Requirements (30) | PASS |

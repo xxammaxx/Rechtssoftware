@@ -1,11 +1,11 @@
 # M6-A Research, Spec-Kit & Architecture Report
 
-## Abschlussklassifikation: SPEC_READY_AWAITING_OWNER_APPROVAL
+## Abschlussklassifikation: SPEC_REPAIRED_AWAITING_OWNER_APPROVAL
 
 ---
 
 ## 1. Abschlussklassifikation
-`SPEC_READY_AWAITING_OWNER_APPROVAL` — Baseline green, Research complete, ARCH_GREEN, SECURITY resolved, COMPLIANCE_GREEN, no Critical/Major findings open, no product code changed, Spec-Branch pushed, Draft-PR created.
+`SPEC_REPAIRED_AWAITING_OWNER_APPROVAL` — Baseline green, Research complete, ARCH_GREEN, SECURITY resolved, COMPLIANCE corrected, no Critical/Major findings open, no product code changed, Spec-Branch pushed, Draft-PR created.
 
 ---
 
@@ -51,7 +51,7 @@ Local = Remote: **YES**
 `spec/006a-reference-events-calendar-arithmetic` (from `acf6995` on main)
 
 ## 10. Research-Methode
-Research-Agent (leaf node) consulted 20+ primary sources via gesetze-im-internet.de, EUR-Lex, dejure.org. All normative claims backed by official primary sources. Secondary sources used for orientation only.
+Research-Agent (leaf node) consulted official primary sources (5 primary norm sources via EUR-Lex and gesetze-im-internet.de, 1 technical primary documentation, 1 secondary source). All normative claims backed by official primary sources. Secondary sources (dejure.org) used for orientation only. Source classification methodology documented in research.md.
 
 ## 11. Offizielle Quellen (Auswahl)
 | Norm | Quelle |
@@ -64,7 +64,7 @@ Research-Agent (leaf node) consulted 20+ primary sources via gesetze-im-internet
 | Art. 22 DSGVO | EUR-Lex 32016R0679 |
 
 ## 12. Quellenmatrix
-Full source matrix in `specs/006a-reference-events-calendar-arithmetic/research.md` — 20+ entries.
+Full source matrix in `specs/006a-reference-events-calendar-arithmetic/research.md` — 8 unique source documents (5 primary norms, 1 technical, 1 secondary, 1 internal).
 
 ## 13. Zurückgestellte Rechtsregeln
 15 rule areas deferred: § 187-193 BGB, § 222 ZPO, § 4 VwZG, § 41 VwVfG, § 180 ZPO, § 181 ZPO, § 167 ZPO, Feiertagsgesetze der 16 Länder, spezialgesetzliche Regeln, Hemmung, Wiedereinsetzung.
@@ -180,7 +180,7 @@ To be created.
 0 workflows, 0 runs — keine Remote-CI ausgelöst.
 
 ## 37. Was wurde in diesem Lauf erreicht?
-- Offizielle Primärquellen recherchiert (20+ Quellen)
+- Offizielle Primärquellen recherchiert (5 primary norm sources + 1 technical + 1 secondary = 8 documents)
 - Rechts- und Mathematikebenen klar getrennt
 - Produkt- und Compliance-Grenzen definiert
 - User-Confirmation-Gate spezifiziert

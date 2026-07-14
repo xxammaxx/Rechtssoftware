@@ -1,8 +1,8 @@
 # Research — M6-A Reference Events and Calendar Arithmetic
 
-## Research Status: GREEN
+## Research Status: RESEARCH_PASS_WITH_NOTES
 
-All 10 research questions answered with primary source evidence. No normative gaps identified. Boundaries are clear and unambiguous.
+All 10 research questions answered. Primary normative sources (EUR-Lex, gesetze-im-internet.de) are the authoritative references. Secondary sources (dejure.org) are used for orientation only. Product and compliance boundaries are explicitly distinguished. Legal basis and GDPR applicability are identified as context-dependent.
 
 ---
 
@@ -70,10 +70,10 @@ All 10 research questions answered with primary source evidence. No normative ga
 
 ## RQ-03 — What can be automatically suggested vs. must be user-confirmed?
 
-**DSGVO Art. 22 Abs. 1:**
+**DSGVO Art. 22 Abs. 1 (EUR-Lex 32016R0679):**
 > "Die betroffene Person hat das Recht, nicht einer ausschließlich auf einer automatisierten Verarbeitung [...] beruhenden Entscheidung unterworfen zu werden, die ihr gegenüber rechtliche Wirkung entfaltet oder sie in ähnlicher Weise erheblich beeinträchtigt."
 
-Source: dejure.org/gesetze/DSGVO/22.html (verified against EUR-Lex 32016R0679), accessed 2026-07-14
+**Source:** EUR-Lex 32016R0679, Art. 22(1) (OFFICIAL_PRIMARY_NORM), accessed 2026-07-14. Also consulted via dejure.org (SECONDARY_SOURCE) for convenience.
 
 **What M6-A CAN suggest (without user):**
 - Detected dates from document text (M5 output)
@@ -88,7 +88,7 @@ Source: dejure.org/gesetze/DSGVO/22.html (verified against EUR-Lex 32016R0679), 
 - Displaying date as "Fristende"
 - Omitting the disclaimer
 
-**Architecture Decision:** M6-A implements a **confirmation gate**: every reference event → reference date mapping must pass through user confirmation before any arithmetic is displayed.
+**Architecture Decision:** M6-A implements a **confirmation gate**: every reference event → reference date mapping must pass through user confirmation before any arithmetic is displayed. This is a **product safety measure** — not a statutory requirement under Art. 22 DSGVO. The confirmation gate provides structural assurance that the system cannot produce output that might be mistaken for an automated legal decision. Whether Art. 22 applies at all depends on the deployment context and whether the system is used to produce decisions with legal effect.
 
 ---
 
@@ -106,21 +106,30 @@ CONFIRMED   → (user explicitly revokes) → REVOKED
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `confirmed_by` | str | Human identifier |
+| `confirmed_by` | str (optional) | Human-readable label (no authentication in single-user context) |
 | `confirmed_at` | datetime (UTC) | Audit timestamp |
 | `confirmation_method` | enum | AUTO_SUGGESTED, MANUALLY_ENTERED, CORRECTED |
 | `source_document_id` | UUID | Origin document |
-| `source_text` | str | Raw text basis |
-| `source_offset_start` | int | Position in document text |
-| `source_offset_end` | int | Position in document text |
+| `evidence_start_offset` | int | Position in document text (start) |
+| `evidence_end_offset` | int | Position in document text (end) |
 | `reference_event_type` | enum | User-selected event category |
 | `confirmed_date` | date | The confirmed reference date |
 
-### Immutability Requirements
+**Note:** Evidence text is NOT duplicated. The original document text is referenced
+by `document_id` + `start_offset` + `end_offset`. The text snippet can be
+reconstructed on demand from the source document. This avoids duplicating
+potentially personal data from legal documents into the confirmation journal.
 
-- Confirmation events are **append-only**
-- Revocation creates a new event, doesn't delete the old one
-- Full audit trail from document import → extraction → confirmation → calculation
+### Confirmation Lifecycle
+
+- Confirmation records are **versioned during the active document lifecycle** — new
+  state transitions (confirm, change, revoke) create new records; previous records
+  are preserved as SUPERSEDED or REVOKED for traceability.
+- This is NOT an "immutable forever" guarantee: deleting the parent document
+  cascades to delete all associated confirmation records (CASCADE DELETE).
+- The history provides **cooperative integrity** for the user's own reference.
+  It does NOT provide cryptographic tamper resistance (documented as INV-M6A-24).
+- Revocation creates a new event; the old one remains visible in history as SUPERSEDED.
 
 ---
 
@@ -214,23 +223,54 @@ CONFIRMED   → (user explicitly revokes) → REVOKED
 
 ---
 
-## Source Matrix
+## Source Classification Methodology
 
-| # | Title | Authority | Norm | Legal Area | Version/Accessed | Primary? |
-|---|-------|-----------|------|------------|------------------|----------|
-| 1 | BGB § 187 Fristbeginn | Bundesrepublik Deutschland | § 187 Abs. 1-2 | Zivilrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 2 | BGB § 188 Fristende | Bundesrepublik Deutschland | § 188 Abs. 1-3 | Zivilrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 3 | BGB § 189-192 | Bundesrepublik Deutschland | §§ 189-192 | Zivilrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 4 | BGB § 193 Sonn-/Feiertag | Bundesrepublik Deutschland | § 193 | Zivilrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 5 | BGB § 130 Zugang | Bundesrepublik Deutschland | § 130 Abs. 1 | Zivilrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 6 | ZPO § 166 Zustellung | Bundesrepublik Deutschland | § 166 | Zivilprozessrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 7 | ZPO §§ 167, 177-181 | Bundesrepublik Deutschland | §§ 167, 177-181 | Zivilprozessrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 8 | ZPO § 222 Fristberechnung | Bundesrepublik Deutschland | § 222 Abs. 1-3 | Zivilprozessrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 9 | VwVfG § 41 Bekanntgabe | Bundesrepublik Deutschland | § 41 Abs. 1-5 | Verwaltungsrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 10 | VwVfG § 43 Wirksamkeit | Bundesrepublik Deutschland | § 43 | Verwaltungsrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 11 | VwZG §§ 3-4 | Bundesrepublik Deutschland | §§ 3-4 | Verwaltungsrecht | gesetze-im-internet.de, 2026-07-14 | YES |
-| 12 | DSGVO Art. 22 | Europäische Union | Art. 22 | Datenschutzrecht | EUR-Lex 32016R0679, 2026-07-14 | YES |
-| 13 | PrivateLegalNavigator Constitution | Project | §§ 1-12 | — | .specify/memory/constitution.md | N/A |
+Sources are classified according to the following hierarchy:
+
+| Type | Description | Examples |
+|------|-------------|----------|
+| `OFFICIAL_PRIMARY_NORM` | Official legal text published by the legislator or authorized government body | EUR-Lex, gesetze-im-internet.de, Bundesgesetzblatt, official Landesrecht portals |
+| `OFFICIAL_GUIDANCE` | Official guidance from supervisory authorities or government bodies | BfDI, EDPB, Datenschutzkonferenz (DSK), Landesdatenschutzbehörden |
+| `SECONDARY_SOURCE` | Private legal information platforms without official status | dejure.org, legal databases, commentaries, textbooks, Wikipedia |
+| `TECHNICAL_PRIMARY_DOCUMENTATION` | Official documentation for software/libraries | Python `datetime` documentation (docs.python.org) |
+| `INTERNAL_PRODUCT_POLICY` | Project-internal governance documents | Constitution, ADRs |
+
+**Counting rule:** Each unique official document (law, regulation, directive) counts as one source.
+Multiple paragraphs of the same law are not counted as separate independent sources.
+
+---
+
+## Official Primary Norm Sources (Normative)
+
+| # | Norm | Authority | Legal Area | Source Type | Accessed |
+|---|------|-----------|------------|-------------|----------|
+| 1 | BGB (Bürgerliches Gesetzbuch) | Bundesrepublik Deutschland | Zivilrecht | OFFICIAL_PRIMARY_NORM | gesetze-im-internet.de, 2026-07-14 |
+| 2 | ZPO (Zivilprozessordnung) | Bundesrepublik Deutschland | Zivilprozessrecht | OFFICIAL_PRIMARY_NORM | gesetze-im-internet.de, 2026-07-14 |
+| 3 | VwVfG (Verwaltungsverfahrensgesetz) | Bundesrepublik Deutschland | Verwaltungsrecht | OFFICIAL_PRIMARY_NORM | gesetze-im-internet.de, 2026-07-14 |
+| 4 | VwZG (Verwaltungszustellungsgesetz) | Bundesrepublik Deutschland | Verwaltungsrecht | OFFICIAL_PRIMARY_NORM | gesetze-im-internet.de, 2026-07-14 |
+| 5 | DSGVO (Datenschutz-Grundverordnung) | Europäische Union | Datenschutzrecht | OFFICIAL_PRIMARY_NORM | EUR-Lex 32016R0679, 2026-07-14 |
+
+**Total official primary norm sources: 5** (covering §§ 130, 166-195, 187-193, 222 BGB/ZPO; §§ 41, 43 VwVfG; §§ 3-4 VwZG; Artt. 2, 5, 6, 15, 17, 22, 25, 30 DSGVO)
+
+## Technical Primary Documentation
+
+| # | Source | Type |
+|---|--------|------|
+| 1 | Python `datetime` module documentation | TECHNICAL_PRIMARY_DOCUMENTATION |
+
+## Secondary Sources (Orientation Only)
+
+| # | Source | Type | Usage |
+|---|--------|------|-------|
+| 1 | dejure.org | SECONDARY_SOURCE | Convenience reference for text lookup; normative claims verified against official sources |
+
+## Internal Product Policy
+
+| # | Source | Type |
+|---|--------|------|
+| 1 | PrivateLegalNavigator Constitution | INTERNAL_PRODUCT_POLICY |
+
+**Summary:** 5 official primary norm sources, 1 technical primary documentation, 1 secondary source, 1 internal project source. Total: 8 unique source documents.
 
 ---
 
@@ -239,7 +279,7 @@ CONFIRMED   → (user explicitly revokes) → REVOKED
 | Risk | Severity | Mitigation |
 |------|----------|-----------|
 | User treats calculated date as binding, misses real deadline | HIGH | Mandatory disclaimers, `human_review_required: true`, no "Frist" terminology, warning badges |
-| Art. 22 DSGVO violation — automated decision with legal effect | HIGH | Confirmation gate: no calculation without user confirmation, human-in-the-loop always |
+| Risk of automated decision with legal effect (Art. 22 DSGVO) | DEPLOYMENT_DEPENDENT | Confirmation gate + mandatory human review ensure no calculation occurs without explicit user action. Art. 22 applicability depends on whether the specific deployment context involves automated decisions with legal effect. The product is designed as a non-binding calculation preview — not as an automated decision-making system. |
 | Days-only arithmetic produces weekend/holiday date, user relies on it | MEDIUM | Warning: "Keine Feiertage berücksichtigt. Rechtliche Frist kann abweichen." |
 | User selects wrong reference event type | MEDIUM | Event type selection is user-controlled, clear warnings |
 | False sense of security from "confirmed" label | MEDIUM | "Bestätigt" only means reference date confirmed — NOT that calculation is legally binding |

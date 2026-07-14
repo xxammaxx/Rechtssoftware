@@ -9,7 +9,7 @@
 - [x] T005 — M6-A Issue #3 (already existed, Start Comment posted)
 - [x] T006 — Spec Branch created (spec/006a-reference-events-calendar-arithmetic)
 - [x] T007 — Constitution check passed
-- [x] T008 — Official primary sources researched (20+ sources documented)
+- [x] T008 — Official primary sources researched (5 primary norm sources, 1 technical, 1 secondary = 8 documents)
 - [x] T009 — Source matrix created (research.md)
 - [x] T010 — Legal and mathematical layers separated
 - [x] T011 — User Stories created (6 stories with acceptance criteria)

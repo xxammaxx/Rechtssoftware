@@ -43,7 +43,15 @@ M6-A berechnet KEINE rechtlich verbindliche Frist. Das Ergebnis ist eine **Berec
 | INV-M6A-21 | Ein Logging-Filter MUSS die Felder confirmed_date, evidence_text, evidence_note und source_text vor der Ausgabe redigieren (Ersetzung durch [REDACTED]). |
 | INV-M6A-22 | Manual-Einträge OHNE evidence_note erhalten eine Warnung MANUAL_ENTRY_WITHOUT_EVIDENCE und geringeres Audit-Gewicht. |
 | INV-M6A-23 | Datumsbereich: Input 1900-01-01 bis 2099-12-31. Post-Calculation-Prüfung: calculated_date muss innerhalb 1900-01-01 bis 2099-12-31 liegen (Fehler: CALCULATED_DATE_OUT_OF_RANGE). |
-| INV-M6A-24 | Die Bestätigungshistorie wird append-only gespeichert. Dies bietet kooperative Integrität, aber KEINE kryptografische Manipulationssicherheit. Der Nutzer mit Dateisystemzugriff kann die SQLite-Datenbank direkt editieren. Dies ist eine dokumentierte Einschränkung für ein lokales Single-User-Tool. |
+| INV-M6A-24 | Die Bestätigungshistorie wird versioniert innerhalb des Dokumentlebenszyklus gespeichert. Neue Zustandsübergänge erzeugen neue Datensätze; vorherige bleiben als SUPERSEDED/REVOKED erhalten. Dies bietet kooperative Integrität, aber KEINE kryptografische Manipulationssicherheit. Der Nutzer mit Dateisystemzugriff kann die SQLite-Datenbank direkt editieren. Dies ist eine dokumentierte Einschränkung für ein lokales Single-User-Tool. |
+| INV-M6A-DP-01 | Kein vollständiger Dokumenttext wird in der Bestätigungshistorie dupliziert. Evidence wird durch `document_id` + Offsets referenziert, nicht kopiert. |
+| INV-M6A-DP-02 | Die Löschung eines Dokuments MUSS alle zugehörigen Bestätigungsdatensätze entfernen oder unzugänglich machen (CASCADE DELETE). |
+| INV-M6A-DP-03 | M6-A legt keine universelle Rechtsgrundlage nach Art. 6 DSGVO fest. Die Rechtsgrundlage ist einsatzkontext- und verantwortlichenabhängig. |
+| INV-M6A-DP-04 | Die Anwendbarkeit von Art. 22 DSGVO ist einsatzkontextabhängig. Das Bestätigungs-Gate ist eine Produktsicherheitsmaßnahme, keine gesetzliche Pflicht. |
+| INV-M6A-DP-05 | Art. 30 DSGVO dient nicht als Rechtsgrundlage für die Event-Level-Persistenz von Bestätigungen. Art. 30 betrifft das Verarbeitungsverzeichnis des Verantwortlichen, nicht die Anwendungsdatenbank. |
+| INV-M6A-DP-06 | Variant B ist eine Produktarchitekturentscheidung (Session-Resumability, Traceability, Korrektur- und Widerrufs-Workflow), keine gesetzliche Pflicht. |
+| INV-M6A-DP-07 | Das `confirmed_by`-Feld ist im Single-User-Kontext optional und stellt keine authentifizierte Signatur dar. Es dient ausschließlich als Label für zukünftige Multi-User-Erweiterungen. |
+| INV-M6A-DP-08 | Der Logging-Filter MUSS zusätzlich zu confirmed_date, evidence_text, evidence_note und source_text auch document_id und confirmation_id redigieren. |
 
 ---
 
@@ -166,9 +174,9 @@ Als Nutzer möchte ich ein zuvor bestätigtes Bezugsdatum ändern oder widerrufe
 | SC-M6A-007 | Keine Ausgabe behauptet eine rechtlich verbindliche Frist. |
 | SC-M6A-008 | Keine Feiertags- oder Wochenendlogik ist Teil des ersten Builds. |
 | SC-M6A-009 | Keine Zustellungsfiktion ist Teil des ersten Builds. |
-| SC-M6A-010 | Mindestens 25 konkrete Testvektoren sind definiert. |
-| SC-M6A-011 | Alle Research-Claims besitzen eine Primärquelle oder sind als Produktentscheidung gekennzeichnet. |
-| SC-M6A-012 | Architektur-, Spec- und Contract-Artefakte widersprechen sich nicht. |
+| SC-M6A-010 | Mindestens 64 konkrete Testvektoren sind definiert. |
+| SC-M6A-011 | Alle normativen Claims besitzen eine nachvollziehbare amtliche oder technische Primärquelle oder sind eindeutig als Produktentscheidung gekennzeichnet. Sekundärquellen sind als solche markiert. |
+| SC-M6A-012 | Architektur-, Spec- und Contract-Artefakte widersprechen sich nicht. Insbesondere sind Datenminimierungs-Claims, Evidence-Modell und Datenbankschema konsistent. |
 | SC-M6A-013 | Der spätere Build kann ohne erneute Grundsatzentscheidung umgesetzt werden. |
 
 ---

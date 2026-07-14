@@ -22,11 +22,14 @@ These extend M5's existing `DeadlineCandidate` and `DeadlineExtractionResult` wi
 | Provenance of reference date | Result warnings |
 
 **Rationale:**
-- Auditierbarkeit: Jede Bestätigung ist nachvollziehbar
+- Nachvollziehbarkeit: Jede Bestätigung ist für den Nutzer nachvollziehbar (Traceability-Feature)
 - Reproduzierbarkeit: Berechnungen sind aus bestätigtem Datum + M5-Dauer jederzeit reproduzierbar
+- Session-Resumability: Nutzer kann Arbeit über Sitzungen hinweg fortsetzen
 - Keine Stale Results: Bei Änderung des Bezugsdatums wird neu berechnet
 - Kleinste Schemaerweiterung: Nur eine neue Tabelle (confirmed_reference_events)
 - CASCADE DELETE: Bei Dokumentlöschung werden Bestätigungen automatisch gelöscht
+
+**Die Persistenzentscheidung ist eine Produkt- und Sicherheitsentscheidung, keine gesetzliche Pflicht.**
 
 **Comparison of variants:**
 - **Variant A (Fully On-Demand):** Keine Bestätigung gespeichert → keine Auditierbarkeit → abgelehnt
@@ -300,12 +303,11 @@ CREATE TABLE IF NOT EXISTS confirmed_reference_events (
     document_id TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
     event_type TEXT NOT NULL,
     confirmed_date TEXT NOT NULL,      -- ISO date: YYYY-MM-DD
-    source_type TEXT NOT NULL DEFAULT '',
+    source_type TEXT NOT NULL DEFAULT 'auto_detected',
     confirmation_method TEXT NOT NULL,
     confirmed_at TEXT NOT NULL,        -- ISO datetime with timezone
     confirmed_by TEXT NOT NULL DEFAULT '',
-    supersedes_confirmation_id TEXT,
-    FOREIGN KEY (document_id) REFERENCES documents(document_id)
+    supersedes_confirmation_id TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_confirmed_reference_events_document
@@ -314,36 +316,48 @@ CREATE INDEX IF NOT EXISTS idx_confirmed_reference_events_document
 
 ---
 
-## Compliance-Annotationen
+## Datenschutz-Design-Maßnahmen
 
-| DSGVO-Artikel | Umsetzung in M6-A |
-|---------------|-----------------|
-| Art. 5(1)(c) — Data Minimization | Nur bestätigte Bezugsdaten gespeichert; keine umliegenden personenbezogenen Daten |
-| Art. 5(1)(e) — Storage Limitation | Bestätigungen an Dokument gebunden; CASCADE DELETE bei Dokumentlöschung |
-| Art. 15 — Right of Access | Alle Bestätigungen pro Dokument abrufbar |
-| Art. 17 — Right to Erasure | CASCADE DELETE über Dokument → alle Bestätigungen gelöscht |
-| Art. 22 — Automated Decisions | Keine automatische Rechtsentscheidung; zwingende Nutzerbestätigung |
-| Art. 25 — Data Protection by Design | Local-only; keine externen Requests; keine Bezugsdaten in Logs |
-| Art. 30 — Records of Processing | Bestätigungs-Timestamp als Audit-Trail |
+Die folgenden Maßnahmen sind als **produktseitige Privacy-by-Design-Entscheidungen** zu verstehen,
+nicht als gesetzliche Einzelpflichten oder als Garantie für die Erfüllung eines bestimmten
+DSGVO-Artikels. Die tatsächliche DSGVO-Compliance bestimmt sich nach dem konkreten
+Einsatzkontext und dem Verantwortlichen.
 
-## DSGVO Art. 6 — Rechtsgrundlagen der Verarbeitung
+| Maßnahme | Umsetzung in M6-A |
+|----------|-----------------|
+| Datenminimierung | Strukturierte Metadaten (Datum, Ereignistyp, Quelle, Zeitstempel, Offsets). Keine Duplikation von Dokumenttext oder personenbezogenen Daten aus Quelldokumenten. Evidence wird per `document_id` + Offsets referenziert. |
+| Speicherbegrenzung | Bestätigungen an Dokument-Lebenszyklus gebunden; CASCADE DELETE bei Dokumentlöschung. Der Nutzer/Verantwortliche ist für Aufbewahrungsfristen und Backup-Management verantwortlich. |
+| Auskunftsfähigkeit | Alle Bestätigungen pro Dokument über GET history-Endpunkt abrufbar. Unterstützt Auskunftsersuchen, implementiert sie aber nicht vollständig (Metadaten nach Art. 15 Abs. 1 DSGVO sind separat bereitzustellen). |
+| Löschunterstützung | CASCADE DELETE entfernt Bestätigungsdatensätze bei Löschung des übergeordneten Dokuments. Deckt keine Datenbank-Backups, WAL-Dateien oder Betriebssystem-Artefakte ab. |
+| Human-in-the-Loop | Bestätigungs-Gate: keine Berechnung ohne explizite Nutzeraktion. `legal_validity_assessed=false` immer. Produktsicherheitsmaßnahme — die Anwendbarkeit von Art. 22 DSGVO ist einsatzkontextabhängig. |
+| Local-Only | Keine externen Netzwerkanfragen; keine Cloud; keine Telemetrie; Bindung an 127.0.0.1. |
+| Log-Schutz | Bezugsdaten, Evidence-Texte und Dokument-IDs werden aus Logs redigiert (INV-M6A-21). |
+| Nachvollziehbarkeit | Bestätigungszeitstempel + Methode für Nutzer-Transparenz. Unterstützt die Rechenschaftspflicht des Verantwortlichen (Art. 5 Abs. 2 DSGVO), stellt aber selbst kein Verarbeitungsverzeichnis nach Art. 30 DSGVO dar. |
 
-**Verantwortlicher:** Die natürliche Person, die die Software auf ihrem lokalen Rechner nutzt (Local-Only-Tool).
+## DSGVO — Anwendbarkeit und Rechtsgrundlagen
 
-**Verarbeitungszwecke und Rechtsgrundlagen:**
+### Anwendungsbereich
 
-| Verarbeitung | Zweck | Rechtsgrundlage |
-|-------------|-------|----------------|
-| Speicherung des bestätigten Bezugsdatums (`confirmed_date`) | Kalenderarithmetik für eigene Fallverwaltung | Art. 6(1)(f) — Berechtigtes Interesse |
-| Speicherung des Bestätigungs-Audit-Trails (`confirmed_at`, `confirmed_by`) | Nachvollziehbarkeit und Rechenschaftspflicht | Art. 6(1)(c) — Rechtliche Verpflichtung (Art. 5(2), Art. 30 DSGVO) |
-| Speicherung des `event_type` | Semantische Kategorisierung des Bezugsereignisses | Art. 6(1)(f) — Berechtigtes Interesse |
-| Transientes `evidence_note` (nicht persistiert) | Dokumentation der Bestätigungsgrundlage in der API-Antwort | Art. 6(1)(f) — Berechtigtes Interesse |
+PrivateLegalNavigator ist ein Local-Only-Tool für die Nutzung durch eine einzelne
+natürliche Person auf dem eigenen Rechner.
 
-**Empfänger:** Keine. Daten verlassen den lokalen Rechner nicht.
+**Private Nutzung (Art. 2 Abs. 2 lit. c DSGVO):** Für eine natürliche Person, die die
+Software zur Verwaltung eigener rechtlicher Angelegenheiten nutzt, fällt die Verarbeitung
+unter die Haushaltsausnahme. Die DSGVO findet in diesem Fall **keine Anwendung**.
 
-**Speicherdauer:** Bis zur Löschung des referenzierten Dokuments (CASCADE DELETE) oder bis zur manuellen Löschung durch den Nutzer.
+**Berufliche oder behördliche Nutzung:** Wird die Software in einem beruflichen Kontext
+(z.B. durch eine Rechtsanwaltskanzlei) oder durch eine Behörde eingesetzt, ist die DSGVO
+anwendbar. Der Verantwortliche (die Kanzlei, die Behörde) muss dann eigenständig:
 
-**Betroffenenrechte:** Auskunft (GET history endpoint), Löschung (CASCADE DELETE über Dokument), Berichtigung (Änderung = neuer Datensatz, alter bleibt SUPERSEDED).
+- Die zutreffende Rechtsgrundlage nach Art. 6 DSGVO bestimmen
+- Ggf. ein Verarbeitungsverzeichnis nach Art. 30 DSGVO führen
+- Die Betroffenenrechte (Art. 15-22 DSGVO) sicherstellen
+- Die Erforderlichkeit und Verhältnismäßigkeit der Datenverarbeitung prüfen
+
+**M6-A legt keine universelle Rechtsgrundlage fest.** Welche Rechtsgrundlage nach Art. 6
+DSGVO einschlägig ist, hängt vom konkreten Verantwortlichen, dem Verarbeitungszweck,
+den betroffenen Datenkategorien und dem Einsatzkontext ab. Eine einsatzspezifische
+Datenschutz-Folgenabschätzung obliegt dem Verantwortlichen.
 
 ---
 
