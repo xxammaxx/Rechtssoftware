@@ -16,6 +16,9 @@ from private_legal_navigator.api.errors import (
 )
 from private_legal_navigator.api.routes import router as case_router
 from private_legal_navigator.config import Settings
+from private_legal_navigator.infrastructure.deterministic_deadline_extractor import (
+    DeterministicDeadlineExtractor,
+)
 from private_legal_navigator.infrastructure.local_file_storage import LocalFileStorage
 from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
 from private_legal_navigator.infrastructure.rule_based_classifier import RuleBasedClassifier
@@ -69,6 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     file_storage = LocalFileStorage(docs_dir)
     text_extractor = PdfTextExtractor()
     classifier = RuleBasedClassifier()
+    deadline_extractor = DeterministicDeadlineExtractor()
 
     app = FastAPI(
         title="PrivateLegalNavigator",
@@ -83,6 +87,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.file_storage = file_storage
     app.state.text_extractor = text_extractor
     app.state.classifier = classifier
+    app.state.deadline_extractor = deadline_extractor
 
     # Register exception handlers
     app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
