@@ -14,8 +14,13 @@ from private_legal_navigator.api.errors import (
     case_not_found_handler,
     validation_error_handler,
 )
+from private_legal_navigator.api.event_routes import router as event_router
 from private_legal_navigator.api.routes import router as case_router
+from private_legal_navigator.application.event_service import ReferenceEventService
 from private_legal_navigator.config import Settings
+from private_legal_navigator.infrastructure.deterministic_calendar import (
+    DeterministicCalendarArithmetic,
+)
 from private_legal_navigator.infrastructure.deterministic_deadline_extractor import (
     DeterministicDeadlineExtractor,
 )
@@ -27,6 +32,9 @@ from private_legal_navigator.infrastructure.sqlite_case_repository import (
 )
 from private_legal_navigator.infrastructure.sqlite_document_repository import (
     SqliteDocumentRepository,
+)
+from private_legal_navigator.infrastructure.sqlite_event_repository import (
+    SqliteEventRepository,
 )
 
 
@@ -51,6 +59,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     repo.initialize_schema()
     doc_repo: SqliteDocumentRepository = app.state.document_repository
     doc_repo.initialize_schema()
+    event_repo: SqliteEventRepository = app.state.event_repository
+    event_repo.initialize_schema()
     yield
 
 
@@ -69,10 +79,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     case_repository.initialize_schema()
     document_repository = SqliteDocumentRepository(settings.database_path)
     document_repository.initialize_schema()
+    event_repository = SqliteEventRepository(settings.database_path)
+    event_repository.initialize_schema()
     file_storage = LocalFileStorage(docs_dir)
     text_extractor = PdfTextExtractor()
     classifier = RuleBasedClassifier()
     deadline_extractor = DeterministicDeadlineExtractor()
+    calendar_arithmetic = DeterministicCalendarArithmetic()
+    event_service = ReferenceEventService(
+        repository=event_repository,
+        arithmetic=calendar_arithmetic,
+    )
 
     app = FastAPI(
         title="PrivateLegalNavigator",
@@ -84,10 +101,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.case_repository = case_repository
     app.state.document_repository = document_repository
+    app.state.event_repository = event_repository
     app.state.file_storage = file_storage
     app.state.text_extractor = text_extractor
     app.state.classifier = classifier
     app.state.deadline_extractor = deadline_extractor
+    app.state.calendar_arithmetic = calendar_arithmetic
+    app.state.event_service = event_service
 
     # Register exception handlers
     app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
@@ -97,6 +117,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Register routes
     app.include_router(case_router)
     app.include_router(document_router)
+    app.include_router(event_router)
 
     # Health check
     @app.get("/health")
