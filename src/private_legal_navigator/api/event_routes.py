@@ -1,8 +1,9 @@
 """FastAPI routes for M6-A Reference Events and Calendar Arithmetic."""
 
 from datetime import date
+from hashlib import sha256
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4, uuid5
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -24,11 +25,14 @@ from private_legal_navigator.api.event_schemas import (
 from private_legal_navigator.application.deadline_extractor import DeadlineExtractor
 from private_legal_navigator.application.document_repository import DocumentRepository
 from private_legal_navigator.domain.calendar import (
-    ConfirmationMethod,
+    ConfirmationStatus,
     EventType,
     SourceType,
 )
 from private_legal_navigator.domain.deadline import DeadlineCandidateKind
+
+# Stable namespace UUID for deterministic candidate IDs (M6-A project-specific)
+_M6A_NAMESPACE = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 router = APIRouter(
     prefix="/api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/{candidate_id}",
@@ -45,19 +49,39 @@ def _get_services(request: Request) -> dict[str, Any]:
     }
 
 
-def _validate_candidate_access(
+def _validate_case_document_access(
     document_repo: DocumentRepository,
-    deadline_extractor: DeadlineExtractor,
+    case_id: UUID,
     document_id: UUID,
-    candidate_id: int,
 ) -> tuple[dict[str, Any] | None, Any]:
-    """Validate document exists and candidate index is valid.
+    """Validate case exists and document belongs to it.
 
-    Returns (error_dict, candidates) or (None, candidates).
+    Returns (error_dict, document) or (None, document).
     """
     document = document_repo.get_by_id(document_id)
     if document is None:
         return {"error": True, "code": "DOCUMENT_NOT_FOUND"}, None
+
+    if document.case_id != case_id:
+        return {"error": True, "code": "CASE_DOCUMENT_MISMATCH"}, None
+
+    return None, document
+
+
+def _validate_candidate_access(
+    document_repo: DocumentRepository,
+    deadline_extractor: DeadlineExtractor,
+    case_id: UUID,
+    document_id: UUID,
+    candidate_id: int,
+) -> tuple[dict[str, Any] | None, Any]:
+    """Validate case exists, document belongs to case, and candidate index is valid.
+
+    Returns (error_dict, candidates) or (None, candidates).
+    """
+    err, document = _validate_case_document_access(document_repo, case_id, document_id)
+    if err is not None:
+        return err, None
 
     result = deadline_extractor.extract(document.text_content)
     candidates = result.candidates
@@ -65,6 +89,28 @@ def _validate_candidate_access(
         return {"error": True, "code": "INVALID_CANDIDATE_INDEX"}, None
 
     return None, candidates
+
+
+def _make_stable_candidate_id(document_id: UUID, index: int, evidence: str) -> UUID:
+    """Generate a stable, deterministic candidate ID.
+
+    Uses UUIDv5 with the project namespace and content-derived uniqueness.
+    """
+    content = f"{document_id}:{index}:{sha256(evidence.encode()).hexdigest()[:16]}"
+    return uuid5(_M6A_NAMESPACE, content)
+
+
+def _error_response(code: str, status_code: int = 400) -> JSONResponse:
+    """Build a consistent error response using the existing error envelope."""
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "error": {
+                "code": code,
+                "message": _error_message(code),
+            }
+        },
+    )
 
 
 # --- 1. List Reference Event Candidates ---
@@ -82,34 +128,28 @@ def list_reference_events(
     doc_repo = svc["document_repo"]
     extractor = svc["deadline_extractor"]
 
+    case_uuid = UUID(case_id)
     doc_uuid = UUID(document_id)
-    err, candidates = _validate_candidate_access(doc_repo, extractor, doc_uuid, candidate_id)
+
+    err, candidates = _validate_candidate_access(
+        doc_repo, extractor, case_uuid, doc_uuid, candidate_id
+    )
     if err is not None:
         code = err.get("code", "UNKNOWN")
-        return JSONResponse(
-            status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400,
-            content={"detail": {"code": code, "message": _error_message(code)}},
-        )
+        return _error_response(code, status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400)
 
     candidate = candidates[candidate_id]
     if candidate.kind != DeadlineCandidateKind.RELATIVE_PERIOD:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": "NOT_A_RELATIVE_CANDIDATE",
-                    "message": "Nur RELATIVE_PERIOD-Kandidaten haben Bezugsereignisse.",
-                }
-            },
-        )
+        return _error_response("NOT_A_RELATIVE_CANDIDATE")
 
     # Build reference event candidates from explicit dates in the document
     ref_events: list[ReferenceEventCandidateOut] = []
-    for c in candidates:
+    for idx, c in enumerate(candidates):
         if c.kind == DeadlineCandidateKind.EXPLICIT_DATE and c.normalized_date:
+            stable_id = _make_stable_candidate_id(doc_uuid, idx, c.raw_text)
             ref_events.append(
                 ReferenceEventCandidateOut(
-                    candidate_id=uuid4(),
+                    candidate_id=stable_id,
                     event_type="issue_date",
                     suggested_date=c.normalized_date,
                     source_type="auto_detected",
@@ -122,9 +162,10 @@ def list_reference_events(
 
     # Also add the candidate itself as context
     if candidate.kind == DeadlineCandidateKind.RELATIVE_PERIOD:
+        stable_id = _make_stable_candidate_id(doc_uuid, candidate_id, candidate.raw_text)
         ref_events.append(
             ReferenceEventCandidateOut(
-                candidate_id=uuid4(),
+                candidate_id=stable_id,
                 event_type="unknown",
                 suggested_date=None,
                 source_type="auto_detected",
@@ -182,45 +223,32 @@ def confirm_reference_event(
     doc_repo = svc["document_repo"]
     extractor = svc["deadline_extractor"]
 
+    case_uuid = UUID(case_id)
     doc_uuid = UUID(document_id)
 
-    # Validate document access
-    err, _ = _validate_candidate_access(doc_repo, extractor, doc_uuid, candidate_id)
+    # Validate case-document-candidate access
+    err, _ = _validate_candidate_access(doc_repo, extractor, case_uuid, doc_uuid, candidate_id)
     if err is not None:
         code = err.get("code", "UNKNOWN")
-        return JSONResponse(
-            status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400,
-            content={"detail": {"code": code, "message": _error_message(code)}},
-        )
+        return _error_response(code, status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400)
 
     action = body.action.lower()
 
     if action == "revoke":
         if body.confirmation_id is None:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "detail": {
-                        "code": "INVALID_CONFIRMATION_ACTION",
-                        "message": "confirmation_id is required for revoke.",
-                    }
-                },
-            )
-        try:
-            event = event_service.revoke(body.confirmation_id, doc_uuid)
-        except ValueError:
-            return JSONResponse(
-                status_code=404,
-                content={
-                    "detail": {
-                        "code": "CONFIRMATION_NOT_FOUND",
-                        "message": f"Confirmation {body.confirmation_id} not found.",
-                    }
-                },
-            )
+            return _error_response("INVALID_CONFIRMATION_ACTION")
 
-        # Get prior confirmation for the response
-        prior = event_service._repo.get_by_id(body.confirmation_id)
+        try:
+            event = event_service.revoke(
+                confirmation_id=body.confirmation_id,
+                document_id=doc_uuid,
+                candidate_index=candidate_id,
+            )
+        except ValueError:
+            return _error_response("CONFIRMATION_NOT_FOUND", status_code=404)
+
+        # Get prior confirmation via public service method
+        prior = event_service.get_confirmation_by_id(body.confirmation_id)
         previous = None
         if prior:
             previous = {
@@ -228,14 +256,14 @@ def confirm_reference_event(
                 "confirmed_date": (
                     prior.confirmed_date.isoformat() if prior.confirmed_date else None
                 ),
-                "confirmation_status": "superseded",
+                "confirmation_status": prior.confirmation_status.value,
             }
 
         return ConfirmResponse(
             confirmation_id=event.confirmation_id,
             document_id=doc_uuid,
             supersedes_confirmation_id=body.confirmation_id,
-            confirmation_status="revoked",
+            confirmation_status=event.confirmation_status.value,
             confirmed_at=event.confirmed_at,
             previous_confirmation=previous,
             warnings=[
@@ -253,13 +281,14 @@ def confirm_reference_event(
             document_id=doc_uuid,
             candidate_id=body.candidate_id,
             event_type=event_type,
+            candidate_index=candidate_id,
         )
         return ConfirmResponse(
             confirmation_id=event.confirmation_id,
             candidate_id=body.candidate_id,
             document_id=doc_uuid,
             event_type=event_type.value,
-            confirmation_status="rejected",
+            confirmation_status=event.confirmation_status.value,
             confirmed_at=event.confirmed_at,
             warnings=[
                 WarningOut(
@@ -274,55 +303,23 @@ def confirm_reference_event(
         # Parse the confirmed date
         confirmed_date_str = body.confirmed_date
         if not confirmed_date_str:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "detail": {
-                        "code": "INVALID_DATE",
-                        "message": "confirmed_date is required for confirm action.",
-                    }
-                },
-            )
+            return _error_response("INVALID_DATE")
 
         try:
             confirmed_date = date.fromisoformat(confirmed_date_str)
         except (ValueError, TypeError):
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "detail": {
-                        "code": "INVALID_DATE",
-                        "message": f"'{confirmed_date_str}' is not a valid ISO date (YYYY-MM-DD).",
-                    }
-                },
-            )
+            return _error_response("INVALID_DATE")
 
         # Validate date range
         if confirmed_date < date(1900, 1, 1) or confirmed_date > date(2099, 12, 31):
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "detail": {
-                        "code": "INVALID_DATE",
-                        "message": "Date must be between 1900-01-01 and 2099-12-31.",
-                    }
-                },
-            )
+            return _error_response("INVALID_DATE")
 
         # Validate source_type
         source_type_str = body.source_type or "auto_detected"
         try:
             source_type = SourceType(source_type_str)
         except ValueError:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "detail": {
-                        "code": "INVALID_SOURCE_TYPE",
-                        "message": f"Unknown source_type: {source_type_str}.",
-                    }
-                },
-            )
+            return _error_response("INVALID_SOURCE_TYPE")
 
         event_type = EventType(body.event_type) if body.event_type else EventType.UNKNOWN
 
@@ -332,16 +329,10 @@ def confirm_reference_event(
             event_type=event_type,
             confirmed_date=confirmed_date,
             source_type=source_type,
+            candidate_index=candidate_id,
             confirmed_by="",
             evidence_note=body.evidence_note[:2000],
         )
-
-        # Map status for response
-        status_map = {
-            ConfirmationMethod.AUTO_SUGGESTED: "confirmed",
-            ConfirmationMethod.MANUALLY_ENTERED: "confirmed",
-            ConfirmationMethod.CORRECTED: "confirmed",
-        }
 
         warnings = [
             WarningOut(
@@ -365,7 +356,7 @@ def confirm_reference_event(
             confirmed_date=confirmed_date,
             source_type=source_type.value,
             confirmation_method=event.confirmation_method.value,
-            confirmation_status=status_map.get(event.confirmation_method, "confirmed"),
+            confirmation_status=event.confirmation_status.value,
             confirmed_at=event.confirmed_at,
             supersedes_confirmation_id=event.supersedes_confirmation_id,
             warnings=warnings,
@@ -373,15 +364,7 @@ def confirm_reference_event(
         )
 
     # Unknown action
-    return JSONResponse(
-        status_code=400,
-        content={
-            "detail": {
-                "code": "INVALID_CONFIRMATION_ACTION",
-                "message": f"Unknown action: {action}. Use 'confirm', 'reject', or 'revoke'.",
-            }
-        },
-    )
+    return _error_response("INVALID_CONFIRMATION_ACTION")
 
 
 # --- 3. Calculation Preview ---
@@ -401,109 +384,60 @@ def calculation_preview(
     doc_repo = svc["document_repo"]
     extractor = svc["deadline_extractor"]
 
+    case_uuid = UUID(case_id)
     doc_uuid = UUID(document_id)
 
     # Validate document and candidate
-    err, candidates = _validate_candidate_access(doc_repo, extractor, doc_uuid, candidate_id)
+    err, candidates = _validate_candidate_access(
+        doc_repo, extractor, case_uuid, doc_uuid, candidate_id
+    )
     if err is not None:
         code = err.get("code", "UNKNOWN")
-        return JSONResponse(
-            status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400,
-            content={"detail": {"code": code, "message": _error_message(code)}},
-        )
+        return _error_response(code, status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400)
 
     candidate = candidates[candidate_id]
 
     # Validate M5 candidate is RELATIVE_PERIOD with duration
     if candidate.kind != DeadlineCandidateKind.RELATIVE_PERIOD:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": "DURATION_NOT_AVAILABLE",
-                    "message": "Der Kandidat hat keine berechenbare Dauer.",
-                }
-            },
-        )
+        return _error_response("DURATION_NOT_AVAILABLE")
 
     if candidate.amount is None or candidate.unit is None:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": "DURATION_NOT_AVAILABLE",
-                    "message": "Keine Dauer verfügbar für diesen Kandidaten.",
-                }
-            },
-        )
+        return _error_response("DURATION_NOT_AVAILABLE")
 
-    # Get the confirmed reference event
-    event = event_service._repo.get_by_id(body.confirmation_id)
+    # Get the confirmed reference event via public service method
+    event = event_service.get_confirmation_by_id(body.confirmation_id)
     if event is None:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "detail": {
-                    "code": "CONFIRMATION_NOT_FOUND",
-                    "message": f"Confirmation {body.confirmation_id} not found.",
-                }
-            },
-        )
+        return _error_response("CONFIRMATION_NOT_FOUND", status_code=404)
+
+    # Context binding: verify document ownership
+    if event.document_id != doc_uuid:
+        return _error_response("CONFIRMATION_NOT_FOUND", status_code=404)
+
+    # Status check
+    if event.confirmation_status != ConfirmationStatus.CONFIRMED:
+        if event.confirmation_status == ConfirmationStatus.REVOKED:
+            return _error_response("REFERENCE_EVENT_REVOKED")
+        return _error_response("REFERENCE_EVENT_NOT_CONFIRMED")
 
     if event.confirmed_date is None:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": "REFERENCE_EVENT_NOT_CONFIRMED",
-                    "message": "Kein bestätigtes Bezugsdatum vorhanden.",
-                }
-            },
-        )
+        return _error_response("REFERENCE_EVENT_NOT_CONFIRMED")
 
     duration_amount = candidate.amount
     duration_unit = candidate.unit
 
     # Validate duration
     if duration_amount <= 0:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": "INVALID_DURATION_AMOUNT",
-                    "message": "Dauer muss positiv sein.",
-                }
-            },
-        )
+        return _error_response("INVALID_DURATION_AMOUNT")
 
     if duration_amount > 36500:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": "DURATION_LIMIT_EXCEEDED",
-                    "message": f"Dauer {duration_amount} überschreitet Maximum (36500).",
-                }
-            },
-        )
+        return _error_response("DURATION_LIMIT_EXCEEDED")
 
     # Map duration unit
     german_units = {"Tag": "day", "tag": "day", "Woche": "week", "woche": "week"}
     unit = german_units.get(duration_unit, duration_unit)
 
     if unit not in ("day", "week"):
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": "UNSUPPORTED_DURATION_UNIT",
-                    "message": (
-                        f"Die Dauer-Einheit '{unit}' wird nicht unterstützt. "
-                        "Nur 'day' und 'week' sind verfügbar."
-                    ),
-                }
-            },
-        )
+        return _error_response("UNSUPPORTED_DURATION_UNIT")
 
     # Compute
     result = event_service.calculate_preview(
@@ -517,19 +451,11 @@ def calculation_preview(
     if result.calculated_date is None:
         # Return error based on warnings
         warning_codes = result.warnings
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": {
-                    "code": warning_codes[0] if warning_codes else "CALCULATION_NOT_PERFORMED",
-                    "message": _error_message(
-                        warning_codes[0] if warning_codes else "CALCULATION_NOT_PERFORMED"
-                    ),
-                }
-            },
+        return _error_response(
+            warning_codes[0] if warning_codes else "CALCULATION_NOT_PERFORMED"
         )
 
-    # Build response
+    # Build response using the calculation_id from the result (preserved through the stack)
     calc_steps = [
         CalculationStepOut(
             step=s.step,
@@ -541,14 +467,19 @@ def calculation_preview(
         for s in result.calculation_steps
     ]
 
+    # Use calculation_id from result (preserved through service → arithmetic → domain)
+    calc_id = result.calculation_id
+    if calc_id is None:
+        calc_id = uuid4()
+
     return CalculationPreviewResponse(
         result_type="calculated_candidate",
-        calculation_id=uuid4(),
+        calculation_id=calc_id,
         reference_event=ReferenceEventInCalculation(
             confirmation_id=event.confirmation_id,
             event_type=event.event_type.value,
             confirmed_date=event.confirmed_date,
-            confirmation_status="confirmed",
+            confirmation_status=event.confirmation_status.value,
             confirmation_method=event.confirmation_method.value,
             source_type=event.source_type.value,
         ),
@@ -582,14 +513,13 @@ def get_confirmation_history(
     doc_repo = svc["document_repo"]
     extractor = svc["deadline_extractor"]
 
+    case_uuid = UUID(case_id)
     doc_uuid = UUID(document_id)
-    err, _ = _validate_candidate_access(doc_repo, extractor, doc_uuid, candidate_id)
+
+    err, _ = _validate_candidate_access(doc_repo, extractor, case_uuid, doc_uuid, candidate_id)
     if err is not None:
         code = err.get("code", "UNKNOWN")
-        return JSONResponse(
-            status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400,
-            content={"detail": {"code": code, "message": _error_message(code)}},
-        )
+        return _error_response(code, status_code=404 if code == "DOCUMENT_NOT_FOUND" else 400)
 
     history = event_service.get_history(doc_uuid, candidate_id)
 
@@ -597,28 +527,21 @@ def get_confirmation_history(
     current_status = "unconfirmed"
 
     for event in history:
-        # Determine effective status
-        if event.confirmed_date is None:
-            status = "revoked" if event.supersedes_confirmation_id is not None else "rejected"
-        else:
-            status = "confirmed"
-
         entries.append(
             HistoryEntryOut(
                 confirmation_id=event.confirmation_id,
                 confirmed_date=event.confirmed_date,
                 event_type=event.event_type.value,
-                confirmation_status=status,
+                confirmation_status=event.confirmation_status.value,
                 confirmed_at=event.confirmed_at,
                 supersedes_confirmation_id=event.supersedes_confirmation_id,
             )
         )
-        if status == "revoked":
-            current_status = "revoked"
-        elif status == "confirmed":
-            current_status = "confirmed"
-        elif status == "rejected" and current_status == "unconfirmed":
-            current_status = "rejected"
+
+    # Determine current_status from the most recent entry
+    current_status = (
+        history[0].confirmation_status.value if history else "unconfirmed"
+    )
 
     return HistoryResponse(
         candidate_id=candidate_id,
@@ -636,6 +559,7 @@ def _error_message(code: str) -> str:
     """Return a human-readable error message for a given error code."""
     messages: dict[str, str] = {
         "CASE_NOT_FOUND": "Der Fall wurde nicht gefunden.",
+        "CASE_DOCUMENT_MISMATCH": "Das Dokument gehört nicht zu diesem Fall.",
         "DOCUMENT_NOT_FOUND": "Das angeforderte Dokument wurde nicht gefunden.",
         "INVALID_CANDIDATE_INDEX": "Der Kandidaten-Index ist ungültig.",
         "NOT_A_RELATIVE_CANDIDATE": "Nur RELATIVE_PERIOD-Kandidaten haben Bezugsereignisse.",

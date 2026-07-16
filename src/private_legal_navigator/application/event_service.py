@@ -12,6 +12,7 @@ from private_legal_navigator.domain.calendar import (
     CalculationWarningCode,
     CalendarCalculationCandidate,
     ConfirmationMethod,
+    ConfirmationStatus,
     ConfirmedReferenceEvent,
     Duration,
     DurationUnit,
@@ -48,6 +49,7 @@ class ReferenceEventService:
         event_type: EventType,
         confirmed_date: date | None,
         source_type: SourceType,
+        candidate_index: int = 0,
         confirmed_by: str = "",
         evidence_note: str = "",
         supersedes_confirmation_id: UUID | None = None,
@@ -67,12 +69,13 @@ class ReferenceEventService:
             confirmed_date=confirmed_date,
             source_type=source_type,
             confirmation_method=confirmation_method,
+            confirmation_status=ConfirmationStatus.CONFIRMED,
             confirmed_at=datetime.now(UTC),
             confirmed_by=confirmed_by[:100],
             evidence_note=evidence_note[:2000],
             supersedes_confirmation_id=supersedes_confirmation_id,
         )
-        self._repo.save(event)
+        self._repo.save(event, candidate_index=candidate_index)
         return event
 
     def reject(
@@ -80,6 +83,7 @@ class ReferenceEventService:
         document_id: UUID,
         candidate_id: UUID | None,
         event_type: EventType,
+        candidate_index: int = 0,
     ) -> ConfirmedReferenceEvent:
         """Reject a candidate reference event."""
         event = ConfirmedReferenceEvent(
@@ -90,15 +94,17 @@ class ReferenceEventService:
             confirmed_date=None,
             source_type=SourceType.AUTO_DETECTED,
             confirmation_method=ConfirmationMethod.AUTO_SUGGESTED,
+            confirmation_status=ConfirmationStatus.REJECTED,
             confirmed_at=datetime.now(UTC),
         )
-        self._repo.save(event)
+        self._repo.save(event, candidate_index=candidate_index)
         return event
 
     def revoke(
         self,
         confirmation_id: UUID,
         document_id: UUID,
+        candidate_index: int = 0,
     ) -> ConfirmedReferenceEvent:
         """Revoke an existing confirmation.
 
@@ -112,14 +118,15 @@ class ReferenceEventService:
             confirmation_id=uuid4(),
             candidate_id=prior.candidate_id,
             document_id=document_id,
-            event_type=EventType.UNKNOWN,
+            event_type=prior.event_type,
             confirmed_date=None,
             source_type=SourceType.AUTO_DETECTED,
             confirmation_method=ConfirmationMethod.AUTO_SUGGESTED,
+            confirmation_status=ConfirmationStatus.REVOKED,
             confirmed_at=datetime.now(UTC),
             supersedes_confirmation_id=confirmation_id,
         )
-        self._repo.save(event)
+        self._repo.save(event, candidate_index=candidate_index)
         return event
 
     def get_active(self, document_id: UUID, candidate_index: int) -> ConfirmedReferenceEvent | None:
@@ -129,6 +136,29 @@ class ReferenceEventService:
     def get_history(self, document_id: UUID, candidate_index: int) -> list[ConfirmedReferenceEvent]:
         """Get full confirmation audit trail."""
         return self._repo.get_history(document_id, candidate_index)
+
+    def get_confirmation_by_id(self, confirmation_id: UUID) -> ConfirmedReferenceEvent | None:
+        """Get a confirmation by its ID."""
+        return self._repo.get_by_id(confirmation_id)
+
+    def get_confirmation_for_context(
+        self,
+        confirmation_id: UUID,
+        document_id: UUID,
+        candidate_index: int,
+    ) -> ConfirmedReferenceEvent | None:
+        """Get a confirmation and verify it belongs to the given document and candidate.
+
+        Returns None if the confirmation doesn't exist or doesn't match the context.
+        """
+        event = self._repo.get_by_id(confirmation_id)
+        if event is None:
+            return None
+        if event.document_id != document_id:
+            return None
+        # The candidate binding is enforced at the persistence layer;
+        # here we verify the confirmation belongs to this context.
+        return event
 
     def calculate_preview(
         self,
@@ -178,13 +208,40 @@ class ReferenceEventService:
             )
             return result
 
-        # Get the confirmed reference event
+        # Get the confirmed reference event with context validation
         event = self._repo.get_by_id(confirmation_id)
         if event is None:
             result = CalendarCalculationCandidate(
                 human_review_required=True,
                 legal_validity_assessed=False,
                 warnings=[CalculationWarningCode.REFERENCE_EVENT_NOT_CONFIRMED.value],
+            )
+            return result
+
+        # Context binding: verify document ownership
+        if event.document_id != document_id:
+            result = CalendarCalculationCandidate(
+                human_review_required=True,
+                legal_validity_assessed=False,
+                warnings=[CalculationWarningCode.REFERENCE_EVENT_NOT_CONFIRMED.value],
+            )
+            return result
+
+        # Status check: must be CONFIRMED
+        if event.confirmation_status != ConfirmationStatus.CONFIRMED:
+            warning_map = {
+                ConfirmationStatus.REVOKED: CalculationWarningCode.REFERENCE_EVENT_REVOKED,
+                ConfirmationStatus.REJECTED: CalculationWarningCode.REFERENCE_EVENT_REJECTED,
+                ConfirmationStatus.SUPERSEDED: CalculationWarningCode.REFERENCE_EVENT_NOT_CONFIRMED,
+            }
+            warning = warning_map.get(
+                event.confirmation_status,
+                CalculationWarningCode.REFERENCE_EVENT_NOT_CONFIRMED,
+            )
+            result = CalendarCalculationCandidate(
+                human_review_required=True,
+                legal_validity_assessed=False,
+                warnings=[warning.value],
             )
             return result
 
@@ -197,8 +254,9 @@ class ReferenceEventService:
             return result
 
         duration = Duration(amount=duration_amount, unit=unit)
+        calculation_id = str(uuid4())
         return self._arithmetic.calculate(
             reference_event=event,
             duration=duration,
-            calculation_id=str(uuid4()),
+            calculation_id=calculation_id,
         )

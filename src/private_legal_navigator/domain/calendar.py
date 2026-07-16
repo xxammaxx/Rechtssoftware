@@ -104,6 +104,12 @@ class CalculationWarningCode(StrEnum):
     INVALID_SOURCE_TYPE = "INVALID_SOURCE_TYPE"
 
 
+# Domain constraints per INV-M6A-23
+MIN_DATE: date = date(1900, 1, 1)
+MAX_DATE: date = date(2099, 12, 31)
+MAX_DURATION_CALENDAR_DAYS: int = 36500
+
+
 @dataclass
 class ReferenceEventCandidate:
     """A candidate reference event that could anchor a relative deadline.
@@ -160,6 +166,7 @@ class ConfirmedReferenceEvent:
         confirmed_date: The user-confirmed reference date.
         source_type: Where the date came from.
         confirmation_method: How the user confirmed.
+        confirmation_status: Current lifecycle state of this confirmation.
         confirmed_at: Timestamp of confirmation (UTC).
         confirmed_by: Human identifier (future: user ID, max 100 chars).
         evidence_note: Optional note (max 2000 chars, transient, not persisted).
@@ -173,7 +180,8 @@ class ConfirmedReferenceEvent:
     confirmed_date: date | None
     source_type: SourceType
     confirmation_method: ConfirmationMethod
-    confirmed_at: datetime
+    confirmation_status: ConfirmationStatus = ConfirmationStatus.UNCONFIRMED
+    confirmed_at: datetime | None = None
     confirmed_by: str = ""
     evidence_note: str = ""
     supersedes_confirmation_id: UUID | None = None
@@ -206,8 +214,11 @@ class Duration:
     def __post_init__(self) -> None:
         if self.amount <= 0:
             raise ValueError("Duration amount must be positive")
-        if self.amount > 36500:
-            raise ValueError("Duration exceeds maximum (36500 days / ~100 years)")
+        if self.calendar_days > MAX_DURATION_CALENDAR_DAYS:
+            raise ValueError(
+                f"Duration exceeds maximum "
+                f"({MAX_DURATION_CALENDAR_DAYS} calendar days / ~100 years)"
+            )
 
 
 @dataclass

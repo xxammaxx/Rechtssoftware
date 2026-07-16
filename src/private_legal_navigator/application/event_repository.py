@@ -16,10 +16,10 @@ class ReferenceEventRepository(ABC):
     """
 
     @abstractmethod
-    def save(self, event: ConfirmedReferenceEvent) -> None:
+    def save(self, event: ConfirmedReferenceEvent, candidate_index: int = 0) -> None:
         """Store a confirmed reference event.
 
-        If a prior confirmation with the same candidate_id exists,
+        If a prior confirmation with the same document_id + candidate_index exists,
         it is marked as SUPERSEDED before the new one is inserted.
         """
         ...

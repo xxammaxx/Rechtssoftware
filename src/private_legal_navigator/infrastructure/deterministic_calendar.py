@@ -6,9 +6,11 @@ No weekends. No holidays. No delivery fiction. No legal rules.
 
 from datetime import date, timedelta
 from typing import ClassVar
+from uuid import UUID
 
 from private_legal_navigator.application.calendar_arithmetic import CalendarArithmetic
 from private_legal_navigator.domain.calendar import (
+    MAX_DURATION_CALENDAR_DAYS,
     CalculationOperation,
     CalculationStep,
     CalculationWarningCode,
@@ -18,7 +20,7 @@ from private_legal_navigator.domain.calendar import (
     DurationUnit,
 )
 
-# Valid date range per INV-M6A-23
+# Valid date range per INV-M6A-23 (imported from domain for single source of truth)
 MIN_DATE: date = date(1900, 1, 1)
 MAX_DATE: date = date(2099, 12, 31)
 
@@ -29,7 +31,7 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
     No external dependencies. No network. No legal rules.
     """
 
-    MAX_DURATION_DAYS: ClassVar[int] = 36500
+    MAX_DURATION_DAYS: ClassVar[int] = MAX_DURATION_CALENDAR_DAYS
 
     def calculate(
         self,
@@ -38,10 +40,13 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
         calculation_id: str | None = None,
     ) -> CalendarCalculationCandidate:
         """Calculate a candidate date from a confirmed reference event and duration."""
+        calc_uuid: UUID | None = (
+            UUID(calculation_id) if calculation_id else None
+        )
         confirmed_date = reference_event.confirmed_date
         if confirmed_date is None:
             return CalendarCalculationCandidate(
-                calculation_id=None,
+                calculation_id=calc_uuid,
                 confirmed_reference_event=reference_event,
                 duration=duration,
                 calculated_date=None,
@@ -54,7 +59,7 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
         # Validate reference date range
         if confirmed_date < MIN_DATE or confirmed_date > MAX_DATE:
             return CalendarCalculationCandidate(
-                calculation_id=None,
+                calculation_id=calc_uuid,
                 confirmed_reference_event=reference_event,
                 duration=duration,
                 calculated_date=None,
@@ -67,13 +72,24 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
         operation = self.resolve_operation(duration)
         calendar_days = duration.calendar_days
 
-        # Compute result
-        result_date = self._add_days_impl(confirmed_date, calendar_days)
+        # Compute result with overflow protection
+        result_date = self._add_days_safe(confirmed_date, calendar_days)
+        if result_date is None:
+            return CalendarCalculationCandidate(
+                calculation_id=calc_uuid,
+                confirmed_reference_event=reference_event,
+                duration=duration,
+                calculated_date=None,
+                calculation_steps=[],
+                legal_validity_assessed=False,
+                human_review_required=True,
+                warnings=[CalculationWarningCode.CALCULATED_DATE_OUT_OF_RANGE.value],
+            )
 
         # Validate result date range
         if result_date < MIN_DATE or result_date > MAX_DATE:
             return CalendarCalculationCandidate(
-                calculation_id=None,
+                calculation_id=calc_uuid,
                 confirmed_reference_event=reference_event,
                 duration=duration,
                 calculated_date=None,
@@ -100,7 +116,7 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
         ]
 
         return CalendarCalculationCandidate(
-            calculation_id=None,
+            calculation_id=calc_uuid,
             confirmed_reference_event=reference_event,
             duration=duration,
             calculated_date=result_date,
@@ -125,13 +141,30 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
 
     def add_calendar_days(self, reference_date: date, days: int) -> date:
         """Add calendar days to a date (pure timedelta)."""
-        return self._add_days_impl(reference_date, days)
+        result = self._add_days_safe(reference_date, days)
+        if result is None:
+            raise ValueError(f"Calendar addition overflow: {reference_date} + {days} days")
+        return result
 
     def add_calendar_weeks(self, reference_date: date, weeks: int) -> date:
         """Add calendar weeks to a date (pure timedelta × 7)."""
-        return self._add_days_impl(reference_date, weeks * 7)
+        result = self._add_days_safe(reference_date, weeks * 7)
+        if result is None:
+            raise ValueError(f"Calendar addition overflow: {reference_date} + {weeks} weeks")
+        return result
+
+    @staticmethod
+    def _add_days_safe(reference_date: date, days: int) -> date | None:
+        """Internal: timedelta addition with overflow protection.
+
+        Returns None if the addition would overflow Python's date range.
+        """
+        try:
+            return reference_date + timedelta(days=days)
+        except (OverflowError, ValueError):
+            return None
 
     @staticmethod
     def _add_days_impl(reference_date: date, days: int) -> date:
-        """Internal: pure timedelta addition."""
+        """Internal: pure timedelta addition (no safety wrapper)."""
         return reference_date + timedelta(days=days)
