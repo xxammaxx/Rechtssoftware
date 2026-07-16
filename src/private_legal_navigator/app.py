@@ -25,6 +25,7 @@ from private_legal_navigator.infrastructure.deterministic_deadline_extractor imp
     DeterministicDeadlineExtractor,
 )
 from private_legal_navigator.infrastructure.local_file_storage import LocalFileStorage
+from private_legal_navigator.infrastructure.log_redaction import configure_logging
 from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
 from private_legal_navigator.infrastructure.rule_based_classifier import RuleBasedClassifier
 from private_legal_navigator.infrastructure.sqlite_case_repository import (
@@ -68,6 +69,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """Create and configure the FastAPI application."""
     if settings is None:
         settings = Settings()
+
+    # Configure logging with privacy redaction (must happen first)
+    configure_logging()
 
     # Ensure directories exist
     settings.data_dir.mkdir(parents=True, exist_ok=True)
