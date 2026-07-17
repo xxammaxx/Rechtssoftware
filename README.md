@@ -5,7 +5,7 @@ behördlichen Angelegenheiten.
 
 ## Status
 
-**M5 — Deterministische Fristkandidaten-Erkennung** — abgeschlossen.
+**M6-A — Bestätigte Bezugsereignisse und Kalenderarithmetik** — abgeschlossen.
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)
@@ -15,6 +15,12 @@ Aktuell implementiert:
 - Textabruf pro Dokument über API (M3)
 - Regelbasierte Dokumentklassifikation (Bescheid, Rechnung, Mahnung, etc.) (M4)
 - Deterministische Fristkandidaten-Erkennung aus extrahiertem Text (M5)
+- Reference-Event-Kandidaten aus Dokumenttext (M6-A)
+- Explizite Bestätigung, Ablehnung und manuelle Datumseingabe (M6-A)
+- Reine Tages-/Wochen-Kalenderarithmetik (M6-A)
+- Unverbindliche Berechnungsvorschau mit vollständigem Rechenweg (M6-A)
+- Bestätigungshistorie mit Supersession-Chain (M6-A)
+- Privacy-Logging-Filter und Exception-Boundary (M6-A)
 - Dokument-Download und -Auflistung pro Fall
 - Lokale FastAPI-Anwendung auf 127.0.0.1:8000
 - SQLite-Persistenz mit automatischer Schema-Initialisierung
@@ -27,12 +33,12 @@ automatischen Rechtsentscheidungen. Jede rechtlich relevante Ausgabe
 erfordert menschliche Prüfung.
 
 Noch **nicht** implementiert:
+- Frontend (M6-UI in Spezifikation, siehe #6)
 - OCR (optische Texterkennung für gescannte Dokumente)
-- Verbindliche Rechtsfristberechnung (M5 erkennt nur Textstellen)
+- Verbindliche Rechtsfristberechnung (M6-B geplant)
 - Rechtsbewertung
 - Handlungsempfehlungen
 - Entwurfserstellung / Schreiben
-- Frontend
 - Authentifizierung / Mehrbenutzer
 - Verschlüsselung
 
@@ -97,13 +103,19 @@ Konfiguration über Umgebungsvariablen:
 | GET | `/api/v1/cases/{case_id}/documents/{doc_id}` | Dokument herunterladen |
 | GET | `/api/v1/cases/{case_id}/documents/{doc_id}/text` | Extrahierten Text abrufen |
 | POST | `/api/v1/cases/{case_id}/documents/{doc_id}/deadline-candidates` | Fristkandidaten erkennen (M5) |
+| GET | `/api/v1/cases/{case_id}/documents/{doc_id}/deadline-candidates/{idx}/reference-events` | Bezugsereignisse abrufen (M6-A) |
+| POST | `/api/v1/cases/{case_id}/documents/{doc_id}/deadline-candidates/{idx}/reference-events/confirm` | Bezugsdatum bestätigen/ablehnen (M6-A) |
+| POST | `/api/v1/cases/{case_id}/documents/{doc_id}/deadline-candidates/{idx}/calculation-preview` | Berechnungsvorschau (M6-A) |
+| GET | `/api/v1/cases/{case_id}/documents/{doc_id}/deadline-candidates/{idx}/reference-events/history` | Bestätigungshistorie (M6-A) |
 
 Vollständige API-Dokumentation: [contracts/api.md](specs/001-greenfield-case-core/contracts/api.md)
 
-> **M5-Hinweis:** Der Deadline-Candidates-Endpunkt erkennt ausschließlich
-> mögliche Frist- und Terminangaben im Text. Er berechnet keine verbindliche
-> Rechtsfrist und ersetzt keine anwaltliche oder behördliche Prüfung.
-> Siehe [M5-Spec](specs/005-deadline-candidates/spec.md).
+> **M6-A-Hinweis:** Reference-Event- und Calculation-Preview-Endpunkte
+> liefern eine unverbindliche Berechnungsvorschau auf Basis bestätigter Bezugsdaten.
+> Sie berechnen keine verbindliche Rechtsfrist, wenden keine Feiertags- oder
+> Wochenendregeln an und ersetzen keine anwaltliche oder behördliche Prüfung.
+> Jede Ausgabe enthält `human_review_required=true` und `legal_validity_assessed=false`.
+> Siehe [M6-A-Spec](specs/006a-reference-events-calendar-arithmetic/spec.md).
 
 ## Datenschutz
 

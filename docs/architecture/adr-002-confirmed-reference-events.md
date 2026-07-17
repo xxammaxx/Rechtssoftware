@@ -1,7 +1,7 @@
 # ADR-002 — Confirmed Reference Events and Calendar Arithmetic (M6-A)
 
 ## Status
-Proposed
+Accepted (implemented via PR #5, merge commit `0e26664`)
 
 ## Context
 
