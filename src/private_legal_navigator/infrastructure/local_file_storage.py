@@ -31,7 +31,7 @@ class LocalFileStorage(FileStorage):
         """Read file content from disk."""
         target = self._resolve(storage_path)
         if not target.exists():
-            raise FileNotFoundError(f"Datei nicht gefunden: {storage_path}")
+            raise FileNotFoundError("Datei nicht gefunden")
         return target.read_bytes()
 
     def exists(self, storage_path: str) -> bool:
