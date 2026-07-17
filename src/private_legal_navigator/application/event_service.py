@@ -3,6 +3,7 @@
 Orchestrates the confirmation state machine and calendar arithmetic.
 """
 
+import logging as _logging
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
@@ -19,6 +20,11 @@ from private_legal_navigator.domain.calendar import (
     EventType,
     SourceType,
 )
+from private_legal_navigator.infrastructure.safe_logging import (
+    safe_log_event,
+)
+
+_SERVICE_LOGGER = _logging.getLogger("private_legal_navigator.application.event_service")
 
 
 def _map_source_type_to_method(source_type: SourceType) -> ConfirmationMethod:
@@ -76,6 +82,13 @@ class ReferenceEventService:
             supersedes_confirmation_id=supersedes_confirmation_id,
         )
         self._repo.save(event, candidate_index=candidate_index)
+        safe_log_event(
+            _SERVICE_LOGGER,
+            "reference_event.confirmed",
+            confirmation_method=confirmation_method.value,
+            source_type=source_type.value,
+            result_status="success",
+        )
         return event
 
     def reject(
@@ -98,6 +111,11 @@ class ReferenceEventService:
             confirmed_at=datetime.now(UTC),
         )
         self._repo.save(event, candidate_index=candidate_index)
+        safe_log_event(
+            _SERVICE_LOGGER,
+            "reference_event.rejected",
+            result_status="success",
+        )
         return event
 
     def revoke(
@@ -112,7 +130,7 @@ class ReferenceEventService:
         """
         prior = self._repo.get_by_id(confirmation_id)
         if prior is None:
-            raise ValueError(f"Confirmation {confirmation_id} not found")
+            raise ValueError("Confirmation not found")
 
         event = ConfirmedReferenceEvent(
             confirmation_id=uuid4(),
@@ -127,6 +145,11 @@ class ReferenceEventService:
             supersedes_confirmation_id=confirmation_id,
         )
         self._repo.save(event, candidate_index=candidate_index)
+        safe_log_event(
+            _SERVICE_LOGGER,
+            "reference_event.revoked",
+            result_status="success",
+        )
         return event
 
     def get_active(self, document_id: UUID, candidate_index: int) -> ConfirmedReferenceEvent | None:
@@ -255,8 +278,16 @@ class ReferenceEventService:
 
         duration = Duration(amount=duration_amount, unit=unit)
         calculation_id = str(uuid4())
-        return self._arithmetic.calculate(
+        result = self._arithmetic.calculate(
             reference_event=event,
             duration=duration,
             calculation_id=calculation_id,
         )
+        safe_log_event(
+            _SERVICE_LOGGER,
+            "calendar_preview.generated",
+            duration_unit=unit.value,
+            duration_amount=duration_amount,
+            result_status="success" if result.calculated_date else "failure",
+        )
+        return result

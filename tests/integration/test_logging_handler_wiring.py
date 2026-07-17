@@ -20,6 +20,9 @@ from private_legal_navigator.infrastructure.log_redaction import (
     PrivacyRedactionFilter,
     configure_logging,
 )
+from private_legal_navigator.infrastructure.safe_logging import (
+    safe_log_failure,
+)
 
 # ── Synthetic test markers ─────────────────────────────────────────────────
 SYNTHETIC_UUID = UUID("bbbbbbbb-1111-cccc-2222-ddddeeeeeeee")
@@ -434,11 +437,17 @@ class TestRealExceptionPath:
         assert "INVALID_CONFIRMATION_CONTEXT" in output  # safe error code
 
     def test_exception_message_with_secret_leaks(self):
-        """Prove that exception messages with secrets WILL leak in traceback.
+        """RED_TEST: raw logger.exception() leaks exception message text.
 
-        This is a RED_TEST: the filter cannot redact text inside exception
-        messages or tracebacks. The static policy guard must prevent putting
-        secrets in exception messages.
+        This test documents the gap: logger.exception() emits full traceback
+        including the exception message. The PrivacyRedactionFilter cannot
+        redact text inside exception messages or tracebacks.
+
+        PROTECTION: The static boundary guard prevents product code from
+        using logger.exception(). Product code uses safe_log_failure()
+        instead, which never emits tracebacks or exception messages.
+
+        See test_exception_with_safe_log_failure_no_leak below.
         """
         root, stream = _setup_clean_root()
         configure_logging()
@@ -456,3 +465,56 @@ class TestRealExceptionPath:
         assert SYNTHETIC_EXCEPTION_SECRET in output, (
             "RED_TEST FAILED: exception message should leak (proves filter gap)"
         )
+
+    def test_exception_with_safe_log_failure_no_leak(self):
+        """GREEN: safe_log_failure() does NOT emit exception message or traceback.
+
+        This proves the safe path: when product code uses safe_log_failure(),
+        the error_code and exception_type are logged but the exception
+        message content is NEVER included.
+        """
+        root, stream = _setup_clean_root()
+        # Use a formatter that renders extra fields for verification
+        root.handlers[0].setFormatter(
+            logging.Formatter(
+                "%(levelname)s %(name)s: %(message)s "
+                "error_code=%(error_code)s exception_type=%(exception_type)s"
+            )
+        )
+        configure_logging()
+
+        child = logging.getLogger("private_legal_navigator")
+        child.propagate = True
+        child.setLevel(logging.DEBUG)
+
+        try:
+            raise ValueError(f"confirmation_id={SYNTHETIC_EXCEPTION_SECRET}")
+        except ValueError as exc:
+            safe_log_failure(
+                child,
+                "reference_event.failed",
+                error_code="INTERNAL_PROCESSING_ERROR",
+                exception=exc,
+            )
+
+        output = stream.getvalue()
+        # The secret must NOT appear
+        assert SYNTHETIC_EXCEPTION_SECRET not in output, (
+            f"safe_log_failure leaked exception message: {output}"
+        )
+        # But error_code and exception_type must be present
+        assert "INTERNAL_PROCESSING_ERROR" in output
+        assert "ValueError" in output
+        # No traceback
+        assert "Traceback" not in output, f"safe_log_failure emitted traceback: {output}"
+
+        output = stream.getvalue()
+        # The secret must NOT appear
+        assert SYNTHETIC_EXCEPTION_SECRET not in output, (
+            f"safe_log_failure leaked exception message: {output}"
+        )
+        # But error_code and exception_type must be present
+        assert "INTERNAL_PROCESSING_ERROR" in output
+        assert "ValueError" in output
+        # No traceback
+        assert "Traceback" not in output, f"safe_log_failure emitted traceback: {output}"

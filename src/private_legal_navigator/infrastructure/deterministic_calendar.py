@@ -40,9 +40,7 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
         calculation_id: str | None = None,
     ) -> CalendarCalculationCandidate:
         """Calculate a candidate date from a confirmed reference event and duration."""
-        calc_uuid: UUID | None = (
-            UUID(calculation_id) if calculation_id else None
-        )
+        calc_uuid: UUID | None = UUID(calculation_id) if calculation_id else None
         confirmed_date = reference_event.confirmed_date
         if confirmed_date is None:
             return CalendarCalculationCandidate(
@@ -143,14 +141,14 @@ class DeterministicCalendarArithmetic(CalendarArithmetic):
         """Add calendar days to a date (pure timedelta)."""
         result = self._add_days_safe(reference_date, days)
         if result is None:
-            raise ValueError(f"Calendar addition overflow: {reference_date} + {days} days")
+            raise ValueError("Calendar addition overflow")
         return result
 
     def add_calendar_weeks(self, reference_date: date, weeks: int) -> date:
         """Add calendar weeks to a date (pure timedelta × 7)."""
         result = self._add_days_safe(reference_date, weeks * 7)
         if result is None:
-            raise ValueError(f"Calendar addition overflow: {reference_date} + {weeks} weeks")
+            raise ValueError("Calendar addition overflow")
         return result
 
     @staticmethod

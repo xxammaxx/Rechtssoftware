@@ -13,6 +13,8 @@ def main() -> None:
         host=settings.host,
         port=settings.port,
         factory=True,
+        log_level="warning",
+        access_log=False,
     )
 
 

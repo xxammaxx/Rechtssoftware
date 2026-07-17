@@ -204,3 +204,14 @@ def configure_logging(
     # Silence overly verbose / privacy-sensitive library loggers
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+
+    # Attach PrivacyRedactionFilter to uvicorn.error logger directly.
+    # Defense in depth: uvicorn.error may have its own handler that
+    # bypasses root logger propagation. Adding the filter to the logger
+    # itself ensures every record through uvicorn.error is filtered.
+    _uvicorn_error = logging.getLogger("uvicorn.error")
+    _uvicorn_error_filters = [
+        f for f in _uvicorn_error.filters if isinstance(f, PrivacyRedactionFilter)
+    ]
+    if not _uvicorn_error_filters:
+        _uvicorn_error.addFilter(PrivacyRedactionFilter())
