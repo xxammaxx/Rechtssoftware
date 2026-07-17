@@ -34,13 +34,31 @@ REDACTED_VALUE = "[REDACTED]"
 
 # LogRecord built-in attribute names that must never be redacted
 # even if they happen to match a sensitive field name.
-_BUILTIN_RECORD_ATTRS: frozenset[str] = frozenset({
-    "args", "created", "exc_info", "exc_text", "filename",
-    "funcName", "levelname", "levelno", "lineno", "module",
-    "msecs", "msg", "name", "pathname", "process",
-    "processName", "relativeCreated", "stack_info", "thread",
-    "threadName", "taskName",
-})
+_BUILTIN_RECORD_ATTRS: frozenset[str] = frozenset(
+    {
+        "args",
+        "created",
+        "exc_info",
+        "exc_text",
+        "filename",
+        "funcName",
+        "levelname",
+        "levelno",
+        "lineno",
+        "module",
+        "msecs",
+        "msg",
+        "name",
+        "pathname",
+        "process",
+        "processName",
+        "relativeCreated",
+        "stack_info",
+        "thread",
+        "threadName",
+        "taskName",
+    }
+)
 
 
 def _is_sensitive_key(key: str) -> bool:
@@ -68,9 +86,7 @@ def _redact_dict_recursive(data: object, _depth: int = 0) -> object:
         return result
 
     if isinstance(data, (list, tuple)):
-        return type(data)(
-            _redact_dict_recursive(item, _depth + 1) for item in data
-        )
+        return type(data)(_redact_dict_recursive(item, _depth + 1) for item in data)
 
     if isinstance(data, (UUID, date, datetime)):
         return str(data)
@@ -90,6 +106,24 @@ class PrivacyRedactionFilter(logging.Filter):
        → recursive redaction of sensitive keys inside them
 
     The filter is idempotent and never mutates the caller's data.
+
+    .. CAUTION::
+
+       This filter ONLY protects structured logging:
+
+       * Safe:  ``logger.info("msg", extra={"document_id": uuid})``
+       * Safe:  ``logger.info("msg", {"document_id": uuid})``
+
+       It does NOT protect:
+
+       * Positional ``%s`` args: ``logger.info("id=%s", uuid)``  — LEAKS
+       * F-string interpolation: ``logger.info(f"id={uuid}")``   — LEAKS
+       * Exception traceback local variables                      — LEAK
+
+       The ``tests/unit/test_logging_static_policy.py`` static guard
+       prevents positional/f-string patterns from entering product code.
+       Always use ``extra={}`` or Mapping-style dict args with
+       sensitive data.
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -128,19 +162,26 @@ def configure_logging(
 ) -> None:
     """Configure application logging with privacy redaction.
 
-    Sets up the root logger with a StreamHandler and attaches the
-    PrivacyRedactionFilter. Safe to call multiple times (idempotent).
+    PrivacyRedactionFilter is attached to every emitting path:
+
+    1. Root logger filter  — catches propagated child-logger records
+    2. Handler filter       — defense in depth for direct handler emission
+    3. Uvicorn access mute  — reduced to WARNING to avoid URL-embedded IDs
+
+    Safe to call multiple times (idempotent). Never removes foreign
+    handlers or filters from non-application loggers.
     """
     root_logger = logging.getLogger()
+    redaction_filter = PrivacyRedactionFilter()
 
+    # --- 1. Root logger filter (catches propagated child-logger records) ---
     if install_root_filter:
-        redaction_filter = PrivacyRedactionFilter()
         root_logger.filters = [
-            f for f in root_logger.filters
-            if not isinstance(f, PrivacyRedactionFilter)
+            f for f in root_logger.filters if not isinstance(f, PrivacyRedactionFilter)
         ]
         root_logger.addFilter(redaction_filter)
 
+    # --- 2. Handler filter (defense in depth) ---
     if not root_logger.handlers:
         handler = logging.StreamHandler()
         handler.setLevel(level)
@@ -151,7 +192,15 @@ def configure_logging(
         handler.setFormatter(formatter)
         root_logger.addHandler(handler)
 
+    # Attach PrivacyRedactionFilter to every existing handler
+    # (idempotent — never duplicates)
+    for h in root_logger.handlers:
+        existing_filters = [f for f in h.filters if isinstance(f, PrivacyRedactionFilter)]
+        if not existing_filters:
+            h.addFilter(PrivacyRedactionFilter())
+
     root_logger.setLevel(level)
 
-    # Silence overly verbose library loggers
+    # Silence overly verbose / privacy-sensitive library loggers
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
