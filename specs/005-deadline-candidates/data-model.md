@@ -145,9 +145,18 @@ DeterministicDeadlineExtractor.extract(text)
   └── R6: QUALITATIVE_RE → finditer()
           → DeadlineCandidate(kind=QUALITATIVE_REFERENCE, ...)
   
-  → Deduplizierung (überlappende Offsets)
+  → R5: CONTEXT_PREFIX_RE → Post-Processing-Enrichment
+  │     Für jeden EXPLICIT_DATE-Kandidaten: vorausgehenden Text (max. 50
+  │     Zeichen rückwärts vom Match-Start) auf Präfix-Muster prüfen;
+  │     raw_text um Präfix erweitern, start_offset anpassen.
+  │     Regel-ID: DEADLINE_CONTEXT_PREFIX_DE_V1 (Decorator)
+  │
+  → Deduplizierung (Containment-basiert: ein Kandidat umschließt den anderen
+  │   vollständig; Priorität: EXPLICIT_DATE > RELATIVE_PERIOD >
+  │   QUALITATIVE_REFERENCE)
   → Sortierung nach start_offset
-  → Warnung-Generierung
+  → Warnung-Generierung (LEGAL_CALCULATION_NOT_PERFORMED, NO_DEADLINE_CANDIDATE,
+    MULTIPLE_DEADLINE_CANDIDATES, RELATIVE_REFERENCE_REQUIRED, AMBIGUOUS_DATE)
   → DeadlineExtractionResult
 ```
 

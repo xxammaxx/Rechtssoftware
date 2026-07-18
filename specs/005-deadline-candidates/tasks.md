@@ -1,5 +1,9 @@
 # Tasks — M5 Deadline Candidate Extraction
 
+> **Ausführungsreihenfolge:** Gemäß Constitution §7 werden Tests (Phase 5) **vor**
+> der Implementierung ausgeführt. Die logische Gruppierung in Phasen 1–6 dient der
+> Übersicht; chronologisch gilt: T5.x → T1.x → T2.x → T3.x → T4.x → T5.x (Rest) → T6.x.
+
 ## Phase 1: Domain Models + Port
 
 | # | Task | Acceptance | Prio |
@@ -19,12 +23,15 @@
 | T2.1 | `infrastructure/deterministic_deadline_extractor.py`: Grundgerüst | Importe, Klasse implementiert `DeadlineExtractor(ABC)` | P0 |
 | T2.2 | R1 — Numerische Datums-Regex | Erkennt TT.MM.JJJJ, validiert mit datetime.strptime, Normalisierung | P0 |
 | T2.3 | R2 — Ausgeschriebene Monatsnamen | Hardcoded German month dict, validiert mit datetime.date | P0 |
-| T2.4 | R3 — Relative Zeiträume mit Zahl | Erkennt "innerhalb von N Tagen", "binnen N Wochen" etc. | P0 |
-| T2.5 | R4 — Relative Zeiträume mit Artikel | Erkennt "innerhalb eines Monats", "binnen einer Woche" | P0 |
-| T2.6 | R6 — Qualitative Referenzen | Erkennt "unverzüglich", "ohne schuldhaftes Zögern" | P1 |
-| T2.7 | Deduplizierung und Sortierung | Überlappende Treffer entfernt, nach start_offset sortiert | P0 |
-| T2.8 | Warnung-Generierung | Warnungen gemäß Spec (LEGAL_CALCULATION_NOT_PERFORMED, etc.) | P0 |
-| T2.9 | Textgrößenlimit und Timeout | 500K Zeichen Limit, threading Timer 5s Timeout | P0 |
+| T2.4 | R3 — Relative Zeiträume mit Zahl | Erkennt "innerhalb von N Tagen", "binnen N Wochen"; kind=RELATIVE_PERIOD, amount=N, reference_required=true, certainty=unresolved | P0 |
+| T2.5 | R4 — Relative Zeiträume mit Artikel | Erkennt "innerhalb eines Monats", "binnen einer Woche"; kind=RELATIVE_PERIOD, amount=1, reference_required=true, certainty=unresolved | P0 |
+| T2.6 | R6 — Qualitative Referenzen | Erkennt "unverzüglich", "ohne schuldhaftes Zögern"; kind=QUALITATIVE_REFERENCE, reference_required=true, certainty=unresolved | P1 |
+| T2.7 | R5 — Fristkontext-Präfix (Post-Processing-Enrichment) | Präfix-Suche max. 50 Zeichen rückwärts vom Match-Start, raw_text erweitern, start_offset anpassen | P0 |
+| T2.8 | Deduplizierung und Sortierung | Containment-basiert (vollständige Offset-Umschließung), Priorität: EXPLICIT_DATE > RELATIVE_PERIOD > QUALITATIVE_REFERENCE, nach start_offset sortiert | P0 |
+| T2.9 | Warnung-Generierung | 5 Warncodes gemäß Spec (LEGAL_CALCULATION_NOT_PERFORMED, NO_DEADLINE_CANDIDATE, MULTIPLE_DEADLINE_CANDIDATES, RELATIVE_REFERENCE_REQUIRED, AMBIGUOUS_DATE) | P0 |
+| T2.10 | Textgrößenlimit und Timeout | 500K Zeichen Limit vor Verarbeitung; threading Timer 5s — vollständiger Abbruch, keine Partialergebnisse in candidates | P0 |
+| T2.11 | Fristspezifisches Logging | Diagnostic Level via `logging.getLogger("private_legal_navigator")` auf INFO-Level: Kandidatenanzahl, Warnungscodes, rule_ids, Dauer, Erfolg/Fehler; raw_text max. 50 Zeichen gekürzt | P0 |
+| T2.12 | Exception Safety | Alle unerwarteten Regex-Exceptions fangen → HTTP 500 INTERNAL_ERROR (kein separater Error-Code nötig) | P0 |
 
 ## Phase 3: Application Service
 
@@ -53,10 +60,10 @@
 | T5.4 | Rule Engine Tests — relative Perioden | "innerhalb von zwei Wochen", "binnen 14 Tagen", "innerhalb eines Monats" | P0 |
 | T5.5 | Rule Engine Tests — qualitative Referenzen | "unverzüglich", "ohne schuldhaftes Zögern" | P1 |
 | T5.6 | Rule Engine Tests — negative Fälle | Ungültige Daten, Aktenzeichen, Versionsnummern | P0 |
-| T5.7 | Rule Engine Tests — Edge Cases | Leerer Text, sehr langer Text, überlappende Treffer, deterministische Reihenfolge | P0 |
+| T5.7 | Rule Engine Tests — Edge Cases | Leerer Text, sehr langer Text, überlappende Treffer, deterministische Reihenfolge, Mixed-Kinds-Szenario (EXPLICIT_DATE + RELATIVE_PERIOD + QUALITATIVE_REFERENCE in einem Dokument) | P0 |
 | T5.8 | Rule Engine Tests — Regex-Sicherheit | Catastrophic backtracking Test, Timeout-Test | P1 |
 | T5.9 | Application Service Tests | Dokument laden, Text analysieren, Fehlerfälle | P0 |
-| T5.10 | API Integration Tests | 200, 404, 413, kein Text, mehrere Kandidaten, kein Kandidat | P0 |
+| T5.10 | API Integration Tests | 200 (Erfolg), 200 (leer), 404 (DOCUMENT_NOT_FOUND), 413 (TEXT_TOO_LARGE), 500 (EXTRACTION_TIMEOUT), 500 (INTERNAL_ERROR), kein Text, mehrere Kandidaten, kein Kandidat | P0 |
 | T5.11 | Regression Tests | Alle bestehenden 83 Tests müssen weiterhin grün sein | P0 |
 
 ## Phase 6: Quality Gates + Documentation

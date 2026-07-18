@@ -94,6 +94,8 @@ extrahierten `text_content` des Dokuments.
 
 ### 500 Internal Server Error — Regex-Timeout
 
+Bei Timeout erfolgt vollständiger Abbruch — keine Partialergebnisse in `candidates`.
+
 ```json
 {
   "error": {
@@ -150,6 +152,16 @@ class DeadlineExtractionResponse(BaseModel):
     warnings: list[DeadlineWarningResponse] = Field(default_factory=list)
     human_review_required: bool = True
 ```
+
+## Error Code Reference
+
+| Code | HTTP | Auslöser |
+|------|------|----------|
+| `DOCUMENT_NOT_FOUND` | 404 | Dokument-ID existiert nicht |
+| `CASE_NOT_FOUND` | 404 | Fall-ID existiert nicht |
+| `TEXT_TOO_LARGE` | 413 | Text >500.000 Zeichen |
+| `EXTRACTION_TIMEOUT` | 500 | Regex-Timeout (5s). Vollständiger Abbruch, keine Partialergebnisse. |
+| `INTERNAL_ERROR` | 500 | Unexpected exception (z.B. `re.error`). Zentraler Exception-Handler. |
 
 ## Sicherheitsanforderungen
 
