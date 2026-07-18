@@ -36,19 +36,25 @@ class DocumentService:
         mime_type: str,
         size_bytes: int,
     ) -> Document:
-        """Upload a document with text extraction and classification."""
+        """Upload a document with text extraction and optional classification."""
+
+        # Case lookup
         if self._case_repo.get_by_id(case_id) is None:
             raise ValueError("Der Fall wurde nicht gefunden.")
 
-        text_content = self._text_extractor.extract(content)
-        classification = self._classifier.classify(text_content)
+        # Text extraction (returns ExtractionResult with text and optional error)
+        result = self._text_extractor.extract(content)
+
+        # Classification
+        classification = self._classifier.classify(result.text)
 
         doc = Document(
             filename=filename,
             mime_type=mime_type,
             size_bytes=size_bytes,
             case_id=case_id,
-            text_content=text_content,
+            text_content=result.text,
+            extraction_error=result.error,
             doc_type=classification.doc_type,
             classification_confidence=classification.confidence,
         )

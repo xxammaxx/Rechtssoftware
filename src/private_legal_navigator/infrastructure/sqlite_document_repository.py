@@ -19,14 +19,15 @@ CREATE TABLE IF NOT EXISTS documents (
     storage_path TEXT NOT NULL,
     created_at TEXT NOT NULL,
     text_content TEXT NOT NULL DEFAULT '',
+    extraction_error TEXT DEFAULT NULL,
     doc_type TEXT NOT NULL DEFAULT 'sonstiges',
     classification_confidence REAL NOT NULL DEFAULT 0.0
 )
 """
 
-CREATE_DOCUMENTS_INDEX = (
-    "CREATE INDEX IF NOT EXISTS idx_documents_case_id ON documents(case_id)"
-)
+ALTER_ADD_EXTRACTION_ERROR = "ALTER TABLE documents ADD COLUMN extraction_error TEXT DEFAULT NULL"
+
+CREATE_DOCUMENTS_INDEX = "CREATE INDEX IF NOT EXISTS idx_documents_case_id ON documents(case_id)"
 
 
 class SqliteDocumentRepository(DocumentRepository):
@@ -41,6 +42,11 @@ class SqliteDocumentRepository(DocumentRepository):
         try:
             conn.execute(CREATE_DOCUMENTS_TABLE)
             conn.execute(CREATE_DOCUMENTS_INDEX)
+            # Idempotent migration: add extraction_error if not present
+            try:
+                conn.execute(ALTER_ADD_EXTRACTION_ERROR)
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             conn.commit()
         finally:
             conn.close()
@@ -58,8 +64,8 @@ class SqliteDocumentRepository(DocumentRepository):
                 INSERT INTO documents
                     (document_id, case_id, filename,
                      mime_type, size_bytes, storage_path, created_at,
-                     text_content, doc_type, classification_confidence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     text_content, extraction_error, doc_type, classification_confidence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(document.document_id),
@@ -70,6 +76,7 @@ class SqliteDocumentRepository(DocumentRepository):
                     document.storage_path,
                     document.created_at.isoformat(),
                     document.text_content,
+                    document.extraction_error,
                     document.doc_type,
                     document.classification_confidence,
                 ),
@@ -85,7 +92,7 @@ class SqliteDocumentRepository(DocumentRepository):
             row = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
                 "size_bytes, storage_path, created_at, text_content, "
-                "doc_type, classification_confidence "
+                "extraction_error, doc_type, classification_confidence "
                 "FROM documents WHERE document_id = ?",
                 (str(document_id),),
             ).fetchone()
@@ -103,7 +110,7 @@ class SqliteDocumentRepository(DocumentRepository):
             rows = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
                 "size_bytes, storage_path, created_at, text_content, "
-                "doc_type, classification_confidence "
+                "extraction_error, doc_type, classification_confidence "
                 "FROM documents WHERE case_id = ? "
                 "ORDER BY created_at DESC",
                 (str(case_id),),
@@ -129,6 +136,7 @@ class SqliteDocumentRepository(DocumentRepository):
             storage_path=row["storage_path"],
             created_at=datetime.fromisoformat(row["created_at"]),
             text_content=row["text_content"],
+            extraction_error=row["extraction_error"],
             doc_type=row["doc_type"],
             classification_confidence=row["classification_confidence"],
         )

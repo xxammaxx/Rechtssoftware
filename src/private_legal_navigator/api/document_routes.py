@@ -197,6 +197,7 @@ def get_document_text(
         document_id=doc.document_id,
         text_content=doc.text_content,
         text_length=len(doc.text_content),
+        extraction_error=doc.extraction_error,
     )
 
 

@@ -7,6 +7,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from private_legal_navigator.config import Settings
+from tests.fixtures.synthetic_pdf import MINIMAL_PDF_BYTES
 
 
 @pytest.fixture
@@ -135,8 +136,48 @@ class TestDocumentDownload:
 class TestDocumentText:
     """Tests for GET .../documents/{id}/text."""
 
-    async def test_get_text(self, client: AsyncClient) -> None:
-        """Get extracted text from an uploaded document."""
+    async def test_get_text_success(self, client: AsyncClient) -> None:
+        """Get extracted text — success case: extraction_error is null."""
+        case_id = await _create_case(client)
+        upload_resp = await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("doc.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        doc_id = upload_resp.json()["document_id"]
+
+        resp = await client.get(f"/api/v1/cases/{case_id}/documents/{doc_id}/text")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["document_id"] == doc_id
+        assert "text_content" in data
+        assert "text_length" in data
+        assert data["extraction_error"] is None
+
+    async def test_get_text_extraction_error(self, client: AsyncClient) -> None:
+        """Get extracted text — extraction failure: extraction_error set."""
+        case_id = await _create_case(client)
+        upload_resp = await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("corrupt.pdf", b"not a pdf", "application/pdf")},
+        )
+        doc_id = upload_resp.json()["document_id"]
+
+        resp = await client.get(f"/api/v1/cases/{case_id}/documents/{doc_id}/text")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["text_content"] == ""
+        assert data["extraction_error"] is not None
+        assert "korrupt" in data["extraction_error"]
+
+    async def test_get_text_nonexistent(self, client: AsyncClient) -> None:
+        """Get text for nonexistent document returns 404."""
+        case_id = await _create_case(client)
+        fake_id = str(uuid.uuid4())
+        resp = await client.get(f"/api/v1/cases/{case_id}/documents/{fake_id}/text")
+        assert resp.status_code == 404
+
+    async def test_document_list_has_no_extraction_error(self, client: AsyncClient) -> None:
+        """Document list endpoint does NOT include extraction_error."""
         case_id = await _create_case(client)
         upload_resp = await client.post(
             f"/api/v1/cases/{case_id}/documents",
@@ -144,20 +185,8 @@ class TestDocumentText:
         )
         doc_id = upload_resp.json()["document_id"]
 
-        resp = await client.get(
-            f"/api/v1/cases/{case_id}/documents/{doc_id}/text"
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["document_id"] == doc_id
-        assert "text_content" in data
-        assert "text_length" in data
-
-    async def test_get_text_nonexistent(self, client: AsyncClient) -> None:
-        """Get text for nonexistent document returns 404."""
-        case_id = await _create_case(client)
-        fake_id = str(uuid.uuid4())
-        resp = await client.get(
-            f"/api/v1/cases/{case_id}/documents/{fake_id}/text"
-        )
-        assert resp.status_code == 404
+        list_resp = await client.get(f"/api/v1/cases/{case_id}/documents")
+        assert list_resp.status_code == 200
+        items = list_resp.json()["items"]
+        for item in items:
+            assert "extraction_error" not in item

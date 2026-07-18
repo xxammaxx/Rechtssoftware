@@ -14,6 +14,7 @@ class Document:
         - size_bytes must be > 0 and ≤ 20 MB
         - case_id references the parent case
         - created_at is timezone-aware UTC
+        - extraction_error is None on successful extraction, str on failure
     """
 
     ALLOWED_MIME_TYPES: frozenset[str] = frozenset({"application/pdf"})
@@ -30,6 +31,7 @@ class Document:
         storage_path: str | None = None,
         created_at: datetime | None = None,
         text_content: str = "",
+        extraction_error: str | None = None,
         doc_type: str = "sonstiges",
         classification_confidence: float = 0.0,
     ) -> None:
@@ -44,6 +46,7 @@ class Document:
         self.storage_path = storage_path or f"{self.document_id}.bin"
         self.created_at = created_at or datetime.now(UTC)
         self.text_content = text_content
+        self.extraction_error = extraction_error
         self.doc_type = doc_type
         self.classification_confidence = classification_confidence
 
