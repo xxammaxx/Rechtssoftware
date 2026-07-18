@@ -13,9 +13,27 @@ CREATE TABLE IF NOT EXISTS cases (
 )
 """
 
+CREATE_CONFIRMED_REFERENCE_EVENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS confirmed_reference_events (
+    confirmation_id TEXT PRIMARY KEY,
+    candidate_id TEXT,
+    document_id TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    deadline_candidate_index INTEGER NOT NULL DEFAULT 0,
+    event_type TEXT NOT NULL,
+    confirmed_date TEXT,
+    source_type TEXT NOT NULL DEFAULT 'auto_detected',
+    confirmation_method TEXT NOT NULL DEFAULT 'auto_suggested',
+    confirmed_at TEXT NOT NULL,
+    confirmed_by TEXT NOT NULL DEFAULT '',
+    evidence_note TEXT NOT NULL DEFAULT '',
+    supersedes_confirmation_id TEXT
+)
+"""
+
 CREATE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_cases_status ON cases(status)",
     "CREATE INDEX IF NOT EXISTS idx_cases_created_at ON cases(created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_cre_doc ON confirmed_reference_events(document_id)",
 ]
 
 
@@ -32,6 +50,7 @@ def initialize_schema(db_path: Path) -> None:
     conn = get_connection(db_path)
     try:
         conn.execute(CREATE_CASES_TABLE)
+        conn.execute(CREATE_CONFIRMED_REFERENCE_EVENTS_TABLE)
         for index_sql in CREATE_INDEXES:
             conn.execute(index_sql)
         conn.commit()
