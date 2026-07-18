@@ -17,6 +17,8 @@ All endpoints follow the existing FastAPI conventions and error envelope pattern
 /api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/{candidate_id}
 ```
 
+> **⚠️ Note on `candidate_id` naming:** The path parameter `{candidate_id}` is an **int** (0-based index identifying the M5 DeadlineCandidate within the document). This is distinct from the `candidate_id` field in the request/response bodies, which is a **UUID** identifying a specific `ReferenceEventCandidate`. These are different identifiers at different levels — the path selects which M5 candidate to act on, the body field selects which detected reference event within that candidate.
+
 ---
 
 ## Endpoints
@@ -73,6 +75,17 @@ GET /api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/{candida
       "message": "Kein Bezugsereignis wurde bestätigt. Eine Berechnung ist erst nach Bestätigung möglich."
     }
   ],
+  "human_review_required": true
+}
+```
+
+**Response 200 (Empty — no reference events detected):**
+```json
+{
+  "candidate_id": 0,
+  "document_id": "550e8400-e29b-41d4-a716-446655440000",
+  "reference_events": [],
+  "warnings": [],
   "human_review_required": true
 }
 ```
@@ -233,6 +246,7 @@ POST /api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/{candid
 | 400 | INVALID_DATE | confirmed_date is not a valid ISO date |
 | 400 | ALREADY_CONFIRMED | Reference event is already confirmed (revoke first) |
 | 400 | ALREADY_REVOKED | Reference event is already revoked |
+| 400 | INVALID_CANDIDATE_REFERENCE | The provided `candidate_id` (UUID) does not reference any known ReferenceEventCandidate. No silent fallback to manual entry. |
 | 422 | VALIDATION_ERROR | Request body validation failed |
 
 ---
@@ -381,6 +395,33 @@ All error responses follow the existing pattern:
   }
 }
 ```
+
+---
+
+## Validation & Error Behavior
+
+### Invalid UUID Formats
+
+All path parameters typed as `UUID` (`case_id`, `document_id`) are validated by FastAPI's built-in UUID parser. Invalid UUID strings (e.g., `"abc"`, `"not-a-uuid"`) produce an automatic **422 VALIDATION_ERROR** response before the endpoint logic executes. No explicit validation logic is required in the endpoint implementation — this is inherited from the project's FastAPI baseline.
+
+### Field Size Constraints
+
+Request body fields have documented length limits enforced at the API layer:
+
+| Field | Max Length | Error Code | Endpoints |
+|-------|-----------|------------|-----------|
+| `evidence_note` | 2000 chars | `FIELD_TOO_LONG` | POST confirm |
+| `source_reference` | 100 chars | `FIELD_TOO_LONG` | POST confirm |
+| `confirmed_by` | 100 chars | `FIELD_TOO_LONG` | POST confirm |
+
+### Single-User Context
+
+The API operates in a **single-user local context** (see INV-M6A-19). This means:
+- No authentication or authorization is required
+- No optimistic locking or conflict resolution is implemented
+- No concurrent-access safeguards exist — rapid sequential requests are processed in order but without transaction isolation
+- Cross-document validation (verifying that a `confirmation_id` belongs to the path's `document_id`) is **not enforced** — the user is expected to operate within the correct document context
+- The `confirmed_by` field is an optional label for future multi-user extension, not an authenticated identity
 
 ---
 

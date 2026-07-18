@@ -8,13 +8,13 @@
 | 2 | Primary sources documented (5 primary norm, 1 technical, 1 secondary = 8 documents) | PASS |
 | 3 | Legal and mathematical layers separated | PASS |
 | 4 | User Stories with acceptance criteria (6) | PASS |
-| 5 | Functional Requirements (30) | PASS |
+| 5 | Functional Requirements (31) | PASS |
 | 6 | Success Criteria (13) | PASS |
 | 7 | Product Invariants (24) | PASS |
 | 8 | Data model complete | PASS |
 | 9 | API contract complete (4 endpoints) | PASS |
 | 10 | Warning codes defined (20) | PASS |
-| 11 | Test vectors defined (64) | PASS |
+| 11 | Test vectors defined (65) | PASS |
 | 12 | ADR-002 created | PASS |
 | 13 | Architecture diagram present | PASS |
 | 14 | Plan document present | PASS |

@@ -16,6 +16,14 @@ M6-A berechnet KEINE rechtlich verbindliche Frist. Das Ergebnis ist eine **Berec
 
 ---
 
+## Clarifications
+
+### Session 2026-07-18
+
+- Q: Confirm endpoint behavior when `candidate_id` (UUID body field) references a non-existent ReferenceEventCandidate? → A: Return 400 error with code `INVALID_CANDIDATE_REFERENCE`. Acknowledging an unrecognized candidate is an invalid request, not a candidate-not-found. Silently falling back to manual entry would hide data integrity issues.
+
+---
+
 ## Product Invariants
 
 | ID | Invariant |
@@ -41,7 +49,7 @@ M6-A berechnet KEINE rechtlich verbindliche Frist. Das Ergebnis ist eine **Berec
 | INV-M6A-19 | Das System ist ausschließlich für die Nutzung durch eine einzelne natürliche Person ausgelegt. Multi-User-Zugriff ist nicht implementiert. |
 | INV-M6A-20 | Freitextfelder (evidence_note, source_reference, confirmed_by) unterliegen Längenbeschränkungen (max 2000/100/100 Zeichen) und werden als potentiell unsicher behandelt. |
 | INV-M6A-21 | Ein Logging-Filter MUSS die Felder confirmed_date, evidence_text, evidence_note und source_text vor der Ausgabe redigieren (Ersetzung durch [REDACTED]). |
-| INV-M6A-22 | Manual-Einträge OHNE evidence_note erhalten eine Warnung MANUAL_ENTRY_WITHOUT_EVIDENCE und geringeres Audit-Gewicht. |
+| INV-M6A-22 | Manual-Einträge OHNE evidence_note erhalten eine Warnung MANUAL_ENTRY_WITHOUT_EVIDENCE und werden im History-Endpoint hinter Einträgen MIT evidence_note sortiert (Nachrangprinzip). Sie sind weiterhin sichtbar, erscheinen aber nachrangig in der Standardansicht. |
 | INV-M6A-23 | Datumsbereich: Input 1900-01-01 bis 2099-12-31. Post-Calculation-Prüfung: calculated_date muss innerhalb 1900-01-01 bis 2099-12-31 liegen (Fehler: CALCULATED_DATE_OUT_OF_RANGE). |
 | INV-M6A-24 | Die Bestätigungshistorie wird versioniert innerhalb des Dokumentlebenszyklus gespeichert. Neue Zustandsübergänge erzeugen neue Datensätze; vorherige bleiben als SUPERSEDED/REVOKED erhalten. Dies bietet kooperative Integrität, aber KEINE kryptografische Manipulationssicherheit. Der Nutzer mit Dateisystemzugriff kann die SQLite-Datenbank direkt editieren. Dies ist eine dokumentierte Einschränkung für ein lokales Single-User-Tool. |
 | INV-M6A-DP-01 | Kein vollständiger Dokumenttext wird in der Bestätigungshistorie dupliziert. Evidence wird durch `document_id` + Offsets referenziert, nicht kopiert. |
@@ -74,10 +82,9 @@ Als Nutzer möchte ich das tatsächliche Bezugsdatum ausdrücklich bestätigen o
 - Benutzer kann ein vorgeschlagenes Datum bestätigen (Status → CONFIRMED)
 - Benutzer kann ein Datum ablehnen (Status → REJECTED)
 - Benutzer kann ein Datum manuell eingeben (confirmation_method = MANUALLY_ENTERED)
-- Benutzer kann ein bestätigtes Datum ändern
-- Benutzer kann eine Bestätigung widerrufen (Status → REVOKED)
 - Jede Bestätigungsaktion wird mit Zeitstempel auditierbar protokolliert
 - Ohne Bestätigung kann keine Kalenderarithmetik ausgeführt werden
+- Änderung und Widerruf: siehe US6
 
 ### US3 — Reine Tages- oder Wochenaddition (P1)
 Als Nutzer möchte ich aus einem bestätigten Datum und einer erkannten Dauer ein rein rechnerisches Kandidatendatum erhalten.
@@ -158,6 +165,7 @@ Als Nutzer möchte ich ein zuvor bestätigtes Bezugsdatum ändern oder widerrufe
 | FR-M6A-028 | Die API MUSS bestehende Fehler-Envelopes verwenden. |
 | FR-M6A-029 | Das System DARF keine externe Laufzeitabhängigkeit benötigen. |
 | FR-M6A-030 | Das System DARF bestätigte Bezugsdaten nicht in Logs ausgeben. |
+| FR-M6A-031 | Ein `candidate_id` (UUID) im Confirm-Request Body, der keinem bekannten ReferenceEventCandidate entspricht, MUSS mit einem 400-Fehler (`INVALID_CANDIDATE_REFERENCE`) abgelehnt werden. Ein stillschweigender Fallback auf manuelle Eingabe ist NICHT erlaubt. |
 
 ---
 
@@ -235,6 +243,7 @@ Als Nutzer möchte ich ein zuvor bestätigtes Bezugsdatum ändern oder widerrufe
 | `MANUAL_ENTRY_WITHOUT_EVIDENCE` | Warning | Manuelle Eingabe ohne Beleg/Evidenz (geringeres Audit-Gewicht) |
 | `FIELD_TOO_LONG` | **Error** | Freitextfeld überschreitet maximale Länge |
 | `INVALID_SOURCE_TYPE` | **Error** | Ungültiger source_type-Wert |
+| `INVALID_CANDIDATE_REFERENCE` | **Error** | Der übergebene candidate_id (UUID) verweist auf kein bekanntes ReferenceEventCandidate. Kein stillschweigender Fallback auf manuelle Eingabe. |
 
 ---
 

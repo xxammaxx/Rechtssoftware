@@ -140,6 +140,14 @@ Test vectors for the M6-A specification. These define expected behavior for the 
 
 ---
 
-## Total: 64 Test Vectors
+## Input Validation Errors
+
+| ID | Scenario | Expected |
+|----|----------|----------|
+| TV-065 | Confirm with candidate_id UUID that does not match any known ReferenceEventCandidate | HTTP 400, INVALID_CANDIDATE_REFERENCE error, no confirmation created, no silent fallback |
+
+---
+
+## Total: 65 Test Vectors
 
 All vectors are specification-only. Implementation in the future build run. Each vector maps to at least one functional requirement or invariant.
