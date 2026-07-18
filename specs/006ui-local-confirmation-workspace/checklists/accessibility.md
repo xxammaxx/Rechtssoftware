@@ -4,6 +4,17 @@ Based on WCAG 2.1 AA criteria. All items must pass before release.
 
 ## Keyboard Navigation
 
+**Expected tab order for workspace page (`deadline_workspace.html`):**
+1. Case/Document breadcrumb navigation
+2. Candidate list items (each focusable, Enter to select)
+3. Selected candidate details panel
+4. Reference event radio group / manual date input
+5. Evidence note textarea
+6. Action buttons (Confirm / Reject / Manual)
+7. Calculation preview button
+8. History link
+9. Warnings section (announced by screen reader, not tab-stop)
+
 - [ ] **A1:** All workflow steps navigable via Tab / Shift+Tab
 - [ ] **A2:** Enter/Space activates focused buttons
 - [ ] **A3:** Escape closes dialogs

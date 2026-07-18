@@ -88,7 +88,10 @@ View calculation preview page (renders only if confirmed).
 
 **Template:** `calculation_result.html`
 **Context:** `CalculationPreviewView`
-**Uses:** None (display-only)
+**Uses:** Re-fetches via `EventService.calculate_preview()` using the active confirmation. Calculation is deterministic and stateless — the service re-computes on each request.
+
+**Prerequisite:** Active `CONFIRMED` confirmation for this candidate.
+**Error:** If no confirmed event exists, redirects to events page with error flash.
 
 #### POST /ui/cases/{case_id}/documents/{document_id}/deadlines/{candidate_id}/preview
 Request calculation preview.

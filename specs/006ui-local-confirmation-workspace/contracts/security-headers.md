@@ -12,6 +12,8 @@ All M6-UI HTML responses must include security headers. This contract defines th
 Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'
 ```
 
+**`img-src 'self' data:` rationale:** The `data:` scheme is allowed exclusively for inline decorative icons (e.g., small SVG data URIs in CSS `background-image`). No user-generated or document-extracted content creates `data:` URIs. If data: URIs are not used in implementation, this directive may be tightened to `img-src 'self'` only.
+
 **Implementation:** FastAPI middleware applied globally to all `/ui/*` routes.
 
 **Verification:**

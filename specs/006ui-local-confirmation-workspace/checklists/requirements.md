@@ -3,7 +3,7 @@
 ## Specification Completeness
 
 - [x] User Stories (7 stories, P1–P2)
-- [x] UI-State-Modell (18 states)
+- [x] UI-State-Modell (19 states)
 - [x] Funktionale Anforderungen (19 FRs)
 - [x] Negativpfade (17 scenarios)
 - [x] Product Invariants (9 UI-specific + inherited M6-A)

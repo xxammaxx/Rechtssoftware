@@ -207,8 +207,8 @@ Als Nutzer möchte ich eine Bestätigung ändern oder widerrufen können.
 
 | Anforderung | Umsetzung |
 |-------------|-----------|
-| Maximale Ausschnittlänge | 2000 Zeichen (M6-A-Limit) |
-| Ellipsis | "..." am Ende bei Kürzung |
+| Maximale Ausschnittlänge (API) | 2000 Zeichen (M6-A-Limit) |
+| UI-Darstellungsgrenze | 500 Zeichen für Übersicht, "..." bei Kürzung; "Vollständigen Text anzeigen" Link für gesamte 2000 Zeichen |
 | HTML-Escapes | Jinja2 Autoescaping (strukturell) |
 | Zeilenumbrüche | `<pre>` oder `white-space: pre-wrap` |
 | Hervorhebung | CSS-Klasse, kein innerHTML |
