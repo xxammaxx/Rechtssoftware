@@ -57,6 +57,8 @@ class TestDocumentUpload:
         assert data["case_id"] == case_id
         assert "doc_type" in data
         assert "classification_confidence" in data
+        assert "matched_patterns" in data
+        assert isinstance(data["matched_patterns"], list)
 
     async def test_upload_to_nonexistent_case(self, client: AsyncClient) -> None:
         """Upload to nonexistent case should return 404."""
@@ -106,6 +108,23 @@ class TestDocumentList:
         assert data["count"] == 2
         assert len(data["items"]) == 2
 
+    async def test_list_documents_includes_classification(self, client: AsyncClient) -> None:
+        """List response should include classification fields for each document."""
+        case_id = await _create_case(client)
+        await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("doc.pdf", b"%PDF-1.4 content", "application/pdf")},
+        )
+        resp = await client.get(f"/api/v1/cases/{case_id}/documents")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] >= 1
+        for item in data["items"]:
+            assert "doc_type" in item
+            assert "classification_confidence" in item
+            assert "matched_patterns" in item
+            assert isinstance(item["matched_patterns"], list)
+
 
 class TestDocumentDownload:
     """Tests for GET /api/v1/cases/{case_id}/documents/{document_id}."""
@@ -144,9 +163,7 @@ class TestDocumentText:
         )
         doc_id = upload_resp.json()["document_id"]
 
-        resp = await client.get(
-            f"/api/v1/cases/{case_id}/documents/{doc_id}/text"
-        )
+        resp = await client.get(f"/api/v1/cases/{case_id}/documents/{doc_id}/text")
         assert resp.status_code == 200
         data = resp.json()
         assert data["document_id"] == doc_id
@@ -157,7 +174,5 @@ class TestDocumentText:
         """Get text for nonexistent document returns 404."""
         case_id = await _create_case(client)
         fake_id = str(uuid.uuid4())
-        resp = await client.get(
-            f"/api/v1/cases/{case_id}/documents/{fake_id}/text"
-        )
+        resp = await client.get(f"/api/v1/cases/{case_id}/documents/{fake_id}/text")
         assert resp.status_code == 404

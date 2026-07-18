@@ -1,5 +1,6 @@
 """Application service for Document use cases."""
 
+import logging
 import uuid
 
 from private_legal_navigator.application.case_repository import CaseRepository
@@ -8,6 +9,8 @@ from private_legal_navigator.application.document_repository import DocumentRepo
 from private_legal_navigator.application.file_storage import FileStorage
 from private_legal_navigator.application.text_extractor import TextExtractor
 from private_legal_navigator.domain.document import Document
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentService:
@@ -43,6 +46,13 @@ class DocumentService:
         text_content = self._text_extractor.extract(content)
         classification = self._classifier.classify(text_content)
 
+        logger.info(
+            "Document classified as %s (confidence=%.2f, patterns=%d)",
+            classification.doc_type,
+            classification.confidence,
+            len(classification.matched_patterns),
+        )
+
         doc = Document(
             filename=filename,
             mime_type=mime_type,
@@ -51,6 +61,7 @@ class DocumentService:
             text_content=text_content,
             doc_type=classification.doc_type,
             classification_confidence=classification.confidence,
+            matched_patterns=classification.matched_patterns,
         )
 
         self._file_storage.store(doc.storage_path, content)

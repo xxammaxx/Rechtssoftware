@@ -72,6 +72,7 @@ def _doc_to_response(doc: Document) -> DocumentResponse:
         created_at=doc.created_at,
         doc_type=doc.doc_type,
         classification_confidence=doc.classification_confidence,
+        matched_patterns=doc.matched_patterns,
     )
 
 

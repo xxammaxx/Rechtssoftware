@@ -43,8 +43,11 @@ class TestDocumentService:
         mock_classifier: MagicMock,
     ) -> DocumentService:
         return DocumentService(
-            mock_doc_repo, mock_file_storage, mock_case_repo,
-            mock_text_extractor, mock_classifier,
+            mock_doc_repo,
+            mock_file_storage,
+            mock_case_repo,
+            mock_text_extractor,
+            mock_classifier,
         )
 
     def test_upload_classifies_document(
@@ -59,9 +62,7 @@ class TestDocumentService:
         case_id = uuid.uuid4()
         mock_case_repo.get_by_id.return_value = MagicMock()
         mock_text_extractor.extract.return_value = "Bescheid über Steuern"
-        mock_classifier.classify.return_value = ClassificationResult(
-            "bescheid", 0.85, ["bescheid"]
-        )
+        mock_classifier.classify.return_value = ClassificationResult("bescheid", 0.85, ["bescheid"])
 
         result = service.upload_document(
             case_id=case_id,
@@ -73,43 +74,63 @@ class TestDocumentService:
 
         assert result.doc_type == "bescheid"
         assert result.classification_confidence == 0.85
+        assert result.matched_patterns == ["bescheid"]
         mock_classifier.classify.assert_called_once_with("Bescheid über Steuern")
 
     def test_upload_sonstiges_when_no_match(
-        self, service: DocumentService, mock_case_repo: MagicMock,
-        mock_text_extractor: MagicMock, mock_classifier: MagicMock,
+        self,
+        service: DocumentService,
+        mock_case_repo: MagicMock,
+        mock_text_extractor: MagicMock,
+        mock_classifier: MagicMock,
     ) -> None:
         """Unrecognized text should result in 'sonstiges'."""
         mock_case_repo.get_by_id.return_value = MagicMock()
         mock_text_extractor.extract.return_value = "lorem ipsum"
-        mock_classifier.classify.return_value = ClassificationResult(
-            "sonstiges", 0.0, []
-        )
+        mock_classifier.classify.return_value = ClassificationResult("sonstiges", 0.0, [])
 
         result = service.upload_document(
-            case_id=uuid.uuid4(), filename="x.pdf", content=b"x",
-            mime_type="application/pdf", size_bytes=100,
+            case_id=uuid.uuid4(),
+            filename="x.pdf",
+            content=b"x",
+            mime_type="application/pdf",
+            size_bytes=100,
         )
         assert result.doc_type == "sonstiges"
         assert result.classification_confidence == 0.0
 
     def test_upload_nonexistent_case(
-        self, service: DocumentService, mock_case_repo: MagicMock,
+        self,
+        service: DocumentService,
+        mock_case_repo: MagicMock,
     ) -> None:
         mock_case_repo.get_by_id.return_value = None
         with pytest.raises(ValueError, match="Fall wurde nicht gefunden"):
             service.upload_document(
-                case_id=uuid.uuid4(), filename="x.pdf", content=b"x",
-                mime_type="application/pdf", size_bytes=100,
+                case_id=uuid.uuid4(),
+                filename="x.pdf",
+                content=b"x",
+                mime_type="application/pdf",
+                size_bytes=100,
             )
 
     def test_get_document_text_with_classification(
-        self, service: DocumentService, mock_doc_repo: MagicMock,
+        self,
+        service: DocumentService,
+        mock_doc_repo: MagicMock,
     ) -> None:
-        doc = Document("a.pdf", "application/pdf", 100, uuid.uuid4(),
-                       text_content="hello", doc_type="bescheid",
-                       classification_confidence=0.9)
+        doc = Document(
+            "a.pdf",
+            "application/pdf",
+            100,
+            uuid.uuid4(),
+            text_content="hello",
+            doc_type="bescheid",
+            classification_confidence=0.9,
+            matched_patterns=["bescheid", "festsetzung"],
+        )
         mock_doc_repo.get_by_id.return_value = doc
         result = service.get_document_text(doc.document_id)
         assert result is not None
         assert result.doc_type == "bescheid"
+        assert result.matched_patterns == ["bescheid", "festsetzung"]
