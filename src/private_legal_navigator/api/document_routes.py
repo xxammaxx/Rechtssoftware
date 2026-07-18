@@ -283,3 +283,86 @@ def extract_deadline_candidates(
         warnings=[_deadline_warning_to_response(w) for w in result.warnings],
         human_review_required=result.human_review_required,
     )
+
+
+# ---------------------------------------------------------------------------
+# M5: Deadline Candidate Extraction
+# ---------------------------------------------------------------------------
+
+
+def _deadline_candidate_to_response(c: DeadlineCandidate) -> DeadlineCandidateResponse:
+    from private_legal_navigator.api.deadline_schemas import (
+        DeadlineCandidateKindSchema,
+        DeadlineCertaintySchema,
+    )
+
+    return DeadlineCandidateResponse(
+        kind=DeadlineCandidateKindSchema(c.kind.value),
+        raw_text=c.raw_text,
+        start_offset=c.start_offset,
+        end_offset=c.end_offset,
+        normalized_date=c.normalized_date,
+        amount=c.amount,
+        unit=c.unit,
+        reference_required=c.reference_required,
+        certainty=DeadlineCertaintySchema(c.certainty.value),
+        rule_id=c.rule_id,
+    )
+
+
+def _deadline_warning_to_response(w: DeadlineWarning) -> DeadlineWarningResponse:
+    from private_legal_navigator.api.deadline_schemas import (
+        DeadlineWarningCodeSchema,
+    )
+
+    return DeadlineWarningResponse(
+        code=DeadlineWarningCodeSchema(w.code.value),
+        message=w.message,
+    )
+
+
+@router.post(
+    "/{case_id}/documents/{document_id}/deadline-candidates",
+    response_model=DeadlineExtractionResponse,
+)
+def extract_deadline_candidates(
+    case_id: uuid.UUID,
+    document_id: uuid.UUID,
+    service: DeadlineService = Depends(get_deadline_service),  # noqa: B008
+) -> DeadlineExtractionResponse:
+    """Extract deadline candidates from a document's text.
+
+    Erkennt deterministisch mögliche Frist- und Terminangaben.
+    Berechnet KEINE verbindliche Rechtsfrist.
+    """
+    from private_legal_navigator.infrastructure.deterministic_deadline_extractor import (
+        ExtractionTimeoutError,
+        TextTooLargeError,
+    )
+
+    try:
+        result = service.extract_candidates(document_id)
+    except TextTooLargeError as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=413,
+            detail={"error": {"code": "TEXT_TOO_LARGE", "message": str(e)}},
+        ) from e
+    except ExtractionTimeoutError as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=500,
+            detail={"error": {"code": "EXTRACTION_TIMEOUT", "message": str(e)}},
+        ) from e
+
+    if result is None:
+        raise DocumentNotFoundError()
+
+    return DeadlineExtractionResponse(
+        document_id=uuid.UUID(result.document_id),
+        candidates=[_deadline_candidate_to_response(c) for c in result.candidates],
+        warnings=[_deadline_warning_to_response(w) for w in result.warnings],
+        human_review_required=result.human_review_required,
+    )
