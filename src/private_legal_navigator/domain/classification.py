@@ -20,5 +20,7 @@ class ClassificationResult:
     def __post_init__(self) -> None:
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("Confidence must be between 0.0 and 1.0")
+        # Exclusive threshold: confidence < 0.5 forces sonstiges.
+        # Exactly 0.5 is valid and preserves the original doc_type.
         if self.confidence < 0.5:
             self.doc_type = "sonstiges"

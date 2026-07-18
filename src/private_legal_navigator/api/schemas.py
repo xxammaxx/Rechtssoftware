@@ -69,6 +69,7 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     doc_type: str = "sonstiges"
     classification_confidence: float = 0.0
+    matched_patterns: list[str] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

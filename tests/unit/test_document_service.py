@@ -79,6 +79,7 @@ class TestDocumentService:
         assert result.extraction_error is None
         assert result.doc_type == "bescheid"
         assert result.classification_confidence == 0.85
+        assert result.matched_patterns == ["bescheid"]
         mock_text_extractor.extract.assert_called_once_with(b"%PDF-1.4")
         mock_classifier.classify.assert_called_once_with("Bescheid über Steuern")
 
@@ -164,6 +165,7 @@ class TestDocumentService:
             extraction_error=None,
             doc_type="bescheid",
             classification_confidence=0.9,
+            matched_patterns=["bescheid", "festsetzung"],
         )
         mock_doc_repo.get_by_id.return_value = doc
         result = service.get_document_text(doc.document_id)
@@ -171,6 +173,7 @@ class TestDocumentService:
         assert result.text_content == "hello"
         assert result.extraction_error is None
         assert result.doc_type == "bescheid"
+        assert result.matched_patterns == ["bescheid", "festsetzung"]
 
     def test_get_document_text_with_error(
         self, service: DocumentService, mock_doc_repo: MagicMock

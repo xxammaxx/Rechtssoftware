@@ -1,5 +1,6 @@
 """SQLite implementation of DocumentRepository."""
 
+import json
 import sqlite3
 import uuid
 from datetime import datetime
@@ -21,7 +22,8 @@ CREATE TABLE IF NOT EXISTS documents (
     text_content TEXT NOT NULL DEFAULT '',
     extraction_error TEXT DEFAULT NULL,
     doc_type TEXT NOT NULL DEFAULT 'sonstiges',
-    classification_confidence REAL NOT NULL DEFAULT 0.0
+    classification_confidence REAL NOT NULL DEFAULT 0.0,
+    matched_patterns TEXT NOT NULL DEFAULT '[]'
 )
 """
 
@@ -64,8 +66,9 @@ class SqliteDocumentRepository(DocumentRepository):
                 INSERT INTO documents
                     (document_id, case_id, filename,
                      mime_type, size_bytes, storage_path, created_at,
-                     text_content, extraction_error, doc_type, classification_confidence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     text_content, extraction_error, doc_type, classification_confidence,
+                     matched_patterns)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(document.document_id),
@@ -79,6 +82,7 @@ class SqliteDocumentRepository(DocumentRepository):
                     document.extraction_error,
                     document.doc_type,
                     document.classification_confidence,
+                    json.dumps(document.matched_patterns),
                 ),
             )
             conn.commit()
@@ -92,7 +96,7 @@ class SqliteDocumentRepository(DocumentRepository):
             row = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
                 "size_bytes, storage_path, created_at, text_content, "
-                "extraction_error, doc_type, classification_confidence "
+                "extraction_error, doc_type, classification_confidence, matched_patterns "
                 "FROM documents WHERE document_id = ?",
                 (str(document_id),),
             ).fetchone()
@@ -110,7 +114,7 @@ class SqliteDocumentRepository(DocumentRepository):
             rows = conn.execute(
                 "SELECT document_id, case_id, filename, mime_type, "
                 "size_bytes, storage_path, created_at, text_content, "
-                "extraction_error, doc_type, classification_confidence "
+                "extraction_error, doc_type, classification_confidence, matched_patterns "
                 "FROM documents WHERE case_id = ? "
                 "ORDER BY created_at DESC",
                 (str(case_id),),
@@ -139,4 +143,5 @@ class SqliteDocumentRepository(DocumentRepository):
             extraction_error=row["extraction_error"],
             doc_type=row["doc_type"],
             classification_confidence=row["classification_confidence"],
+            matched_patterns=json.loads(row["matched_patterns"]),
         )

@@ -15,6 +15,9 @@ class Document:
         - case_id references the parent case
         - created_at is timezone-aware UTC
         - extraction_error is None on successful extraction, str on failure
+        - doc_type is one of: bescheid, rechnung, mahnung, vertrag, widerspruch, sonstiges
+        - classification_confidence is 0.0–1.0 (ratio-model: matched/total patterns)
+        - matched_patterns is a list of matched regex pattern strings (JSON TEXT in DB)
     """
 
     ALLOWED_MIME_TYPES: frozenset[str] = frozenset({"application/pdf"})
@@ -34,6 +37,7 @@ class Document:
         extraction_error: str | None = None,
         doc_type: str = "sonstiges",
         classification_confidence: float = 0.0,
+        matched_patterns: list[str] | None = None,
     ) -> None:
         self._validate_mime_type(mime_type)
         self._validate_size(size_bytes)
@@ -49,6 +53,7 @@ class Document:
         self.extraction_error = extraction_error
         self.doc_type = doc_type
         self.classification_confidence = classification_confidence
+        self.matched_patterns = matched_patterns or []
 
     @classmethod
     def _validate_mime_type(cls, mime_type: str) -> None:
