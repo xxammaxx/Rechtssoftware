@@ -120,7 +120,9 @@ Alle Fehlerantworten folgen diesem Schema:
 ```
 
 **Fehlercodes:**
-- `VALIDATION_ERROR` — Eingabevalidierung fehlgeschlagen
-- `CASE_NOT_FOUND` — Fall existiert nicht
-- `DATABASE_ERROR` — Datenbankfehler (keine Details exponiert)
-- `INTERNAL_ERROR` — Unerwarteter Fehler (keine Details exponiert)
+| HTTP-Status | Code | Beschreibung |
+|-------------|------|-------------|
+| 422 | `VALIDATION_ERROR` | Eingabevalidierung fehlgeschlagen |
+| 404 | `CASE_NOT_FOUND` | Fall existiert nicht |
+| 500 | `DATABASE_ERROR` | Datenbankfehler (keine Details exponiert) |
+| 500 | `INTERNAL_ERROR` | Unerwarteter Fehler (keine Details exponiert) |
