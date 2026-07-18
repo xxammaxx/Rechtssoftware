@@ -14,6 +14,7 @@ class Document:
         - size_bytes must be > 0 and ≤ 20 MB
         - case_id references the parent case
         - created_at is timezone-aware UTC
+        - extraction_error is None on successful extraction, str on failure
     """
 
     ALLOWED_MIME_TYPES: frozenset[str] = frozenset({"application/pdf"})
@@ -30,6 +31,7 @@ class Document:
         storage_path: str | None = None,
         created_at: datetime | None = None,
         text_content: str = "",
+        extraction_error: str | None = None,
     ) -> None:
         self._validate_mime_type(mime_type)
         self._validate_size(size_bytes)
@@ -42,6 +44,7 @@ class Document:
         self.storage_path = storage_path or f"{self.document_id}.bin"
         self.created_at = created_at or datetime.now(UTC)
         self.text_content = text_content
+        self.extraction_error = extraction_error
 
     @classmethod
     def _validate_mime_type(cls, mime_type: str) -> None:

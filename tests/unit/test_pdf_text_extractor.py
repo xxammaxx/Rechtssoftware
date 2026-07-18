@@ -1,5 +1,6 @@
 """Unit tests for PdfTextExtractor."""
 
+from private_legal_navigator.application.text_extractor import ExtractionResult
 from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
 
 
@@ -30,23 +31,38 @@ def _make_minimal_pdf() -> bytes:
 
 
 class TestPdfTextExtractor:
-    """Tests for PdfTextExtractor."""
+    """Tests for PdfTextExtractor returning ExtractionResult."""
 
     def test_extract_text_from_pdf(self) -> None:
         """Should extract text from a valid PDF."""
         extractor = PdfTextExtractor()
         pdf = _make_minimal_pdf()
-        text = extractor.extract(pdf)
-        assert "Hallo Welt" in text
+        result = extractor.extract(pdf)
+        assert isinstance(result, ExtractionResult)
+        assert "Hallo Welt" in result.text
+        assert result.error is None
 
-    def test_extract_empty_for_invalid_pdf(self) -> None:
-        """Invalid PDF should return empty string (no crash)."""
+    def test_extract_error_for_invalid_pdf(self) -> None:
+        """Invalid PDF should return ExtractionResult with error."""
         extractor = PdfTextExtractor()
-        text = extractor.extract(b"not a pdf")
-        assert text == ""
+        result = extractor.extract(b"not a pdf")
+        assert isinstance(result, ExtractionResult)
+        assert result.text == ""
+        assert result.error is not None
+        assert "korrupt" in result.error
 
-    def test_extract_empty_for_empty_bytes(self) -> None:
-        """Empty bytes should return empty string."""
+    def test_extract_error_for_empty_bytes(self) -> None:
+        """Empty bytes should return ExtractionResult with error."""
         extractor = PdfTextExtractor()
-        text = extractor.extract(b"")
-        assert text == ""
+        result = extractor.extract(b"")
+        assert isinstance(result, ExtractionResult)
+        assert result.text == ""
+        assert result.error is not None
+
+    def test_extraction_error_contains_no_document_content(self) -> None:
+        """Error messages must not contain document content (PII-safe)."""
+        extractor = PdfTextExtractor()
+        result = extractor.extract(b"not a pdf")
+        assert result.error is not None
+        # Error should describe the problem, not echo the content
+        assert "not a pdf" not in result.error

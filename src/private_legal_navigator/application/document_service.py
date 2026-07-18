@@ -34,20 +34,25 @@ class DocumentService:
     ) -> Document:
         """Upload a document to a case with automatic text extraction.
 
+        Extraction runs synchronously after file persistence.
+        If extraction fails, the upload still succeeds and the error
+        is recorded in the document's extraction_error field.
+
         Raises ValueError if the case doesn't exist or the document is invalid.
         """
         if self._case_repo.get_by_id(case_id) is None:
             raise ValueError("Der Fall wurde nicht gefunden.")
 
-        # Extract text before persisting
-        text_content = self._text_extractor.extract(content)
+        # Extract text (returns ExtractionResult with text and optional error)
+        result = self._text_extractor.extract(content)
 
         doc = Document(
             filename=filename,
             mime_type=mime_type,
             size_bytes=size_bytes,
             case_id=case_id,
-            text_content=text_content,
+            text_content=result.text,
+            extraction_error=result.error,
         )
 
         self._file_storage.store(doc.storage_path, content)

@@ -84,3 +84,4 @@ class DocumentTextResponse(BaseModel):
     document_id: UUID
     text_content: str
     text_length: int
+    extraction_error: str | None = None
