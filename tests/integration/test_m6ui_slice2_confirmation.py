@@ -8,10 +8,29 @@ import re
 import uuid
 from pathlib import Path
 
+import pymupdf
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from private_legal_navigator.config import Settings
+
+# ── Test PDF generation ────────────────────────────────────────────
+
+_SYNTHETIC_PDF_TEXT: str = "SYNTHETISCH – Frist bis 31.07.2026. Weitere Frist: 15.01.2026."
+
+
+def _create_pdf_with_date_text() -> bytes:
+    """Create a minimal valid PDF with German date patterns as text content.
+
+    Uses pymupdf to generate a single-page PDF that contains deadline
+    candidates the deterministic extractor can recognise.  This allows
+    integration tests to exercise the end-to-end pipeline from document
+    upload through candidate detail through confirmation POST.
+    """
+    doc = pymupdf.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 72), _SYNTHETIC_PDF_TEXT, fontsize=11)
+    return doc.tobytes()
 
 
 @pytest.fixture
@@ -38,11 +57,18 @@ async def _create_case(client: AsyncClient):
 
 
 async def _upload_pdf(client: AsyncClient, case_id: str):
+    """Upload a real PDF with deadline-candidate date text.
+
+    The PDF contains ``_SYNTHETIC_PDF_TEXT`` which includes
+    ``31.07.2026`` and ``15.01.2026`` — both recognised by the
+    deterministic German-date extractor (R1 rule).
+    """
+    pdf_bytes = _create_pdf_with_date_text()
     resp = await client.post(
         f"/api/v1/cases/{case_id}/documents",
-        files={"file": ("test.pdf", b"%PDF-1.4 test doc", "application/pdf")},
+        files={"file": ("test.pdf", pdf_bytes, "application/pdf")},
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 201, f"Upload failed: {resp.text}"
     return resp.json()["document_id"]
 
 

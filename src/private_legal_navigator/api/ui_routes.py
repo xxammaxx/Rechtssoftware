@@ -297,12 +297,19 @@ async def ui_candidate_detail(request: Request) -> HTMLResponse:
             "Die angeforderte Seite wurde nicht gefunden.",
         )
 
+    # ── CSRF: generate nonce once and share between cookie + form ──
+    csrf_service = request.app.state.csrf_service
+    existing_nonce = request.cookies.get("pln_csrf_nonce", "")
+    is_new_nonce = not existing_nonce
+    browser_nonce = existing_nonce if existing_nonce else csrf_service.generate_browser_nonce()
+
     try:
         view = svc.get_candidate_detail(
             case_id,
             document_id,
             candidate_index,
             action_path=str(request.url.path),
+            browser_nonce=browser_nonce,
         )
     except Exception as exc:
         safe_log_failure(
@@ -336,7 +343,16 @@ async def ui_candidate_detail(request: Request) -> HTMLResponse:
         ),
         headers={"Cache-Control": "no-store, max-age=0"},
     )
-    _set_csrf_cookie(response, request)
+
+    if is_new_nonce:
+        response.set_cookie(
+            key="pln_csrf_nonce",
+            value=browser_nonce,
+            httponly=True,
+            samesite="strict",
+            path="/ui",
+            secure=False,
+        )
     return response
 
 

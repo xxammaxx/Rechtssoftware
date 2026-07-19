@@ -249,6 +249,7 @@ class LocalConfirmationWorkspaceService:
         document_id: uuid.UUID,
         candidate_index: int,
         action_path: str = "",
+        browser_nonce: str = "",
     ) -> CandidateDetailView | None:
         """Produce a candidate detail view with confirmation history and forms.
 
@@ -257,6 +258,10 @@ class LocalConfirmationWorkspaceService:
             document_id: The document UUID.
             candidate_index: The 0-based deadline candidate index.
             action_path: The POST action path for CSRF token binding.
+            browser_nonce: Existing browser nonce (from cookie).
+                When provided, the CSRF token is bound to this nonce
+                instead of generating a new one — this ensures the
+                cookie nonce and form token nonce match.
 
         Returns:
             CandidateDetailView or None if case/document/candidate not found.
@@ -348,7 +353,7 @@ class LocalConfirmationWorkspaceService:
         csrf_token = ""
         idempotency_key = ""
         if self._csrf_service:
-            nonce = self._csrf_service.generate_browser_nonce()
+            nonce = browser_nonce if browser_nonce else self._csrf_service.generate_browser_nonce()
             csrf_token = self._csrf_service.generate_form_token(nonce, action_path or "/ui/")
             idempotency_key = CsrfTokenService.generate_idempotency_key()
 

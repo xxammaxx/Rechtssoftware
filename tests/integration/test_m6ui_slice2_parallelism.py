@@ -4,14 +4,28 @@ Verifies that concurrent requests with the same idempotency key
 produce exactly one domain mutation and consistent results.
 """
 
-import threading
+import asyncio
+import re
 import uuid
 from pathlib import Path
 
+import pymupdf
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from private_legal_navigator.config import Settings
+
+# ── Test PDF generation ────────────────────────────────────────────
+
+_SYNTHETIC_PDF_TEXT: str = "SYNTHETISCH – Frist bis 31.07.2026. Weitere Frist: 15.01.2026."
+
+
+def _create_pdf_with_date_text() -> bytes:
+    """Create a minimal valid PDF with German date patterns as text content."""
+    doc = pymupdf.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 72), _SYNTHETIC_PDF_TEXT, fontsize=11)
+    return doc.tobytes()
 
 
 @pytest.fixture
@@ -38,11 +52,13 @@ async def _create_case(client: AsyncClient) -> str:
 
 
 async def _upload_pdf(client: AsyncClient, case_id: str) -> str:
+    """Upload a real PDF with deadline-candidate date text."""
+    pdf_bytes = _create_pdf_with_date_text()
     resp = await client.post(
         f"/api/v1/cases/{case_id}/documents",
-        files={"file": ("test.pdf", b"%PDF-1.4 test doc", "application/pdf")},
+        files={"file": ("test.pdf", pdf_bytes, "application/pdf")},
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 201, f"Upload failed: {resp.text}"
     return resp.json()["document_id"]
 
 
@@ -52,8 +68,6 @@ class TestConcurrentSameKey:
     @pytest.mark.asyncio
     async def test_concurrent_same_key_produces_one_mutation(self, client: AsyncClient):
         """Both concurrent requests must succeed, exactly one mutation occurs."""
-        import asyncio
-
         case_id = await _create_case(client)
         doc_id = await _upload_pdf(client, case_id)
 
@@ -61,7 +75,6 @@ class TestConcurrentSameKey:
         get_resp = await client.get(f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0")
         csrf_token = ""
         csrf_cookie = ""
-        import re
 
         m = re.search(r'name="csrf_token"\s+value="([^"]+)"', get_resp.text)
         if m:
@@ -87,10 +100,10 @@ class TestConcurrentSameKey:
         }
 
         results: list[int] = []
-        barrier = threading.Barrier(2, timeout=5)
+        barrier = asyncio.Barrier(2)
 
         async def _do_post(idx: int) -> None:
-            barrier.wait()
+            await barrier.wait()
             resp = await client.post(
                 f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0/confirm",
                 data=form_data,
@@ -126,7 +139,6 @@ class TestConcurrentSameKey:
         get_resp = await client.get(f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0")
         csrf_token = ""
         csrf_cookie = ""
-        import re
 
         m = re.search(r'name="csrf_token"\s+value="([^"]+)"', get_resp.text)
         if m:

@@ -103,3 +103,43 @@ class TestCsrfSecurityProperties:
         nonce = csrf_service.generate_browser_nonce()
         # 256 bits of entropy (32 bytes × 8 = 256 bits)
         assert len(nonce) >= 64
+
+
+class TestCsrfValidationEdgeCases:
+    """Cover edge-case branches in validate_token."""
+
+    def test_path_mismatch_fails(self, csrf_service: CsrfTokenService) -> None:
+        """Token bound to path A must not validate with path B."""
+        nonce = csrf_service.generate_browser_nonce()
+        token = csrf_service.generate_form_token(
+            nonce, action_path="/ui/cases/x/documents/y/candidates/0"
+        )
+        # Validate with a DIFFERENT path → must fail (line 96)
+        assert (
+            csrf_service.validate_token(
+                token, nonce, action_path="/ui/cases/x/documents/y/candidates/1"
+            )
+            is False
+        )
+
+    def test_non_post_method_token_fails(self, csrf_service: CsrfTokenService) -> None:
+        """Token with method != POST must fail validation (line 92)."""
+        import time as _time
+
+        nonce = csrf_service.generate_browser_nonce()
+        timestamp = int(_time.time())
+        payload = f"{timestamp}:{nonce}:GET:/ui/"
+        signature = csrf_service._sign(payload)  # type: ignore[attr-defined]
+        token = f"{payload}:{signature}"
+        assert csrf_service.validate_token(token, nonce) is False
+
+    def test_corrupted_timestamp_triggers_exception_handler(
+        self, csrf_service: CsrfTokenService
+    ) -> None:
+        """Non-numeric timestamp triggers the except Exception branch (lines 102-103)."""
+        nonce = csrf_service.generate_browser_nonce()
+        # Token with non-numeric timestamp
+        payload = f"not-a-number:{nonce}:POST:/ui/"
+        signature = csrf_service._sign(payload)  # type: ignore[attr-defined]
+        token = f"{payload}:{signature}"
+        assert csrf_service.validate_token(token, nonce) is False

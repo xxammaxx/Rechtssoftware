@@ -1,6 +1,7 @@
 """Unit tests for security dependency edge cases."""
 
 import uuid
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -149,3 +150,132 @@ class TestCSRFEdgeCases:
             },
         )
         assert resp.status_code == 403
+
+
+# ── Direct dependency unit tests (cover non-POST early-return branches) ──
+
+
+class TestSecurityDependencyEarlyReturns:
+    """Cover the ``if request.method != 'POST': return`` branches."""
+
+    @pytest.mark.anyio
+    async def test_content_type_skips_non_post(self):
+        """require_form_content_type returns immediately for GET requests."""
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_form_content_type,
+        )
+
+        req = MagicMock()
+        req.method = "GET"
+        # Must not raise — just returns
+        await require_form_content_type(req)
+
+    @pytest.mark.anyio
+    async def test_body_size_skips_non_post(self):
+        """require_body_size_limit returns immediately for GET requests."""
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_body_size_limit,
+        )
+
+        req = MagicMock()
+        req.method = "GET"
+        await require_body_size_limit(req)
+
+    @pytest.mark.anyio
+    async def test_origin_check_skips_non_post(self):
+        """require_origin_or_referer returns immediately for GET requests."""
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_origin_or_referer,
+        )
+
+        req = MagicMock()
+        req.method = "GET"
+        await require_origin_or_referer(req)
+
+    @pytest.mark.anyio
+    async def test_csrf_skips_non_post(self):
+        """require_csrf_token returns immediately for GET requests."""
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_csrf_token,
+        )
+
+        req = MagicMock()
+        req.method = "GET"
+        await require_csrf_token(req)
+
+    @pytest.mark.anyio
+    async def test_csrf_missing_service_returns_500(self):
+        """require_csrf_token returns 500 when csrf_service is not on app state."""
+        from fastapi import HTTPException
+
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_csrf_token,
+        )
+
+        req = MagicMock()
+        req.method = "POST"
+        req.app.state = MagicMock()
+        del req.app.state.csrf_service  # Simulate missing service
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_csrf_token(req)
+        assert exc_info.value.status_code == 500
+
+    @pytest.mark.anyio
+    async def test_csrf_form_read_failure_returns_400(self):
+        """require_csrf_token returns 400 when request.form() raises."""
+        from fastapi import HTTPException
+
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_csrf_token,
+        )
+
+        req = MagicMock()
+        req.method = "POST"
+        # Set up state so the csrf_service check passes
+        req.app.state.csrf_service = MagicMock()
+        # Make request.form() raise
+        req.form = AsyncMock(side_effect=ValueError("form parse error"))
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_csrf_token(req)
+        assert exc_info.value.status_code == 400
+
+
+class TestSecurityDependencyErrorBranches:
+    """Cover remaining error-branch statements."""
+
+    @pytest.mark.anyio
+    async def test_body_size_exceeded_returns_413(self):
+        """Content-Length > MAX_BODY_BYTES must return 413 (line 47)."""
+        from fastapi import HTTPException
+
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_body_size_limit,
+        )
+
+        req = MagicMock()
+        req.method = "POST"
+        req.headers = {"content-length": "999999"}
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_body_size_limit(req)
+        assert exc_info.value.status_code == 413
+
+    @pytest.mark.anyio
+    async def test_referer_mismatch_returns_403(self):
+        """Referer header not matching origin must return 403 (line 70)."""
+        from fastapi import HTTPException
+
+        from private_legal_navigator.middleware.security_dependencies import (
+            require_origin_or_referer,
+        )
+
+        req = MagicMock()
+        req.method = "POST"
+        req.headers = {"referer": "https://evil.example.com"}
+        req.base_url = "http://127.0.0.1:8000/"
+
+        with pytest.raises(HTTPException) as exc_info:
+            await require_origin_or_referer(req)
+        assert exc_info.value.status_code == 403
