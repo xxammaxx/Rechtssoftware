@@ -1,5 +1,6 @@
 """SQLite implementation of DocumentRepository."""
 
+import contextlib
 import json
 import sqlite3
 import uuid
@@ -45,10 +46,8 @@ class SqliteDocumentRepository(DocumentRepository):
             conn.execute(CREATE_DOCUMENTS_TABLE)
             conn.execute(CREATE_DOCUMENTS_INDEX)
             # Idempotent migration: add extraction_error if not present
-            try:
+            with contextlib.suppress(sqlite3.OperationalError):
                 conn.execute(ALTER_ADD_EXTRACTION_ERROR)
-            except sqlite3.OperationalError:
-                pass  # Column already exists
             conn.commit()
         finally:
             conn.close()
