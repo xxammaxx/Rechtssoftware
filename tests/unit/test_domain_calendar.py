@@ -1,11 +1,11 @@
-"""Unit tests for M6-A domain models (calendar.py)."""
+"""Unit tests for M6-A domain models (reference_event.py)."""
 
 from datetime import UTC, date, datetime
 from uuid import uuid4
 
 import pytest
 
-from private_legal_navigator.domain.calendar import (
+from private_legal_navigator.domain.reference_event import (
     CalculationOperation,
     CalculationStep,
     CalendarCalculationCandidate,

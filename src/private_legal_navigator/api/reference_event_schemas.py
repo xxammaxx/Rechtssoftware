@@ -88,7 +88,9 @@ class ConfirmRequest(BaseModel):
         None, description="UUID of the ReferenceEventCandidate (null for manual entry)"
     )
     event_type: EventTypeSchema | None = Field(None, description="Event category")
-    confirmed_date: date | None = Field(None, description="Confirmed reference date (ISO format)")
+    confirmed_date: str | None = Field(
+        None, description="Confirmed reference date (ISO format YYYY-MM-DD)"
+    )
     source_type: SourceTypeSchema | None = Field(None, description="Origin of the date")
     confirmation_id: UUID | None = Field(None, description="Required for revoke action")
     evidence_note: str | None = Field(

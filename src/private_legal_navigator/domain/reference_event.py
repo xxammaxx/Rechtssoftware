@@ -103,7 +103,7 @@ class ReferenceEventCandidate:
 
     candidate_id: UUID
     document_id: UUID
-    deadline_candidate_index: int
+    deadline_candidate_index: int = 0
     event_type: EventType = EventType.UNKNOWN
     suggested_date: date | None = None
     source_type: SourceType = SourceType.AUTO_DETECTED
@@ -148,9 +148,9 @@ class ConfirmedReferenceEvent:
 
     confirmation_id: UUID
     document_id: UUID
-    deadline_candidate_index: int
     event_type: EventType
     confirmed_at: datetime
+    deadline_candidate_index: int = 0
     confirmed_date: date | None = None
     source_type: SourceType = SourceType.AUTO_DETECTED
     confirmation_method: ConfirmationMethod = ConfirmationMethod.AUTO_SUGGESTED
@@ -222,6 +222,12 @@ class CalculationStep:
     input_date: date
     amount: int
     output_date: date
+
+    def __post_init__(self) -> None:
+        if self.step < 1:
+            raise ValueError("step must be >= 1")
+        if self.amount < 0:
+            raise ValueError("amount must be >= 0")
 
 
 @dataclass
@@ -301,3 +307,9 @@ class CalculationWarningCode(StrEnum):
     HUMAN_REVIEW_REQUIRED = "HUMAN_REVIEW_REQUIRED"
     CALCULATION_PREVIEW_ONLY = "CALCULATION_PREVIEW_ONLY"
     CALCULATION_NOT_PERFORMED = "CALCULATION_NOT_PERFORMED"
+
+
+# Domain constants (INV-M6A-23)
+MIN_DATE: date = date(1900, 1, 1)
+MAX_DATE: date = date(2099, 12, 31)
+MAX_DURATION_CALENDAR_DAYS: int = 36500

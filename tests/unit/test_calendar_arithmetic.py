@@ -3,7 +3,10 @@
 from datetime import UTC, date, datetime
 from uuid import uuid4
 
-from private_legal_navigator.domain.calendar import (
+import pytest
+
+from private_legal_navigator.domain.reference_event import (
+    MIN_DATE,
     CalculationOperation,
     ConfirmationMethod,
     ConfirmedReferenceEvent,
@@ -12,8 +15,7 @@ from private_legal_navigator.domain.calendar import (
     EventType,
     SourceType,
 )
-from private_legal_navigator.infrastructure.deterministic_calendar import (
-    MIN_DATE,
+from private_legal_navigator.infrastructure.deterministic_calendar_arithmetic import (
     DeterministicCalendarArithmetic,
 )
 
@@ -23,6 +25,7 @@ def _make_event(confirmed_date: date) -> ConfirmedReferenceEvent:
         confirmation_id=uuid4(),
         candidate_id=uuid4(),
         document_id=uuid4(),
+        deadline_candidate_index=0,
         event_type=EventType.ISSUE_DATE,
         confirmed_date=confirmed_date,
         source_type=SourceType.AUTO_DETECTED,
@@ -218,12 +221,11 @@ class TestArithmetic:
         assert result.calculated_date is not None
 
     def test_before_1900_returns_error(self) -> None:
-        """Input before 1900-01-01 returns out of range."""
+        """Input before 1900-01-01 raises ValueError."""
         event = _make_event(date(1899, 12, 31))
         duration = Duration(amount=1, unit=DurationUnit.DAY)
-        result = self.arithmetic.calculate(event, duration)
-        assert result.calculated_date is None
-        assert "CALCULATED_DATE_OUT_OF_RANGE" in result.warnings
+        with pytest.raises(ValueError, match="CALCULATED_DATE_OUT_OF_RANGE"):
+            self.arithmetic.calculate(event, duration)
 
     def test_max_date_2099(self) -> None:
         """Input at upper boundary (2099-12-31) is valid."""
@@ -233,21 +235,21 @@ class TestArithmetic:
         assert result.calculated_date == date(2099, 12, 31)
 
     def test_exceeds_max_date_returns_error(self) -> None:
-        """Result beyond 2099-12-31 returns out of range."""
+        """Result beyond 2099-12-31 raises ValueError."""
         event = _make_event(date(2099, 12, 31))
         duration = Duration(amount=1, unit=DurationUnit.DAY)
-        result = self.arithmetic.calculate(event, duration)
-        assert result.calculated_date is None
-        assert "CALCULATED_DATE_OUT_OF_RANGE" in result.warnings
+        with pytest.raises(ValueError, match="CALCULATED_DATE_OUT_OF_RANGE"):
+            self.arithmetic.calculate(event, duration)
 
     # --- No confirmed date ---
 
     def test_no_confirmed_date(self) -> None:
-        """TV-001: Event with no confirmed_date returns warning."""
+        """TV-001: Event with no confirmed_date raises ValueError."""
         event = ConfirmedReferenceEvent(
             confirmation_id=uuid4(),
             candidate_id=uuid4(),
             document_id=uuid4(),
+            deadline_candidate_index=0,
             event_type=EventType.UNKNOWN,
             confirmed_date=None,
             source_type=SourceType.AUTO_DETECTED,
@@ -255,9 +257,8 @@ class TestArithmetic:
             confirmed_at=datetime.now(UTC),
         )
         duration = Duration(amount=1, unit=DurationUnit.DAY)
-        result = self.arithmetic.calculate(event, duration)
-        assert result.calculated_date is None
-        assert "REFERENCE_EVENT_NOT_CONFIRMED" in result.warnings
+        with pytest.raises(ValueError, match="REFERENCE_EVENT_NOT_CONFIRMED"):
+            self.arithmetic.calculate(event, duration)
 
     # --- Warning presence ---
 

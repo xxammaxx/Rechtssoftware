@@ -212,7 +212,7 @@ class TestCalculationPreview:
             f"/api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/0/calculation-preview",
             json={"confirmation_id": str(uuid.uuid4())},
         )
-        assert resp.status_code == 400
+        assert resp.status_code == 404
         data = resp.json()
         assert "detail" in data
 

@@ -1,6 +1,8 @@
 """FastAPI routes for M6-A reference events and calendar arithmetic API."""
 
+import logging
 import uuid
+from datetime import date
 from typing import cast
 
 from fastapi import APIRouter, Request, Response
@@ -33,10 +35,15 @@ from private_legal_navigator.application.reference_event_service import (
     ReferenceEventService,
 )
 from private_legal_navigator.domain.reference_event import (
+    MAX_DATE,
+    MIN_DATE,
     ConfirmationMethod,
     EventType,
     SourceType,
 )
+from private_legal_navigator.infrastructure.safe_logging import safe_log_event
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/{candidate_id}",
@@ -109,10 +116,22 @@ def list_reference_events(
     document_id: uuid.UUID,
     candidate_id: int,
     request: Request,
-) -> ListReferenceEventsResponse:
+) -> ListReferenceEventsResponse | Response:
     """List all reference event candidates for a deadline candidate."""
     _resolve_case(case_id, _get_case_repo(request))
     _resolve_document(document_id, _get_document_repo(request))
+
+    # Validate candidate_id index bounds
+    if candidate_id < 0:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": {
+                    "code": "INVALID_CANDIDATE_INDEX",
+                    "message": f"candidate_id must be >= 0, got {candidate_id}",
+                }
+            },
+        )
 
     service = _get_ref_event_service(request)
     candidates = service.get_reference_event_candidates(document_id, candidate_id)
@@ -168,6 +187,32 @@ def confirm_reference_event(
                     }
                 },
             )
+        # Parse and validate the confirmed_date string
+        try:
+            parsed_date = date.fromisoformat(body.confirmed_date)
+        except (ValueError, TypeError):
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": {
+                        "code": "INVALID_DATE",
+                        "message": f"Invalid date format: {body.confirmed_date}. Use YYYY-MM-DD.",
+                    }
+                },
+            )
+        if parsed_date < MIN_DATE or parsed_date > MAX_DATE:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": {
+                        "code": "INVALID_DATE",
+                        "message": (
+                            f"Date {body.confirmed_date} out of valid range "
+                            f"({MIN_DATE} to {MAX_DATE})."
+                        ),
+                    }
+                },
+            )
         if body.event_type is None or body.source_type is None:
             return JSONResponse(
                 status_code=400,
@@ -193,11 +238,18 @@ def confirm_reference_event(
             document_id=document_id,
             deadline_candidate_index=candidate_id,
             event_type=EventType(body.event_type.value),
-            confirmed_date=body.confirmed_date,
+            confirmed_date=parsed_date,
             source_type=SourceType(body.source_type.value),
             confirmation_method=ConfirmationMethod(confirmation_method.value),
             candidate_id=body.candidate_id,
             evidence_note=body.evidence_note or "",
+        )
+
+        safe_log_event(
+            logger,
+            "reference_event.confirmed",
+            confirmation_id=str(event.confirmation_id),
+            document_id=str(document_id),
         )
 
         return ConfirmationResponse(
@@ -233,6 +285,12 @@ def confirm_reference_event(
             deadline_candidate_index=candidate_id,
             event_type=EventType(body.event_type.value),
             candidate_id=body.candidate_id,
+        )
+        safe_log_event(
+            logger,
+            "reference_event.rejected",
+            confirmation_id=str(event.confirmation_id),
+            document_id=str(document_id),
         )
         return ConfirmationResponse(
             confirmation_id=event.confirmation_id,
@@ -327,10 +385,10 @@ def calculation_preview(
 
         if event is None:
             return JSONResponse(
-                status_code=400,
+                status_code=404,
                 content={
                     "detail": {
-                        "code": "REFERENCE_EVENT_NOT_CONFIRMED",
+                        "code": "CONFIRMATION_NOT_FOUND",
                         "message": "No confirmed reference event exists for this candidate.",
                     }
                 },
@@ -342,6 +400,13 @@ def calculation_preview(
 
         arithmetic = DeterministicCalendarArithmetic()
         result = arithmetic.calculate(event, stub_duration)
+
+        safe_log_event(
+            logger,
+            "calendar_preview.generated",
+            calculation_id=str(result.calculation_id) if result.calculation_id else None,
+            document_id=str(document_id),
+        )
 
         return CalendarCalculationResponse(
             calculation_id=result.calculation_id,
@@ -361,6 +426,7 @@ def calculation_preview(
                 unit=DurationUnitSchema(stub_duration.unit.value),
                 calendar_days=stub_duration.calendar_days,
             ),
+            adjustments_applied=result.adjustments_applied,
             warnings=[
                 WarningResponse(code=CalculationWarningCodeSchema(w), message=w)
                 for w in result.warnings
@@ -416,19 +482,18 @@ def confirmation_history(
             confirmation_id=h.confirmation_id,
             confirmed_date=h.confirmed_date,
             event_type=EventTypeSchema(h.event_type.value),
-            confirmation_status=ConfirmationStatusSchema.REVOKED
-            if h.supersedes_confirmation_id
+            confirmation_status=ConfirmationStatusSchema.SUPERSEDED
+            if i > 0
             else ConfirmationStatusSchema.CONFIRMED,
             confirmed_at=h.confirmed_at,
             supersedes_confirmation_id=h.supersedes_confirmation_id,
         )
-        for h in history
+        for i, h in enumerate(history)
     ]
 
     current_status = None
     if history:
-        latest = history[0]
-        current_status = "revoked" if latest.supersedes_confirmation_id else "confirmed"
+        current_status = "confirmed"
 
     return ConfirmationHistoryResponse(
         candidate_id=candidate_id,

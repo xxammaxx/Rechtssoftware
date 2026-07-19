@@ -1,5 +1,6 @@
 """FastAPI application factory and lifecycle management."""
 
+import logging as _logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -28,8 +29,10 @@ from private_legal_navigator.infrastructure.deterministic_deadline_extractor imp
     DeterministicDeadlineExtractor,
 )
 from private_legal_navigator.infrastructure.local_file_storage import LocalFileStorage
+from private_legal_navigator.infrastructure.log_redaction import configure_logging
 from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
 from private_legal_navigator.infrastructure.rule_based_classifier import RuleBasedClassifier
+from private_legal_navigator.infrastructure.safe_logging import safe_log_failure
 from private_legal_navigator.infrastructure.sqlite_case_repository import (
     SqliteCaseRepository,
 )
@@ -72,6 +75,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """Create and configure the FastAPI application."""
     if settings is None:
         settings = Settings()
+
+    # Configure logging with privacy redaction (must happen first)
+    configure_logging()
 
     # Ensure directories exist
     settings.data_dir.mkdir(parents=True, exist_ok=True)
@@ -121,6 +127,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]
     app.add_exception_handler(CaseNotFoundError, case_not_found_handler)
     app.add_exception_handler(DocumentNotFoundError, _document_not_found_handler)
+
+    # Catch-all exception boundary: prevents raw tracebacks and exception
+    # messages from reaching Uvicorn's error log. Logs ONLY a stable error
+    # code and the exception type name, never the exception message.
+    app_logger = _logging.getLogger("private_legal_navigator")
+
+    @app.exception_handler(Exception)
+    async def _catch_all_handler(request: Request, exc: Exception) -> JSONResponse:
+        safe_log_failure(
+            app_logger,
+            "application.unhandled_error",
+            error_code="INTERNAL_PROCESSING_ERROR",
+            exception=exc,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "INTERNAL_PROCESSING_ERROR",
+                    "message": "Der Vorgang konnte nicht abgeschlossen werden.",
+                }
+            },
+        )
 
     # Register routes
     app.include_router(case_router)
