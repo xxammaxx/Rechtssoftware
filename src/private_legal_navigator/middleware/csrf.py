@@ -44,39 +44,39 @@ class CsrfTokenService:
         """
         return secrets.token_hex(32)
 
-    def generate_form_token(self, browser_nonce: str) -> str:
+    def generate_form_token(self, browser_nonce: str, action_path: str = "/ui/") -> str:
         """Generate a time-bound, signed form token for a browser nonce.
 
-        Args:
-            browser_nonce: The nonce from the browser's CSRF cookie.
-
-        Returns:
-            A base64-encoded token containing timestamp + nonce + HMAC.
+        Token is bound to: browser_nonce + action_path + HTTP method (POST).
+        Format: timestamp:nonce:POST:path:signature (path may contain colons)
         """
         now = int(time.time())
-        payload = f"{now}:{browser_nonce}"
+        payload = f"{now}:{browser_nonce}:POST:{action_path}"
         signature = self._sign(payload)
-        token_raw = f"{now}:{browser_nonce}:{signature}"
+        token_raw = f"{now}:{browser_nonce}:POST:{action_path}:{signature}"
         return token_raw
 
-    def validate_token(self, form_token: str, browser_nonce: str) -> bool:
-        """Validate a form token against a browser nonce.
+    def validate_token(self, form_token: str, browser_nonce: str, action_path: str = "") -> bool:
+        """Validate a form token against a browser nonce and action path.
 
         Uses constant-time comparison for the HMAC.
-
-        Args:
-            form_token: The token from the hidden form field.
-            browser_nonce: The nonce from the browser's CSRF cookie.
-
-        Returns:
-            True if the token is valid, not expired, and bound to the nonce.
+        Token format: timestamp:nonce:POST:path:signature
+        Since paths may contain colons, we split from the right.
         """
         try:
-            parts = form_token.split(":", 2)
-            if len(parts) != 3:
+            # Split from right: last part is signature
+            last_colon = form_token.rfind(":")
+            if last_colon == -1:
+                return False
+            payload_part = form_token[:last_colon]
+            signature = form_token[last_colon + 1 :]
+
+            # Parse payload: timestamp:nonce:POST:path
+            parts = payload_part.split(":", 3)
+            if len(parts) != 4:
                 return False
 
-            timestamp_str, token_nonce, signature = parts
+            timestamp_str, token_nonce, method, token_path = parts
             timestamp = int(timestamp_str)
 
             # Check expiry
@@ -87,11 +87,19 @@ class CsrfTokenService:
             if not hmac.compare_digest(token_nonce, browser_nonce):
                 return False
 
+            # Check method
+            if method != "POST":
+                return False
+
+            # Check path binding if caller provided one
+            if action_path and not hmac.compare_digest(token_path, action_path):
+                return False
+
             # Verify signature
-            expected_sig = self._sign(f"{timestamp_str}:{browser_nonce}")
+            expected_sig = self._sign(payload_part)
             return hmac.compare_digest(signature, expected_sig)
 
-        except (ValueError, TypeError):
+        except Exception:
             return False
 
     def _sign(self, payload: str) -> str:

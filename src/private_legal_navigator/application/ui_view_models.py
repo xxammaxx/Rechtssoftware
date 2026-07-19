@@ -128,3 +128,49 @@ class BaseContext:
     page_title: str = "PrivateLegalNavigator"
     human_review_required: bool = True
     legal_validity_assessed: bool = False
+
+
+@dataclass
+class ConfirmationHistoryEntry:
+    """A single entry in the confirmation history."""
+
+    confirmation_id: str
+    confirmed_date: str | None  # ISO date or None for rejected
+    event_type_label: str
+    source_type_label: str
+    confirmation_method_label: str
+    status_label: str
+    confirmed_at: str  # ISO datetime
+    supersedes: str | None
+    is_active: bool
+
+
+@dataclass
+class CandidateDetailView:
+    """View model for the candidate detail / confirmation page."""
+
+    case_id: str
+    document_id: str
+    document_filename: str
+    candidate_index: int
+    candidate_kind: str
+    candidate_display_text: str
+    candidate_date_value: str | None
+    candidate_duration_amount: int | None
+    candidate_duration_unit: str | None
+    candidate_reference_required: bool
+    candidate_is_relative: bool
+    # Confirmation state
+    current_status_label: str  # e.g., "Vom Nutzer bestätigt"
+    current_status: str  # raw enum value
+    active_confirmation: ConfirmationHistoryEntry | None
+    history: list[ConfirmationHistoryEntry]
+    has_history: bool
+    # CSRF
+    csrf_token: str
+    idempotency_key: str
+    # Safety
+    human_review_required: bool = True
+    legal_validity_assessed: bool = False
+    # Success flash message
+    success_message: str = ""

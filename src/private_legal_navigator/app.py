@@ -51,6 +51,7 @@ from private_legal_navigator.infrastructure.sqlite_document_repository import (
 from private_legal_navigator.infrastructure.sqlite_reference_event_repository import (
     SqliteReferenceEventRepository,
 )
+from private_legal_navigator.middleware.csrf import CsrfConfig, CsrfTokenService
 from private_legal_navigator.middleware.host_validation import HostValidationMiddleware
 from private_legal_navigator.middleware.security_headers import SecurityHeadersMiddleware
 
@@ -112,6 +113,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         arithmetic=calendar_arithmetic,
     )
 
+    # --- M6-UI: CSRF token service ---
+    csrf_service = CsrfTokenService(
+        CsrfConfig(secret=settings.csrf_secret, token_lifetime_seconds=3600)
+    )
+
     app = FastAPI(
         title="PrivateLegalNavigator",
         version="0.2.0",
@@ -135,6 +141,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             deadline_extractor,
         ),
         reference_event_service=reference_event_service,
+        csrf_service=csrf_service,
     )
 
     # --- M6-UI: Middleware ---
@@ -164,6 +171,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.calculation_service = calculation_service
     app.state.templates = templates
     app.state.workspace_service = workspace_service
+    app.state.csrf_service = csrf_service
 
     # Initialize M6-A schema
     reference_event_repository.initialize_schema()

@@ -9,19 +9,23 @@ Does NOT:
 """
 
 import uuid
+from datetime import date as date_type
 
 from private_legal_navigator.application.case_repository import CaseRepository
 from private_legal_navigator.application.deadline_service import DeadlineService
 from private_legal_navigator.application.document_repository import DocumentRepository
 from private_legal_navigator.application.document_service import DocumentService
 from private_legal_navigator.application.reference_event_service import (
+    ConfirmationActionResult,
     ReferenceEventService,
 )
 from private_legal_navigator.application.ui_view_models import (
     CandidateCard,
+    CandidateDetailView,
     CaseDetailView,
     CaseListView,
     CaseSummary,
+    ConfirmationHistoryEntry,
     DeadlineWorkspaceView,
     DocumentSummary,
     ReferenceEventCard,
@@ -31,8 +35,12 @@ from private_legal_navigator.domain.deadline import (
     DeadlineCandidateKind,
 )
 from private_legal_navigator.domain.reference_event import (
+    ConfirmationMethod,
     ConfirmationStatus,
+    EventType,
+    SourceType,
 )
+from private_legal_navigator.middleware.csrf import CsrfTokenService
 
 # ---------------------------------------------------------------------------
 # Neutral German labels — must NOT imply legal assessment
@@ -62,16 +70,22 @@ _EVENT_TYPE_LABELS: dict[str, str] = {
 
 _SOURCE_LABELS: dict[str, str] = {
     "auto_detected": "Automatisch erkannt",
-    "user_manual": "Manuell",
-    "user_corrected": "Korrigiert",
+    "user_manual": "Vom Nutzer manuell eingegeben",
+    "user_corrected": "Vom Nutzer korrigiert",
 }
 
 _STATUS_LABELS: dict[ConfirmationStatus, str] = {
     ConfirmationStatus.UNCONFIRMED: "Unbestätigt",
-    ConfirmationStatus.CONFIRMED: "Bestätigt",
-    ConfirmationStatus.REJECTED: "Abgelehnt",
+    ConfirmationStatus.CONFIRMED: "Vom Nutzer bestätigt",
+    ConfirmationStatus.REJECTED: "Vom Nutzer abgelehnt",
     ConfirmationStatus.REVOKED: "Widerrufen",
-    ConfirmationStatus.SUPERSEDED: "Überschrieben",
+    ConfirmationStatus.SUPERSEDED: "Durch neuere Angabe ersetzt",
+}
+
+_CONFIRMATION_METHOD_LABELS: dict[ConfirmationMethod, str] = {
+    ConfirmationMethod.AUTO_SUGGESTED: "Automatisch erkannt – vom Nutzer bestätigt",
+    ConfirmationMethod.MANUALLY_ENTERED: "Manuell eingegeben",
+    ConfirmationMethod.CORRECTED: "Vom Nutzer korrigiert",
 }
 
 _TRUNCATION_LIMIT = 300
@@ -91,12 +105,14 @@ class LocalConfirmationWorkspaceService:
         document_service: DocumentService,
         deadline_service: DeadlineService,
         reference_event_service: ReferenceEventService,
+        csrf_service: CsrfTokenService | None = None,
     ) -> None:
         self._case_repo = case_repository
         self._document_repo = document_repository
         self._document_service = document_service
         self._deadline_service = deadline_service
         self._reference_event_service = reference_event_service
+        self._csrf_service = csrf_service
 
     # ------------------------------------------------------------------ #
     #  Case views
@@ -223,4 +239,269 @@ class LocalConfirmationWorkspaceService:
             any_confirmed=any_confirmed,
             current_status=current_status,
             csrf_token="",  # Not wired in read-only slice
+        )
+
+    # ── Candidate Detail & Confirmation Actions (M6-UI Slice 2) ─────
+
+    def get_candidate_detail(
+        self,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        action_path: str = "",
+    ) -> CandidateDetailView | None:
+        """Produce a candidate detail view with confirmation history and forms.
+
+        Args:
+            case_id: The case UUID.
+            document_id: The document UUID.
+            candidate_index: The 0-based deadline candidate index.
+            action_path: The POST action path for CSRF token binding.
+
+        Returns:
+            CandidateDetailView or None if case/document/candidate not found.
+        """
+        # Verify case exists
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            return None
+
+        # Verify document exists and belongs to case
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            return None
+
+        # Get deadline candidates
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            return None
+
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            return None
+
+        c = extraction_result.candidates[candidate_index]
+
+        # Candidate display data
+        display_text = c.raw_text
+        if len(display_text) > _TRUNCATION_LIMIT:
+            display_text = display_text[:_TRUNCATION_LIMIT] + "…"
+
+        # Get confirmation history
+        history_records = self._reference_event_service.get_history(document_id, candidate_index)
+
+        # Build history entries
+        history_entries: list[ConfirmationHistoryEntry] = []
+        active_confirmation: ConfirmationHistoryEntry | None = None
+        current_status: ConfirmationStatus = ConfirmationStatus.UNCONFIRMED
+
+        for event in history_records:
+            # Determine implicit status
+            if event.confirmed_date is None:
+                status = ConfirmationStatus.REJECTED
+            elif event.supersedes_confirmation_id is not None:
+                # Check if this is a revocation (revoke creates record with supersedes)
+                # REVOKED records set supersedes to the target; if this record's ID
+                # appears as supersedes in another record, it's SUPERSEDED
+                status = ConfirmationStatus.CONFIRMED  # simplified for now
+            else:
+                status = ConfirmationStatus.CONFIRMED
+
+            # Check if this record is superseded by another
+            for other in history_records:
+                if (
+                    other.supersedes_confirmation_id is not None
+                    and uuid.UUID(str(other.supersedes_confirmation_id)) == event.confirmation_id
+                ):
+                    status = ConfirmationStatus.SUPERSEDED
+                    break
+
+            entry = ConfirmationHistoryEntry(
+                confirmation_id=str(event.confirmation_id),
+                confirmed_date=event.confirmed_date.isoformat() if event.confirmed_date else None,
+                event_type_label=_EVENT_TYPE_LABELS.get(
+                    event.event_type.value, event.event_type.value
+                ),
+                source_type_label=_SOURCE_LABELS.get(
+                    event.source_type.value, event.source_type.value
+                ),
+                confirmation_method_label=_CONFIRMATION_METHOD_LABELS.get(
+                    event.confirmation_method, event.confirmation_method.value
+                ),
+                status_label=_STATUS_LABELS.get(status, status.value),
+                confirmed_at=event.confirmed_at.isoformat(),
+                supersedes=str(event.supersedes_confirmation_id)
+                if event.supersedes_confirmation_id
+                else None,
+                is_active=status == ConfirmationStatus.CONFIRMED,
+            )
+            history_entries.append(entry)
+
+            if status == ConfirmationStatus.CONFIRMED and active_confirmation is None:
+                active_confirmation = entry
+                current_status = ConfirmationStatus.CONFIRMED
+            elif status == ConfirmationStatus.REJECTED and current_status not in (
+                ConfirmationStatus.CONFIRMED,
+            ):
+                current_status = ConfirmationStatus.REJECTED
+
+        # Generate CSRF token and idempotency key
+        csrf_token = ""
+        idempotency_key = ""
+        if self._csrf_service:
+            nonce = self._csrf_service.generate_browser_nonce()
+            csrf_token = self._csrf_service.generate_form_token(nonce, action_path or "/ui/")
+            idempotency_key = CsrfTokenService.generate_idempotency_key()
+
+        return CandidateDetailView(
+            case_id=str(case_id),
+            document_id=str(document_id),
+            document_filename=doc.filename,
+            candidate_index=candidate_index,
+            candidate_kind=_KIND_LABELS.get(c.kind, c.kind.value),
+            candidate_display_text=display_text,
+            candidate_date_value=c.normalized_date.isoformat() if c.normalized_date else None,
+            candidate_duration_amount=c.amount,
+            candidate_duration_unit=_UNIT_LABELS.get(c.unit, c.unit) if c.unit else None,
+            candidate_reference_required=c.reference_required,
+            candidate_is_relative=c.kind == DeadlineCandidateKind.RELATIVE_PERIOD,
+            current_status_label=_STATUS_LABELS.get(current_status, current_status.value),
+            current_status=current_status.value,
+            active_confirmation=active_confirmation,
+            history=history_entries,
+            has_history=len(history_entries) > 0,
+            csrf_token=csrf_token,
+            idempotency_key=idempotency_key,
+        )
+
+    def confirm_candidate(
+        self,
+        idempotency_key: str,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        event_type: EventType,
+        confirmed_date: date_type,
+        redirect_path: str,
+    ) -> ConfirmationActionResult:
+        """Confirm a detected reference event candidate.
+
+        Server-side revalidation: reloads candidate from database to
+        verify it exists and belongs to the correct document/case.
+
+        Args:
+            idempotency_key: Unique idempotency key for this action.
+            case_id: The case UUID.
+            document_id: The document UUID.
+            candidate_index: The candidate index to confirm.
+            event_type: The event type enum value.
+            confirmed_date: The date to confirm.
+            redirect_path: The PRG redirect target.
+
+        Returns:
+            ConfirmationActionResult.
+
+        Raises:
+            IdempotencyKeyConflictError: On replay conflict.
+            ValueError: If case/document/candidate not found.
+        """
+        # Server-side revalidation
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            raise ValueError("Fall nicht gefunden.")
+
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            raise ValueError("Dokument nicht gefunden oder gehört nicht zum Fall.")
+
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            raise ValueError("Dokument hat keine extrahierten Kandidaten.")
+
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            raise ValueError("Kandidat nicht gefunden.")
+
+        return self._reference_event_service.confirm_with_idempotency(
+            idempotency_key=idempotency_key,
+            document_id=document_id,
+            deadline_candidate_index=candidate_index,
+            event_type=event_type,
+            confirmed_date=confirmed_date,
+            source_type=SourceType.AUTO_DETECTED,
+            confirmation_method=ConfirmationMethod.AUTO_SUGGESTED,
+            redirect_path=redirect_path,
+        )
+
+    def reject_candidate(
+        self,
+        idempotency_key: str,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        event_type: EventType,
+        redirect_path: str,
+    ) -> ConfirmationActionResult:
+        """Reject a detected reference event candidate."""
+        # Server-side revalidation (same as confirm)
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            raise ValueError("Fall nicht gefunden.")
+
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            raise ValueError("Dokument nicht gefunden oder gehört nicht zum Fall.")
+
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            raise ValueError("Dokument hat keine extrahierten Kandidaten.")
+
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            raise ValueError("Kandidat nicht gefunden.")
+
+        return self._reference_event_service.reject_with_idempotency(
+            idempotency_key=idempotency_key,
+            document_id=document_id,
+            deadline_candidate_index=candidate_index,
+            event_type=event_type,
+            redirect_path=redirect_path,
+        )
+
+    def manual_confirm_date(
+        self,
+        idempotency_key: str,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        event_type: EventType,
+        confirmed_date: date_type,
+        redirect_path: str,
+        evidence_note: str = "",
+    ) -> ConfirmationActionResult:
+        """Manually confirm a reference date."""
+        # Server-side revalidation
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            raise ValueError("Fall nicht gefunden.")
+
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            raise ValueError("Dokument nicht gefunden oder gehört nicht zum Fall.")
+
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            raise ValueError("Dokument hat keine extrahierten Kandidaten.")
+
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            raise ValueError("Kandidat nicht gefunden.")
+
+        return self._reference_event_service.confirm_with_idempotency(
+            idempotency_key=idempotency_key,
+            document_id=document_id,
+            deadline_candidate_index=candidate_index,
+            event_type=event_type,
+            confirmed_date=confirmed_date,
+            source_type=SourceType.USER_MANUAL,
+            confirmation_method=ConfirmationMethod.MANUALLY_ENTERED,
+            candidate_id=None,
+            evidence_note=evidence_note,
+            redirect_path=redirect_path,
         )

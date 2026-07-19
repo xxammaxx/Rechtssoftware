@@ -1,11 +1,35 @@
 """Repository port (interface) for reference event persistence."""
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from uuid import UUID
 
 from private_legal_navigator.domain.reference_event import (
     ConfirmedReferenceEvent,
 )
+
+
+class IdempotencyKeyConflictError(Exception):
+    """Raised when an idempotency key has already been claimed."""
+
+    def __init__(self, idempotency_key: str) -> None:
+        super().__init__("Idempotency key already exists")
+        self.idempotency_key = idempotency_key
+
+
+@dataclass
+class IdempotencyRecord:
+    """Represents a recorded idempotency outcome."""
+
+    idempotency_key: str
+    operation_type: str
+    target_document_id: str
+    target_candidate_index: int
+    status: str  # 'processing', 'completed', 'conflict'
+    result_confirmation_id: str | None
+    created_at: str
+    completed_at: str | None
+    expires_at: str
 
 
 class ReferenceEventRepository(ABC):
@@ -80,5 +104,74 @@ class ReferenceEventRepository(ABC):
 
         Args:
             document_id: The document identifier.
+        """
+        ...
+
+    # ── Idempotency methods (M6-UI Slice 2) ──
+
+    @abstractmethod
+    def claim_idempotency_key(
+        self,
+        idempotency_key: str,
+        operation_type: str,
+        document_id: UUID,
+        deadline_candidate_index: int,
+    ) -> IdempotencyRecord:
+        """Atomically claim an idempotency key.
+
+        INSERTs a new record with status='processing'.
+        Raises an exception if the key already exists.
+
+        Args:
+            idempotency_key: The unique idempotency key.
+            operation_type: 'confirm', 'reject', or 'manual_confirm'.
+            document_id: The document this action targets.
+            deadline_candidate_index: The candidate index.
+
+        Returns:
+            The newly created IdempotencyRecord.
+
+        Raises:
+            IdempotencyKeyConflict: If the key already exists.
+        """
+        ...
+
+    @abstractmethod
+    def get_idempotency_record(self, idempotency_key: str) -> IdempotencyRecord | None:
+        """Retrieve an idempotency record by key.
+
+        Args:
+            idempotency_key: The unique idempotency key.
+
+        Returns:
+            IdempotencyRecord if found, None otherwise.
+        """
+        ...
+
+    @abstractmethod
+    def complete_idempotency_key(self, idempotency_key: str, result_confirmation_id: str) -> None:
+        """Mark an idempotency record as completed.
+
+        Args:
+            idempotency_key: The unique idempotency key.
+            result_confirmation_id: The confirmation_id of the domain mutation result.
+        """
+        ...
+
+    @abstractmethod
+    def mark_idempotency_conflict(self, idempotency_key: str) -> None:
+        """Mark an idempotency record as conflict (non-retryable error).
+
+        Args:
+            idempotency_key: The unique idempotency key.
+        """
+        ...
+
+    @abstractmethod
+    def cleanup_expired_idempotency_records(self) -> int:
+        """Delete expired idempotency records.
+
+        Returns:
+            Number of records deleted.
         """
         ...
