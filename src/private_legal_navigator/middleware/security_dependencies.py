@@ -5,6 +5,7 @@ and body size limits as FastAPI dependencies (not global middleware).
 """
 
 import logging
+import re
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
@@ -16,6 +17,11 @@ logger = logging.getLogger("private_legal_navigator.ui")
 
 MAX_BODY_BYTES = 65_536  # 64 KB limit for form submissions
 ALLOWED_CONTENT_TYPE = "application/x-www-form-urlencoded"
+
+# M6-UI Slice 2 action suffixes that extend the candidate page path.
+# CSRF tokens are bound to the page path (/candidates/{idx}) and
+# validated by stripping these known action suffixes from the POST path.
+_ACTION_SUFFIX_PATTERN = re.compile(r"/(confirm|reject|manual-confirm)$")
 
 
 async def require_form_content_type(request: Request) -> None:
@@ -76,7 +82,14 @@ def _is_same_origin(header_value: str, request: Request) -> bool:
 
 
 async def require_csrf_token(request: Request) -> None:
-    """Validate CSRF token from form against browser nonce cookie."""
+    """Validate CSRF token from form against browser nonce cookie.
+
+    M6-UI Slice 2: CSRF tokens are bound to the candidate detail page
+    path (e.g. ``/ui/cases/{id}/documents/{id}/candidates/{idx}``).
+    POST actions add a suffix (``/confirm``, ``/reject``,
+    ``/manual-confirm``).  We strip the suffix before validation so
+    one page token covers all three forms.
+    """
     if request.method != "POST":
         return
 
@@ -103,16 +116,18 @@ async def require_csrf_token(request: Request) -> None:
         )
         raise HTTPException(status_code=400, detail="Ungültiges Formular.") from exc
 
-    csrf_token = form.get("csrf_token", "")
-    if isinstance(csrf_token, str):
-        csrf_token = csrf_token.strip()
+    # Use FormData typing to help mypy distinguish strings from UploadFile
+    raw_token = form.get("csrf_token", "")
+    csrf_token: str = raw_token.strip() if isinstance(raw_token, str) else ""
 
     browser_nonce = request.cookies.get("pln_csrf_nonce", "")
 
     if not csrf_token or not browser_nonce:
         raise HTTPException(status_code=403, detail="Fehlende Sicherheitsdaten.")
 
-    action_path = request.url.path
+    # Strip action suffix so the token matches the page path.
+    raw_path = request.url.path
+    action_path = _ACTION_SUFFIX_PATTERN.sub("", raw_path)
 
     if not csrf_service.validate_token(csrf_token, browser_nonce, action_path):
         raise HTTPException(

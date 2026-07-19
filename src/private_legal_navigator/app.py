@@ -107,7 +107,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     deadline_extractor = DeterministicDeadlineExtractor()
     reference_event_repository = SqliteReferenceEventRepository(settings.database_path)
     calendar_arithmetic = DeterministicCalendarArithmetic()
-    reference_event_service = ReferenceEventService(repo=reference_event_repository)
+    reference_event_service = ReferenceEventService(
+        repo=reference_event_repository,
+        secret_key=settings.csrf_secret,
+    )
     calculation_service = CalculationService(
         repo=reference_event_repository,
         arithmetic=calendar_arithmetic,

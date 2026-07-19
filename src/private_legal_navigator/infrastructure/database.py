@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS idempotency_records (
     operation_type TEXT NOT NULL,
     target_document_id TEXT NOT NULL,
     target_candidate_index INTEGER NOT NULL,
+    payload_digest TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'processing',
     result_confirmation_id TEXT,
     created_at TEXT NOT NULL,

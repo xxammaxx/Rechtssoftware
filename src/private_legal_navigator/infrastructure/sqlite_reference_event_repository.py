@@ -1,7 +1,9 @@
 """SQLite implementation of the ReferenceEventRepository port."""
 
+import contextlib
 import sqlite3
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -36,10 +38,18 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
     def save_confirmation(self, event: ConfirmedReferenceEvent) -> None:
         conn = get_connection(self._db_path)
         try:
+            conn.execute("BEGIN IMMEDIATE")
             self._save_confirmation_in_conn(conn, event)
             conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
+
+    def save_confirmation_in_conn(self, conn: object, event: ConfirmedReferenceEvent) -> None:
+        """Persist inside an existing transaction (caller owns commit)."""
+        self._save_confirmation_in_conn(conn, event)  # type: ignore[arg-type]
 
     @staticmethod
     def _save_confirmation_in_conn(
@@ -176,104 +186,276 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
         operation_type: str,
         document_id: uuid.UUID,
         deadline_candidate_index: int,
+        payload_digest: str = "",
     ) -> IdempotencyRecord:
-        """Atomically claim an idempotency key.
+        """Atomically claim an idempotency key (legacy — standalone conn).
 
-        Uses INSERT with PRIMARY KEY constraint as natural race-condition guard.
-        Must be called within an existing transaction.
+        Prefer ``execute_atomic_with_idempotency`` for new callers.
         """
         conn = get_connection(self._db_path)
         try:
-            now = datetime.now(UTC).isoformat()
-
-            conn.execute(
-                """
-                INSERT INTO idempotency_records
-                    (idempotency_key, operation_type, target_document_id,
-                     target_candidate_index, status, created_at, expires_at)
-                VALUES (?, ?, ?, ?, 'processing', ?, datetime('now', '+1 day'))
-                """,
-                (
-                    idempotency_key,
-                    operation_type,
-                    str(document_id),
-                    deadline_candidate_index,
-                    now,
-                ),
+            conn.execute("BEGIN IMMEDIATE")
+            record = self._claim_idempotency_key_in_conn(
+                conn,
+                idempotency_key,
+                operation_type,
+                document_id,
+                deadline_candidate_index,
+                payload_digest,
             )
             conn.commit()
-            return IdempotencyRecord(
-                idempotency_key=idempotency_key,
-                operation_type=operation_type,
-                target_document_id=str(document_id),
-                target_candidate_index=deadline_candidate_index,
-                status="processing",
-                result_confirmation_id=None,
-                created_at=now,
-                completed_at=None,
-                expires_at="",
-            )
+            return record
         except sqlite3.IntegrityError:
+            conn.rollback()
             raise IdempotencyKeyConflictError(idempotency_key) from None
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
+
+    @staticmethod
+    def _claim_idempotency_key_in_conn(
+        conn: sqlite3.Connection,
+        idempotency_key: str,
+        operation_type: str,
+        document_id: uuid.UUID,
+        deadline_candidate_index: int,
+        payload_digest: str = "",
+    ) -> IdempotencyRecord:
+        """INSERT idempotency claim inside an existing transaction.
+
+        Caller owns BEGIN / COMMIT / ROLLBACK.
+        """
+        now = datetime.now(UTC).isoformat()
+        conn.execute(
+            """
+            INSERT INTO idempotency_records
+                (idempotency_key, operation_type, target_document_id,
+                 target_candidate_index, payload_digest, status,
+                 created_at, expires_at)
+            VALUES (?, ?, ?, ?, ?, 'processing', ?, datetime('now', '+1 day'))
+            """,
+            (
+                idempotency_key,
+                operation_type,
+                str(document_id),
+                deadline_candidate_index,
+                payload_digest,
+                now,
+            ),
+        )
+        return IdempotencyRecord(
+            idempotency_key=idempotency_key,
+            operation_type=operation_type,
+            target_document_id=str(document_id),
+            target_candidate_index=deadline_candidate_index,
+            payload_digest=payload_digest,
+            status="processing",
+            result_confirmation_id=None,
+            created_at=now,
+            completed_at=None,
+            expires_at="",
+        )
 
     def get_idempotency_record(self, idempotency_key: str) -> IdempotencyRecord | None:
         conn = get_connection(self._db_path)
         try:
-            row = conn.execute(
-                "SELECT * FROM idempotency_records WHERE idempotency_key = ?",
-                (idempotency_key,),
-            ).fetchone()
-            if row is None:
-                return None
-            return IdempotencyRecord(
-                idempotency_key=row["idempotency_key"],
-                operation_type=row["operation_type"],
-                target_document_id=row["target_document_id"],
-                target_candidate_index=row["target_candidate_index"],
-                status=row["status"],
-                result_confirmation_id=row["result_confirmation_id"],
-                created_at=row["created_at"],
-                completed_at=row["completed_at"],
-                expires_at=row["expires_at"],
-            )
+            return self._get_idempotency_record_in_conn(conn, idempotency_key)
         finally:
             conn.close()
+
+    @staticmethod
+    def _get_idempotency_record_in_conn(
+        conn: sqlite3.Connection, idempotency_key: str
+    ) -> IdempotencyRecord | None:
+        row = conn.execute(
+            "SELECT * FROM idempotency_records WHERE idempotency_key = ?",
+            (idempotency_key,),
+        ).fetchone()
+        if row is None:
+            return None
+        return IdempotencyRecord(
+            idempotency_key=row["idempotency_key"],
+            operation_type=row["operation_type"],
+            target_document_id=row["target_document_id"],
+            target_candidate_index=row["target_candidate_index"],
+            payload_digest=row["payload_digest"] or "",
+            status=row["status"],
+            result_confirmation_id=row["result_confirmation_id"],
+            created_at=row["created_at"],
+            completed_at=row["completed_at"],
+            expires_at=row["expires_at"],
+        )
 
     def complete_idempotency_key(self, idempotency_key: str, result_confirmation_id: str) -> None:
         conn = get_connection(self._db_path)
         try:
-            now = datetime.now(UTC).isoformat()
-            conn.execute(
-                """
-                UPDATE idempotency_records
-                SET status = 'completed',
-                    result_confirmation_id = ?,
-                    completed_at = ?
-                WHERE idempotency_key = ?
-                """,
-                (result_confirmation_id, now, idempotency_key),
-            )
+            conn.execute("BEGIN IMMEDIATE")
+            self._complete_idempotency_key_in_conn(conn, idempotency_key, result_confirmation_id)
             conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
+
+    @staticmethod
+    def _complete_idempotency_key_in_conn(
+        conn: sqlite3.Connection, idempotency_key: str, result_confirmation_id: str
+    ) -> None:
+        now = datetime.now(UTC).isoformat()
+        conn.execute(
+            """
+            UPDATE idempotency_records
+            SET status = 'completed',
+                result_confirmation_id = ?,
+                completed_at = ?
+            WHERE idempotency_key = ?
+            """,
+            (result_confirmation_id, now, idempotency_key),
+        )
 
     def mark_idempotency_conflict(self, idempotency_key: str) -> None:
         conn = get_connection(self._db_path)
         try:
-            now = datetime.now(UTC).isoformat()
-            conn.execute(
-                """
-                UPDATE idempotency_records
-                SET status = 'conflict', completed_at = ?
-                WHERE idempotency_key = ?
-                """,
-                (now, idempotency_key),
-            )
+            conn.execute("BEGIN IMMEDIATE")
+            self._mark_idempotency_conflict_in_conn(conn, idempotency_key)
             conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
+
+    @staticmethod
+    def _mark_idempotency_conflict_in_conn(conn: sqlite3.Connection, idempotency_key: str) -> None:
+        now = datetime.now(UTC).isoformat()
+        conn.execute(
+            """
+            UPDATE idempotency_records
+            SET status = 'conflict', completed_at = ?
+            WHERE idempotency_key = ?
+            """,
+            (now, idempotency_key),
+        )
+
+    # ── Atomic transaction orchestration ───────────────────────────
+
+    def execute_atomic_with_idempotency(
+        self,
+        *,
+        idempotency_key: str,
+        operation_type: str,
+        payload_digest: str,
+        document_id: uuid.UUID,
+        deadline_candidate_index: int,
+        perform_mutation: Callable[[sqlite3.Connection, object | None], ConfirmedReferenceEvent],
+    ) -> tuple[ConfirmedReferenceEvent, bool]:
+        """Execute a domain mutation inside a single atomic transaction.
+
+        Sequence:
+            1. BEGIN IMMEDIATE
+            2. Claim idempotency key (INSERT → serialises concurrent attempts)
+            3. Load currently-active confirmation (TOCTOU-safe: same TX)
+            4. Perform domain mutation (caller-supplied)
+            5. Mark idempotency as completed
+            6. COMMIT
+
+        On IntegrityError from the idempotency INSERT:
+            - Reads existing record (outside TX)
+            - If completed + payload matches → replay (returns existing result)
+            - If completed + payload mismatch → raises 409
+            - If still processing / conflict → raises 409
+
+        Returns:
+            (event, was_replay) — ``was_replay`` is True when the result
+            comes from a previously completed idempotency record.
+        """
+        conn = get_connection(self._db_path)
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+
+            # Step 1: Claim idempotency key (INSERT)
+            try:
+                self._claim_idempotency_key_in_conn(
+                    conn,
+                    idempotency_key,
+                    operation_type,
+                    document_id,
+                    deadline_candidate_index,
+                    payload_digest,
+                )
+            except sqlite3.IntegrityError:
+                conn.rollback()
+                # Read the existing record to decide how to respond
+                return self._handle_existing_idempotency(
+                    idempotency_key, payload_digest, operation_type
+                )
+
+            # Step 2: Load active confirmation (same TX → TOCTOU-safe)
+            active = self._get_active_confirmation_in_conn(
+                conn, document_id, deadline_candidate_index
+            )
+
+            # Step 3: Perform domain mutation (caller-supplied)
+            try:
+                event = perform_mutation(conn, active)
+            except Exception:
+                conn.rollback()
+                # Best-effort: mark idempotency as conflict (separate conn)
+                with contextlib.suppress(Exception):
+                    self.mark_idempotency_conflict(idempotency_key)
+                raise
+
+            # Step 4: Mark idempotency as completed
+            self._complete_idempotency_key_in_conn(
+                conn, idempotency_key, str(event.confirmation_id)
+            )
+
+            conn.commit()
+            return event, False
+
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def _handle_existing_idempotency(
+        self,
+        idempotency_key: str,
+        expected_payload_digest: str,
+        operation_type: str,
+    ) -> tuple[ConfirmedReferenceEvent, bool]:
+        """Inspect an existing idempotency record and respond accordingly.
+
+        Returns (event, was_replay) on successful replay.
+        Raises IdempotencyKeyConflictError on mismatch or non-completed state.
+        """
+        existing = self.get_idempotency_record(idempotency_key)
+
+        if existing is None:
+            raise IdempotencyKeyConflictError(idempotency_key)
+
+        if existing.status != "completed":
+            raise IdempotencyKeyConflictError(idempotency_key)
+
+        # Payload binding — reject if the digest doesn't match
+        if existing.payload_digest and existing.payload_digest != expected_payload_digest:
+            raise IdempotencyKeyConflictError(idempotency_key)
+
+        # Operation type must also match
+        if existing.operation_type != operation_type:
+            raise IdempotencyKeyConflictError(idempotency_key)
+
+        result_id = existing.result_confirmation_id
+        if result_id:
+            original = self.get_confirmation(uuid.UUID(result_id))
+            if original:
+                return original, True
+
+        raise IdempotencyKeyConflictError(idempotency_key)
 
     def cleanup_expired_idempotency_records(self) -> int:
         conn = get_connection(self._db_path)

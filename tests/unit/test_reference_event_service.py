@@ -253,3 +253,262 @@ class TestCalculationService:
     def test_validate_duration_negative_raises(self) -> None:
         with pytest.raises(ValueError, match="Duration amount must be positive"):
             CalculationService._validate_duration(-5, "day")
+
+
+# ── M6-UI Slice 2 Closure: Payload digest, key hashing, idempotency ──
+
+
+class TestPayloadDigest:
+    """compute_payload_digest produces deterministic SHA-256 hashes."""
+
+    def test_simple_payload(self) -> None:
+        payload = {"op": "confirm", "did": "abc"}
+        digest = ReferenceEventService.compute_payload_digest(payload)
+        assert isinstance(digest, str)
+        assert len(digest) == 64
+
+    def test_deterministic(self) -> None:
+        payload = {"a": 1, "b": 2}
+        d1 = ReferenceEventService.compute_payload_digest(payload)
+        d2 = ReferenceEventService.compute_payload_digest(payload)
+        assert d1 == d2
+
+    def test_key_order_independent(self) -> None:
+        p1 = {"z": 1, "a": 2}
+        p2 = {"a": 2, "z": 1}
+        d1 = ReferenceEventService.compute_payload_digest(p1)
+        d2 = ReferenceEventService.compute_payload_digest(p2)
+        assert d1 == d2
+
+    def test_complex_payload(self) -> None:
+        from uuid import uuid4 as _uuid4
+
+        payload = {
+            "op": "confirm",
+            "did": str(_uuid4()),
+            "dci": 0,
+            "et": "issue_date",
+            "cd": "2026-07-15",
+            "st": "auto_detected",
+            "cm": "auto_suggested",
+            "cid": None,
+            "en": "SYNTHETISCH – evidence",
+            "cb": "",
+        }
+        digest = ReferenceEventService.compute_payload_digest(payload)
+        assert len(digest) == 64
+
+
+class TestHashKey:
+    """_hash_key produces consistent HMAC-SHA256 digests."""
+
+    def test_with_secret(self) -> None:
+        svc = ReferenceEventService(repo=MagicMock(), secret_key="test-secret")
+        h1 = svc._hash_key("my-idempotency-key")
+        h2 = svc._hash_key("my-idempotency-key")
+        assert h1 == h2
+        assert len(h1) == 64
+
+    def test_different_keys_different_hash(self) -> None:
+        svc = ReferenceEventService(repo=MagicMock(), secret_key="test-secret")
+        h1 = svc._hash_key("key-a")
+        h2 = svc._hash_key("key-b")
+        assert h1 != h2
+
+    def test_without_secret_dev_fallback(self) -> None:
+        svc = ReferenceEventService(repo=MagicMock())
+        h = svc._hash_key("dev-key")
+        assert len(h) == 64
+        assert svc._hash_key("dev-key") == h
+
+    def test_different_secret_different_hash(self) -> None:
+        svc1 = ReferenceEventService(repo=MagicMock(), secret_key="secret-1")
+        svc2 = ReferenceEventService(repo=MagicMock(), secret_key="secret-2")
+        h1 = svc1._hash_key("same-key")
+        h2 = svc2._hash_key("same-key")
+        assert h1 != h2
+
+
+class TestConfirmWithIdempotency:
+    """Tests for the atomic confirm_with_idempotency."""
+
+    def test_successful_confirm(self) -> None:
+        mock_repo = MagicMock()
+        event = ConfirmedReferenceEvent(
+            confirmation_id=uuid4(),
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.ISSUE_DATE,
+            confirmed_at=datetime.now(UTC),
+            confirmed_date=date(2026, 7, 15),
+        )
+        mock_repo.execute_atomic_with_idempotency.return_value = (event, False)
+        svc = ReferenceEventService(repo=mock_repo, secret_key="test")
+
+        result = svc.confirm_with_idempotency(
+            idempotency_key="test-key",
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.ISSUE_DATE,
+            confirmed_date=date(2026, 7, 15),
+            source_type=SourceType.AUTO_DETECTED,
+            confirmation_method=ConfirmationMethod.AUTO_SUGGESTED,
+            redirect_path="/ui/cases",
+        )
+        assert result.was_replay is False
+        assert result.result_status == "confirmed"
+        assert result.event == event
+        mock_repo.execute_atomic_with_idempotency.assert_called_once()
+
+    def test_replay_returns_existing(self) -> None:
+        mock_repo = MagicMock()
+        event = ConfirmedReferenceEvent(
+            confirmation_id=uuid4(),
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.ISSUE_DATE,
+            confirmed_at=datetime.now(UTC),
+            confirmed_date=date(2026, 7, 15),
+        )
+        mock_repo.execute_atomic_with_idempotency.return_value = (event, True)
+        svc = ReferenceEventService(repo=mock_repo, secret_key="test")
+
+        result = svc.confirm_with_idempotency(
+            idempotency_key="replay",
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.ISSUE_DATE,
+            confirmed_date=date(2026, 7, 15),
+            source_type=SourceType.AUTO_DETECTED,
+            confirmation_method=ConfirmationMethod.AUTO_SUGGESTED,
+        )
+        assert result.was_replay is True
+
+    def test_conflict_raises(self) -> None:
+        from private_legal_navigator.application.reference_event_repository import (
+            IdempotencyKeyConflictError,
+        )
+
+        mock_repo = MagicMock()
+        mock_repo.execute_atomic_with_idempotency.side_effect = IdempotencyKeyConflictError("dup")
+        svc = ReferenceEventService(repo=mock_repo, secret_key="test")
+
+        with pytest.raises(IdempotencyKeyConflictError):
+            svc.confirm_with_idempotency(
+                idempotency_key="dup",
+                document_id=uuid4(),
+                deadline_candidate_index=0,
+                event_type=EventType.ISSUE_DATE,
+                confirmed_date=date(2026, 7, 15),
+                source_type=SourceType.AUTO_DETECTED,
+                confirmation_method=ConfirmationMethod.AUTO_SUGGESTED,
+            )
+
+    def test_payload_includes_manual_fields(self) -> None:
+        """Manual confirm payload must include evidence_note and confirmed_by."""
+        mock_repo = MagicMock()
+        event = ConfirmedReferenceEvent(
+            confirmation_id=uuid4(),
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.USER_DEFINED,
+            confirmed_at=datetime.now(UTC),
+            confirmed_date=date(2026, 7, 20),
+            evidence_note="SYNTHETISCH – manual entry",
+        )
+        mock_repo.execute_atomic_with_idempotency.return_value = (event, False)
+        svc = ReferenceEventService(repo=mock_repo, secret_key="test")
+
+        result = svc.confirm_with_idempotency(
+            idempotency_key="manual-key",
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.USER_DEFINED,
+            confirmed_date=date(2026, 7, 20),
+            source_type=SourceType.USER_MANUAL,
+            confirmation_method=ConfirmationMethod.MANUALLY_ENTERED,
+            evidence_note="SYNTHETISCH – manual entry",
+            confirmed_by="SYNTHETISCH – user",
+        )
+        assert result.result_status == "confirmed"
+        mock_repo.execute_atomic_with_idempotency.assert_called_once()
+
+
+class TestRejectWithIdempotency:
+    """Tests for the atomic reject_with_idempotency."""
+
+    def test_successful_reject(self) -> None:
+        mock_repo = MagicMock()
+        event = ConfirmedReferenceEvent(
+            confirmation_id=uuid4(),
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.DELIVERY,
+            confirmed_at=datetime.now(UTC),
+            confirmed_date=None,
+        )
+        mock_repo.execute_atomic_with_idempotency.return_value = (event, False)
+        svc = ReferenceEventService(repo=mock_repo, secret_key="test")
+
+        result = svc.reject_with_idempotency(
+            idempotency_key="reject-key",
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.DELIVERY,
+            redirect_path="/ui/cases",
+        )
+        assert result.result_status == "rejected"
+        assert result.was_replay is False
+
+    def test_reject_replay(self) -> None:
+        mock_repo = MagicMock()
+        event = ConfirmedReferenceEvent(
+            confirmation_id=uuid4(),
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.DELIVERY,
+            confirmed_at=datetime.now(UTC),
+            confirmed_date=None,
+        )
+        mock_repo.execute_atomic_with_idempotency.return_value = (event, True)
+        svc = ReferenceEventService(repo=mock_repo, secret_key="test")
+
+        result = svc.reject_with_idempotency(
+            idempotency_key="replay-reject",
+            document_id=uuid4(),
+            deadline_candidate_index=0,
+            event_type=EventType.DELIVERY,
+        )
+        assert result.was_replay is True
+
+    def test_reject_conflict_raises(self) -> None:
+        from private_legal_navigator.application.reference_event_repository import (
+            IdempotencyKeyConflictError,
+        )
+
+        mock_repo = MagicMock()
+        mock_repo.execute_atomic_with_idempotency.side_effect = IdempotencyKeyConflictError(
+            "conflict"
+        )
+        svc = ReferenceEventService(repo=mock_repo, secret_key="test")
+
+        with pytest.raises(IdempotencyKeyConflictError):
+            svc.reject_with_idempotency(
+                idempotency_key="conflict",
+                document_id=uuid4(),
+                deadline_candidate_index=0,
+                event_type=EventType.DELIVERY,
+            )
+
+
+class TestCleanupIdempotency:
+    """cleanup_idempotency delegates to repository."""
+
+    def test_delegates_to_repo(self) -> None:
+        mock_repo = MagicMock()
+        mock_repo.cleanup_expired_idempotency_records.return_value = 5
+        svc = ReferenceEventService(repo=mock_repo)
+
+        result = svc.cleanup_idempotency()
+        assert result == 5
+        mock_repo.cleanup_expired_idempotency_records.assert_called_once()

@@ -1,7 +1,9 @@
 """Repository port (interface) for reference event persistence."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from private_legal_navigator.domain.reference_event import (
@@ -25,6 +27,7 @@ class IdempotencyRecord:
     operation_type: str
     target_document_id: str
     target_candidate_index: int
+    payload_digest: str
     status: str  # 'processing', 'completed', 'conflict'
     result_confirmation_id: str | None
     created_at: str
@@ -45,6 +48,14 @@ class ReferenceEventRepository(ABC):
 
         Args:
             event: The confirmed reference event to persist.
+        """
+        ...
+
+    @abstractmethod
+    def save_confirmation_in_conn(self, conn: object, event: ConfirmedReferenceEvent) -> None:
+        """Persist a confirmed reference event inside an existing transaction.
+
+        Caller owns BEGIN / COMMIT / ROLLBACK on *conn*.
         """
         ...
 
@@ -116,6 +127,7 @@ class ReferenceEventRepository(ABC):
         operation_type: str,
         document_id: UUID,
         deadline_candidate_index: int,
+        payload_digest: str = "",
     ) -> IdempotencyRecord:
         """Atomically claim an idempotency key.
 
@@ -127,6 +139,7 @@ class ReferenceEventRepository(ABC):
             operation_type: 'confirm', 'reject', or 'manual_confirm'.
             document_id: The document this action targets.
             deadline_candidate_index: The candidate index.
+            payload_digest: SHA-256 digest of the canonical operation payload.
 
         Returns:
             The newly created IdempotencyRecord.
@@ -173,5 +186,23 @@ class ReferenceEventRepository(ABC):
 
         Returns:
             Number of records deleted.
+        """
+        ...
+
+    @abstractmethod
+    def execute_atomic_with_idempotency(
+        self,
+        *,
+        idempotency_key: str,
+        operation_type: str,
+        payload_digest: str,
+        document_id: UUID,
+        deadline_candidate_index: int,
+        perform_mutation: Callable[..., Any],
+    ) -> tuple[ConfirmedReferenceEvent, bool]:
+        """Execute a domain mutation inside a single atomic transaction.
+
+        Sequence: BEGIN → claim → load active → mutate → complete → COMMIT.
+        Returns (event, was_replay).
         """
         ...

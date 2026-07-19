@@ -10,8 +10,16 @@ from datetime import date as date_type
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from starlette.datastructures import FormData
 from starlette.templating import Jinja2Templates
 
+from private_legal_navigator.api.form_helpers import (
+    MAX_DATE_FIELD_LENGTH,
+    MAX_EVIDENCE_NOTE_LENGTH,
+    MAX_IDEMPOTENCY_KEY_LENGTH,
+    optional_form_string,
+    require_form_string,
+)
 from private_legal_navigator.application.local_confirmation_workspace_service import (
     LocalConfirmationWorkspaceService,
 )
@@ -231,8 +239,8 @@ async def ui_document_detail(request: Request) -> HTMLResponse:
 # ---------------------------------------------------------------------------
 
 
-def _safe_form_str(form: dict[str, str], key: str, default: str = "") -> str:
-    """Safely extract a string value from form data."""
+def _safe_form_str(form: FormData, key: str, default: str = "") -> str:
+    """Safely extract a string value from form data (legacy helper)."""
     val = form.get(key, default)
     if isinstance(val, str):
         return val.strip()
@@ -362,7 +370,7 @@ async def ui_confirm_candidate(request: Request) -> RedirectResponse | HTMLRespo
             "Die angegebenen IDs sind ungültig.",
         )
 
-    # Read form data
+    # Read and validate form data with typed extractors
     try:
         form = await request.form()
     except Exception:
@@ -373,17 +381,15 @@ async def ui_confirm_candidate(request: Request) -> RedirectResponse | HTMLRespo
             "Das Formular konnte nicht verarbeitet werden.",
         )
 
-    idempotency_key = form.get("idempotency_key", "")
-    if isinstance(idempotency_key, str):
-        idempotency_key = idempotency_key.strip()
-
-    confirmed_date_str = form.get("confirmed_date", "")
-    if isinstance(confirmed_date_str, str):
-        confirmed_date_str = confirmed_date_str.strip()
-
-    event_type_str = _safe_form_str(form, "event_type", "unknown")  # type: ignore[arg-type]
-
-    if not idempotency_key:
+    try:
+        idempotency_key = require_form_string(
+            form, "idempotency_key", max_length=MAX_IDEMPOTENCY_KEY_LENGTH
+        )
+        confirmed_date_str = require_form_string(
+            form, "confirmed_date", max_length=MAX_DATE_FIELD_LENGTH
+        )
+        event_type_str = optional_form_string(form, "event_type", max_length=64) or "unknown"
+    except (ValueError, TypeError):
         return _render_error(
             request,
             400,
@@ -393,7 +399,7 @@ async def ui_confirm_candidate(request: Request) -> RedirectResponse | HTMLRespo
 
     # Parse and validate date
     try:
-        confirmed_date = date_type.fromisoformat(str(confirmed_date_str))  # type: ignore[arg-type]
+        confirmed_date = date_type.fromisoformat(confirmed_date_str)
     except (ValueError, TypeError):
         return _render_error(
             request,
@@ -412,7 +418,7 @@ async def ui_confirm_candidate(request: Request) -> RedirectResponse | HTMLRespo
 
     # Parse event type
     try:
-        event_type = EventType(event_type_str)  # type: ignore[arg-type]
+        event_type = EventType(event_type_str)
     except ValueError:
         event_type = EventType.UNKNOWN
 
@@ -427,7 +433,7 @@ async def ui_confirm_candidate(request: Request) -> RedirectResponse | HTMLRespo
 
     try:
         _ = svc.confirm_candidate(
-            idempotency_key=idempotency_key,  # type: ignore[arg-type]
+            idempotency_key=idempotency_key,
             case_id=case_id,
             document_id=document_id,
             candidate_index=candidate_index,
@@ -511,15 +517,12 @@ async def ui_reject_candidate(request: Request) -> RedirectResponse | HTMLRespon
             "Das Formular konnte nicht verarbeitet werden.",
         )
 
-    idempotency_key = form.get("idempotency_key", "")
-    if isinstance(idempotency_key, str):
-        idempotency_key = idempotency_key.strip()
-
-    event_type_str = form.get("event_type", "unknown")
-    if isinstance(event_type_str, str):
-        event_type_str = event_type_str.strip()
-
-    if not idempotency_key:
+    try:
+        idempotency_key = require_form_string(
+            form, "idempotency_key", max_length=MAX_IDEMPOTENCY_KEY_LENGTH
+        )
+        event_type_str = optional_form_string(form, "event_type", max_length=64) or "unknown"
+    except (ValueError, TypeError):
         return _render_error(
             request,
             400,
@@ -619,23 +622,16 @@ async def ui_manual_confirm(request: Request) -> RedirectResponse | HTMLResponse
             "Das Formular konnte nicht verarbeitet werden.",
         )
 
-    idempotency_key = form.get("idempotency_key", "")
-    if isinstance(idempotency_key, str):
-        idempotency_key = idempotency_key.strip()
-
-    manual_date_str = form.get("manual_date", "")
-    if isinstance(manual_date_str, str):
-        manual_date_str = manual_date_str.strip()
-
-    event_type_str = form.get("event_type", "unknown")
-    if isinstance(event_type_str, str):
-        event_type_str = event_type_str.strip()
-
-    evidence_note = form.get("evidence_note", "")
-    if isinstance(evidence_note, str):
-        evidence_note = evidence_note.strip()
-
-    if not idempotency_key:
+    try:
+        idempotency_key = require_form_string(
+            form, "idempotency_key", max_length=MAX_IDEMPOTENCY_KEY_LENGTH
+        )
+        manual_date_str = require_form_string(form, "manual_date", max_length=MAX_DATE_FIELD_LENGTH)
+        event_type_str = optional_form_string(form, "event_type", max_length=64) or "unknown"
+        evidence_note = optional_form_string(
+            form, "evidence_note", max_length=MAX_EVIDENCE_NOTE_LENGTH
+        )
+    except (ValueError, TypeError):
         return _render_error(
             request,
             400,
@@ -685,7 +681,7 @@ async def ui_manual_confirm(request: Request) -> RedirectResponse | HTMLResponse
             event_type=event_type,
             confirmed_date=manual_date,
             redirect_path=redirect_path,
-            evidence_note=evidence_note,
+            evidence_note=evidence_note or "",
         )
     except IdempotencyKeyConflictError:
         return _render_error(
