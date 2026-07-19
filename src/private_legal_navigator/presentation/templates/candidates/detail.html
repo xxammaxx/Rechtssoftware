@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}{{ base.page_title }}{% endblock %}
+{% block content %}
+
+<nav aria-label="Brotkrumen">
+  <a href="{{ url_for('ui_case_list') }}">Fälle</a> →
+  <a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}">Fall</a> →
+  <a href="{{ url_for('ui_document_detail', case_id=view.case_id, document_id=view.document_id) }}">{{ view.document_filename }}</a> →
+  <span aria-current="page">Zeitangabe prüfen</span>
+</nav>
+
+{% if request.query_params.get('confirmed') %}
+<div role="status" class="success-banner">
+  <strong>Bezugsdatum wurde bestätigt.</strong>
+  Die Angabe wurde als Bezugsdatum gespeichert. Keine rechtliche Bewertung.
+</div>
+{% endif %}
+
+{% if request.query_params.get('rejected') %}
+<div role="status" class="info-banner">
+  <strong>Vom Nutzer abgelehnt.</strong>
+  Die Zeitangabe wurde abgelehnt. Keine Berechnung möglich.
+</div>
+{% endif %}
+
+<h1>Zeitangabe prüfen und bestätigen</h1>
+
+<div class="disclaimer" role="note">
+  <strong>Rechtliche Gültigkeit nicht bewertet.</strong>
+  Menschliche Prüfung erforderlich.
+</div>
+
+<!-- Candidate Info -->
+<div class="candidate-info" role="region" aria-label="Erkannte Zeitangabe">
+  <h2>Erkannte Zeitangabe</h2>
+  <dl>
+    <dt>Art</dt>
+    <dd>{{ view.candidate_kind }}</dd>
+
+    {% if view.candidate_date_value %}
+    <dt>Erkanntes Datum</dt>
+    <dd>{{ view.candidate_date_value }}</dd>
+    {% endif %}
+
+    {% if view.candidate_duration_amount and view.candidate_duration_unit %}
+    <dt>Erkannter Zeitraum</dt>
+    <dd>{{ view.candidate_duration_amount }} {{ view.candidate_duration_unit }}</dd>
+    {% endif %}
+
+    <dt>Text im Dokument</dt>
+    <dd class="evidence-text">{{ view.candidate_display_text }}</dd>
+  </dl>
+</div>
+
+<!-- Current Status -->
+<div class="current-status" role="region" aria-label="Aktueller Status">
+  <h2>Aktueller Status</h2>
+  <p><strong>{{ view.current_status_label }}</strong></p>
+
+  {% if view.active_confirmation %}
+  <dl>
+    <dt>Bestätigtes Datum</dt>
+    <dd>{{ view.active_confirmation.confirmed_date }}</dd>
+    <dt>Quelle</dt>
+    <dd>{{ view.active_confirmation.source_type_label }}</dd>
+    <dt>Methode</dt>
+    <dd>{{ view.active_confirmation.confirmation_method_label }}</dd>
+    <dt>Bestätigt am</dt>
+    <dd>{{ view.active_confirmation.confirmed_at }}</dd>
+  </dl>
+  {% endif %}
+</div>
+
+<!-- Confirmation Forms -->
+<div class="confirmation-actions" role="region" aria-label="Aktionen">
+  <h2>Aktionen</h2>
+
+  {# Confirm detected date #}
+  {% if view.candidate_date_value and view.current_status not in ('confirmed',) %}
+  <form method="POST"
+        action="{{ url_for('ui_confirm_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+        class="action-form">
+    <fieldset>
+      <legend>Erkanntes Bezugsdatum bestätigen</legend>
+
+      <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+      <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+      <input type="hidden" name="confirmed_date" value="{{ view.candidate_date_value }}">
+      <input type="hidden" name="event_type" value="unknown">
+
+      <p>
+        <strong>Erkanntes Datum:</strong>
+        <span>{{ view.candidate_date_value }}</span>
+      </p>
+      <p class="form-hint">
+        Mit dieser Aktion bestätigen Sie das erkannte Datum als Bezugsdatum.
+        Dies stellt keine rechtliche Bewertung dar.
+      </p>
+      <button type="submit">Als Bezugsdatum bestätigen</button>
+    </fieldset>
+  </form>
+  {% endif %}
+
+  {# Reject candidate #}
+  {% if view.current_status not in ('rejected',) %}
+  <form method="POST"
+        action="{{ url_for('ui_reject_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+        class="action-form">
+    <fieldset>
+      <legend>Zeitangabe ablehnen</legend>
+
+      <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+      <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+      <input type="hidden" name="event_type" value="unknown">
+
+      <p class="form-hint">
+        Mit dieser Aktion lehnen Sie die Zeitangabe ab.
+        Danach ist keine Berechnung für diese Angabe möglich.
+      </p>
+      <button type="submit">Ablehnen</button>
+    </fieldset>
+  </form>
+  {% endif %}
+
+  {# Manual date confirmation #}
+  <form method="POST"
+        action="{{ url_for('ui_manual_confirm', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+        class="action-form">
+    <fieldset>
+      <legend>Bezugsdatum manuell eingeben</legend>
+
+      <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+      <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+      <input type="hidden" name="event_type" value="unknown">
+
+      <div class="form-field">
+        <label for="manual_date">Datum (JJJJ-MM-TT)</label>
+        <input
+          type="date"
+          id="manual_date"
+          name="manual_date"
+          required
+          min="1900-01-01"
+          max="2099-12-31"
+          aria-describedby="manual_date_hint"
+        >
+        <span id="manual_date_hint" class="form-hint">
+          Geben Sie das Datum im Format JJJJ-MM-TT ein (z.&nbsp;B. 2026-01-15).
+        </span>
+      </div>
+
+      <div class="form-field">
+        <label for="evidence_note">Beleg / Anmerkung (optional)</label>
+        <input
+          type="text"
+          id="evidence_note"
+          name="evidence_note"
+          maxlength="2000"
+          aria-describedby="evidence_note_hint"
+        >
+        <span id="evidence_note_hint" class="form-hint">
+          Optional: Woher stammt dieses Datum? (z.&nbsp;B. „Schreiben vom 12.01.2026“)
+        </span>
+      </div>
+
+      <p class="form-hint">
+        Mit dieser Aktion geben Sie manuell ein Bezugsdatum ein.
+        Dies stellt keine rechtliche Bewertung dar.
+      </p>
+      <button type="submit">Manuell eingeben</button>
+    </fieldset>
+  </form>
+</div>
+
+<!-- Confirmation History -->
+{% if view.has_history %}
+<div class="confirmation-history" role="region" aria-label="Bestätigungsverlauf">
+  <h2>Bestätigungsverlauf</h2>
+  <table aria-label="Verlauf der Bestätigungen">
+    <thead>
+      <tr>
+        <th>Datum</th>
+        <th>Ereignistyp</th>
+        <th>Quelle</th>
+        <th>Methode</th>
+        <th>Status</th>
+        <th>Bestätigt am</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in view.history %}
+      <tr>
+        <td>{{ entry.confirmed_date or '—' }}</td>
+        <td>{{ entry.event_type_label }}</td>
+        <td>{{ entry.source_type_label }}</td>
+        <td>{{ entry.confirmation_method_label }}</td>
+        <td>{{ entry.status_label }}</td>
+        <td>{{ entry.confirmed_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="footer-disclaimer" role="contentinfo">
+  <p><strong>Rechtliche Gültigkeit nicht bewertet.</strong></p>
+  <p>Menschliche Prüfung erforderlich. Keine automatische Rechtsentscheidung.</p>
+</div>
+
+{% endblock %}
