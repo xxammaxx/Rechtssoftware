@@ -33,23 +33,29 @@ python -m private_legal_navigator
 
 Open: `http://127.0.0.1:8000/ui/cases`
 
-## UI Routes (after implementation)
+## UI Routes
+
+### Slice 2 — Implemented (Stand Juli 2026)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/ui/` | Redirect to case list |
 | GET | `/ui/cases` | Case list |
 | GET | `/ui/cases/{case_id}` | Case detail with documents |
 | GET | `/ui/cases/{case_id}/documents/{document_id}` | Document detail with text preview |
-| GET | `/ui/cases/{case_id}/documents/{document_id}/workspace` | Zeitangaben-Kandidaten workspace |
-| GET | `/ui/.../workspace/preview` | Calculation preview (read-only) |
-| POST | `/ui/.../workspace/confirm` | Confirm reference event |
-| POST | `/ui/.../workspace/reject` | Reject reference event |
-| POST | `/ui/.../workspace/manual` | Manual date entry |
-| POST | `/ui/.../workspace/correct` | Correct confirmation |
-| POST | `/ui/.../workspace/preview` | Request calculation preview |
-| GET | `/ui/.../workspace/history` | Confirmation history |
-| POST | `/ui/.../workspace/revoke` | Revoke confirmation |
+| GET | `/ui/cases/{case_id}/documents/{document_id}/candidates/{idx}` | Candidate detail with confirmation forms |
+| POST | `/ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/confirm` | Confirm candidate (CSRF, idempotent) |
+| POST | `/ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/reject` | Reject candidate (CSRF, idempotent) |
+| POST | `/ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/manual-confirm` | Manual date entry (CSRF, idempotent) |
+
+### Slice 3+ — Planned (not yet implemented)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/ui/.../candidates/{idx}/correct` | Correct confirmation |
+| POST | `/ui/.../candidates/{idx}/revoke` | Revoke confirmation |
+| GET | `/ui/.../history` | Full confirmation history page |
+| GET | `/ui/.../preview` | Calculation preview |
+| POST | `/ui/.../preview` | Request calculation preview |
 
 ## Test Tool Strategy
 

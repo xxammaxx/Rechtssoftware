@@ -2,7 +2,10 @@
 
 ## Task Structure
 
-Tasks are small, testable, and ordered by dependency. **No implementation in this specification run** — these tasks are for the future build phase.
+Tasks are small, testable, and ordered by dependency.
+
+**Status (2026-07-19):** Slice 1 (T1–T7) and Slice 2 (T8–T10 + partial T14) are **implemented and verified**.
+Slice 3+ (T11–T13, T15–T23) are **pending**.
 
 ## Task List
 

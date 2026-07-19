@@ -10,7 +10,6 @@ from datetime import date as date_type
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from starlette.datastructures import FormData
 from starlette.templating import Jinja2Templates
 
 from private_legal_navigator.api.form_helpers import (
@@ -237,14 +236,6 @@ async def ui_document_detail(request: Request) -> HTMLResponse:
 # ---------------------------------------------------------------------------
 # Helpers for CSRF cookie management
 # ---------------------------------------------------------------------------
-
-
-def _safe_form_str(form: FormData, key: str, default: str = "") -> str:
-    """Safely extract a string value from form data (legacy helper)."""
-    val = form.get(key, default)
-    if isinstance(val, str):
-        return val.strip()
-    return default
 
 
 def _set_csrf_cookie(response: Response, request: Request) -> None:
