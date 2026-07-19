@@ -3,10 +3,13 @@
 import logging as _logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
+from starlette.templating import Jinja2Templates
 
 from private_legal_navigator.api.document_routes import router as document_router
 from private_legal_navigator.api.errors import (
@@ -17,7 +20,13 @@ from private_legal_navigator.api.errors import (
 )
 from private_legal_navigator.api.reference_event_routes import router as reference_event_router
 from private_legal_navigator.api.routes import router as case_router
+from private_legal_navigator.api.ui_routes import router as ui_router
 from private_legal_navigator.application.calculation_service import CalculationService
+from private_legal_navigator.application.deadline_service import DeadlineService
+from private_legal_navigator.application.document_service import DocumentService
+from private_legal_navigator.application.local_confirmation_workspace_service import (
+    LocalConfirmationWorkspaceService,
+)
 from private_legal_navigator.application.reference_event_service import (
     ReferenceEventService,
 )
@@ -42,6 +51,8 @@ from private_legal_navigator.infrastructure.sqlite_document_repository import (
 from private_legal_navigator.infrastructure.sqlite_reference_event_repository import (
     SqliteReferenceEventRepository,
 )
+from private_legal_navigator.middleware.host_validation import HostValidationMiddleware
+from private_legal_navigator.middleware.security_headers import SecurityHeadersMiddleware
 
 
 def _document_not_found_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -107,6 +118,38 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
+    # --- M6-UI: Templates and services ---
+    templates = Jinja2Templates(directory=str(settings.template_dir))
+    workspace_service = LocalConfirmationWorkspaceService(
+        case_repository=case_repository,
+        document_repository=document_repository,
+        document_service=DocumentService(
+            document_repository,
+            file_storage,
+            case_repository,
+            text_extractor,
+            classifier,
+        ),
+        deadline_service=DeadlineService(
+            document_repository,
+            deadline_extractor,
+        ),
+        reference_event_service=reference_event_service,
+    )
+
+    # --- M6-UI: Middleware ---
+    # Order: HostValidation (outermost user middleware) → SecurityHeaders
+    app.add_middleware(
+        HostValidationMiddleware,
+        allowed_hosts=settings.allowed_hosts,
+    )
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # --- M6-UI: Static files ---
+    static_dir = str(settings.static_dir)
+    if Path(static_dir).is_dir():
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
     # Store in app state for dependency injection
     app.state.settings = settings
     app.state.case_repository = case_repository
@@ -119,6 +162,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.calendar_arithmetic = calendar_arithmetic
     app.state.reference_event_service = reference_event_service
     app.state.calculation_service = calculation_service
+    app.state.templates = templates
+    app.state.workspace_service = workspace_service
 
     # Initialize M6-A schema
     reference_event_repository.initialize_schema()
@@ -155,6 +200,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(case_router)
     app.include_router(document_router)
     app.include_router(reference_event_router)
+    app.include_router(ui_router)
 
     # Health check
     @app.get("/health")

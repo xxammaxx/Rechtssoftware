@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>{{ view.title }}</h1>
+
+<p class="case-meta-detail">
+    Status: <strong>{{ view.status }}</strong>
+</p>
+
+<p><a href="/ui/cases">← Zurück zur Fallübersicht</a></p>
+
+{% if not view.has_documents %}
+    <p class="empty-state">Keine Dokumente im Fall.</p>
+{% else %}
+    <h2>Dokumente ({{ view.documents|length }})</h2>
+
+    <ul class="document-list">
+    {% for doc in view.documents %}
+        <li class="document-item">
+            <a href="/ui/cases/{{ view.case_id }}/documents/{{ doc.document_id }}" class="document-link">
+                <strong>{{ doc.filename }}</strong>
+                <span class="document-meta">
+                    {{ doc.classification }} —
+                    {{ doc.size_bytes }} Bytes —
+                    Hochgeladen: {{ doc.uploaded_at }}
+                </span>
+                {% if not doc.has_text %}
+                <span class="document-warning">Kein Text extrahierbar</span>
+                {% endif %}
+            </a>
+        </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<p class="interactive-notice">
+    Interaktive Bestätigung folgt in einer späteren Ausbaustufe.
+</p>
+
+{% endblock %}

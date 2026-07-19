@@ -1,0 +1,320 @@
+/* PrivateLegalNavigator M6-UI Styles
+ * =================================
+ * No external resources. No CDN. No Google Fonts.
+ * All assets are local.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Base & Reset                                                      */
+/* ------------------------------------------------------------------ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+                 Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+    color: #1a1a1a;
+    background-color: #ffffff;
+}
+
+body {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Skip Link (Barrierefreiheit)                                      */
+/* ------------------------------------------------------------------ */
+
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    padding: 0.5rem 1rem;
+    background: #1a1a1a;
+    color: #ffffff;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Header & Navigation                                               */
+/* ------------------------------------------------------------------ */
+
+header[role="banner"] {
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.nav-home {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-decoration: none;
+}
+
+.nav-home:hover {
+    text-decoration: underline;
+}
+
+.nav-local-only {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main Content                                                      */
+/* ------------------------------------------------------------------ */
+
+h1 {
+    font-size: 1.75rem;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+h2 {
+    font-size: 1.35rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+a {
+    color: #1a1a1a;
+}
+
+a:focus {
+    outline: 3px solid #1a1a1a;
+    outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Case List                                                         */
+/* ------------------------------------------------------------------ */
+
+.case-list, .document-list, .candidate-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.case-item, .document-item, .candidate-card {
+    border: 1px solid #ccc;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+}
+
+.case-link, .document-link {
+    display: block;
+    text-decoration: none;
+    color: #1a1a1a;
+}
+
+.case-link strong, .document-link strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.case-meta, .document-meta {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.document-warning {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    background: #fff3cd;
+    color: #856404;
+    font-size: 0.8rem;
+    border-radius: 3px;
+}
+
+.case-count {
+    color: #555;
+    font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Error Box                                                         */
+/* ------------------------------------------------------------------ */
+
+.error-box {
+    border: 2px solid #dc3545;
+    background: #fff5f5;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.error-detail {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Warnings Box                                                      */
+/* ------------------------------------------------------------------ */
+
+.warnings-box {
+    border: 1px solid #ffc107;
+    background: #fffde7;
+    padding: 0.75rem 1.25rem;
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.warning-item {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.warning-code {
+    font-family: monospace;
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Candidate Cards                                                   */
+/* ------------------------------------------------------------------ */
+
+.candidate-kind {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    background: #e6e6e6;
+    font-size: 0.8rem;
+    border-radius: 3px;
+    margin-bottom: 0.3rem;
+}
+
+.candidate-text {
+    display: block;
+    margin: 0.3rem 0;
+    font-family: monospace;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.candidate-date {
+    display: block;
+    color: #1a5276;
+    font-size: 0.9rem;
+}
+
+.candidate-duration {
+    display: block;
+    color: #1a5276;
+    font-size: 0.9rem;
+}
+
+.candidate-reference-info {
+    display: block;
+    color: #856404;
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-top: 0.3rem;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Legal & Interactive Notices                                       */
+/* ------------------------------------------------------------------ */
+
+.legal-notice {
+    border: 1px solid #1a1a1a;
+    padding: 0.75rem 1rem;
+    margin: 1.5rem 0;
+    background: #f8f8f8;
+    text-align: center;
+    font-weight: 600;
+}
+
+.interactive-notice-box {
+    border: 1px dashed #1a1a1a;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+}
+
+.interactive-notice {
+    font-size: 0.85rem;
+    color: #555;
+    font-style: italic;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Empty States                                                      */
+/* ------------------------------------------------------------------ */
+
+.empty-state {
+    padding: 1.5rem;
+    text-align: center;
+    color: #777;
+    font-style: italic;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Footer                                                            */
+/* ------------------------------------------------------------------ */
+
+footer[role="contentinfo"] {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ccc;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.footer-notice {
+    margin: 0.25rem 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Breadcrumb                                                        */
+/* ------------------------------------------------------------------ */
+
+nav[aria-label="Brotkrümel"] {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+nav[aria-label="Brotkrümel"] a {
+    color: #1a1a1a;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Focus Indicators                                                  */
+/* ------------------------------------------------------------------ */
+
+:focus {
+    outline: 3px solid #1a1a1a;
+    outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  200% Zoom Support                                                 */
+/* ------------------------------------------------------------------ */
+
+@media (min-width: 600px) {
+    body {
+        padding: 2rem 2.5rem;
+    }
+}

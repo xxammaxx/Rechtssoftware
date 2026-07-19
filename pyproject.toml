@@ -24,6 +24,7 @@ classifiers = [
 
 dependencies = [
     "fastapi>=0.115.0",
+    "jinja2>=3.1",
     "pymupdf>=1.24.0",
     "python-multipart>=0.0.9",
     "uvicorn[standard]>=0.30.0",
@@ -44,6 +45,9 @@ Repository = "https://github.com/xxammaxx/Rechtssoftware"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"private_legal_navigator.presentation" = ["templates/**/*.html", "static/**/*.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

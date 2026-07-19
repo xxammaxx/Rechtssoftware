@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ base.page_title }} — PrivateLegalNavigator</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+</head>
+<body>
+
+{# Skip-Link für Tastaturnutzer #}
+<a href="#main-content" class="skip-link">Zum Hauptinhalt springen</a>
+
+<header role="banner">
+    <nav aria-label="Hauptnavigation">
+        <a href="/ui/cases" class="nav-home">PrivateLegalNavigator</a>
+        <span class="nav-local-only">Lokale Anwendung</span>
+    </nav>
+</header>
+
+<main id="main-content" role="main">
+    {% block content %}{% endblock %}
+</main>
+
+<footer role="contentinfo">
+    <p class="footer-notice">
+        <strong>Lokale Anwendung — keine Cloud, keine Telemetrie.</strong>
+    </p>
+    <p class="footer-notice">
+        <strong>Rechtliche Gültigkeit nicht bewertet.</strong>
+        Menschliche Prüfung erforderlich.
+    </p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>{{ error.title }}</h1>
+
+<div class="error-box" role="alert">
+    <p>{{ error.message }}</p>
+    {% if error.detail %}
+    <p class="error-detail">{{ error.detail }}</p>
+    {% endif %}
+</div>
+
+<p><a href="/ui/cases">← Zurück zur Fallübersicht</a></p>
+
+{% endblock %}
