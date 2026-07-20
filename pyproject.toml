@@ -55,10 +55,12 @@ asyncio_mode = "auto"
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+norecursedirs = ["tests/e2e", ".venv", ".opencode", "evidence", "e2e-screenshots"]
 
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+exclude = ["tests/e2e/**", ".venv/**", ".opencode/**", "evidence/**", "e2e-screenshots/**"]
 
 [tool.ruff.lint]
 select = [

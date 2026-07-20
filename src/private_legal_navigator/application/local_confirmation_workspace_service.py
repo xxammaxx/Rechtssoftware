@@ -342,14 +342,15 @@ class LocalConfirmationWorkspaceService:
         current_status: ConfirmationStatus = ConfirmationStatus.UNCONFIRMED
 
         for event in history_records:
-            # Determine implicit status
-            if event.confirmed_date is None:
+            # Determine implicit status from database-level flags and structure
+            if event.is_revoke:
+                # Database-level revocation flag
+                status = ConfirmationStatus.REVOKED
+            elif event.confirmed_date is None:
                 status = ConfirmationStatus.REJECTED
             elif event.supersedes_confirmation_id is not None:
-                # Check if this is a revocation (revoke creates record with supersedes)
-                # REVOKED records set supersedes to the target; if this record's ID
-                # appears as supersedes in another record, it's SUPERSEDED
-                status = ConfirmationStatus.CONFIRMED  # simplified for now
+                # Has supersedes but not revoked — check if superseded by another
+                status = ConfirmationStatus.CONFIRMED  # Default for records with date + supersedes
             else:
                 status = ConfirmationStatus.CONFIRMED
 
@@ -395,6 +396,10 @@ class LocalConfirmationWorkspaceService:
                 ConfirmationStatus.CONFIRMED,
             ):
                 current_status = ConfirmationStatus.REJECTED
+            elif status == ConfirmationStatus.REVOKED and current_status not in (
+                ConfirmationStatus.CONFIRMED,
+            ):
+                current_status = ConfirmationStatus.REVOKED
 
         # Generate CSRF token and idempotency key
         csrf_token = ""
@@ -420,11 +425,20 @@ class LocalConfirmationWorkspaceService:
         )
 
         # Show actions when not yet acted upon (rejected handles its own rules)
-        show_actions = current_status not in (ConfirmationStatus.CONFIRMED,)
+        show_actions = current_status not in (
+            ConfirmationStatus.CONFIRMED,
+            ConfirmationStatus.REVOKED,
+        )
+        # Correct/revoke are available when CONFIRMED (not for UNCONFIRMED/REJECTED/REVOKED)
+        show_correct_revoke = current_status == ConfirmationStatus.CONFIRMED
         is_completed = current_status in (
             ConfirmationStatus.CONFIRMED,
             ConfirmationStatus.REJECTED,
+            ConfirmationStatus.REVOKED,
         )
+
+        # Active confirmation ID for expected-state binding
+        active_confirmation_id = active_confirmation.confirmation_id if active_confirmation else ""
 
         return CandidateDetailView(
             case_id=str(case_id),
@@ -452,6 +466,8 @@ class LocalConfirmationWorkspaceService:
             dates_match=dates_match,
             status_css=_STATUS_CSS_MAP.get(current_status.value, "unconfirmed"),
             show_actions=show_actions,
+            show_correct_revoke=show_correct_revoke,
+            active_confirmation_id=active_confirmation_id,
             is_completed=is_completed,
         )
 
@@ -585,5 +601,90 @@ class LocalConfirmationWorkspaceService:
             confirmation_method=ConfirmationMethod.MANUALLY_ENTERED,
             candidate_id=None,
             evidence_note=evidence_note,
+            redirect_path=redirect_path,
+        )
+
+    # ── Correct & Revoke (M6-UI Slice 3) ──────────────────────────
+
+    def correct_candidate(
+        self,
+        idempotency_key: str,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        event_type: EventType,
+        confirmed_date: date_type,
+        expected_active_confirmation_id: str,
+        redirect_path: str,
+        evidence_note: str = "",
+    ) -> ConfirmationActionResult:
+        """Correct (supersede) an existing active confirmation.
+
+        Server-side revalidation verifies case/document/candidate exist.
+        Expected-state binding ensures the form was generated for the
+        current active confirmation.
+        """
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            raise ValueError("Fall nicht gefunden.")
+
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            raise ValueError("Dokument nicht gefunden oder gehört nicht zum Fall.")
+
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            raise ValueError("Dokument hat keine extrahierten Kandidaten.")
+
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            raise ValueError("Kandidat nicht gefunden.")
+
+        return self._reference_event_service.correct_with_idempotency(
+            idempotency_key=idempotency_key,
+            document_id=document_id,
+            deadline_candidate_index=candidate_index,
+            event_type=event_type,
+            confirmed_date=confirmed_date,
+            expected_active_confirmation_id=expected_active_confirmation_id,
+            evidence_note=evidence_note,
+            redirect_path=redirect_path,
+        )
+
+    def revoke_candidate(
+        self,
+        idempotency_key: str,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        event_type: EventType,
+        expected_active_confirmation_id: str,
+        redirect_path: str,
+    ) -> ConfirmationActionResult:
+        """Revoke (widerrufen) an existing active confirmation.
+
+        Creates a REVOKED record. The previous active confirmation
+        becomes SUPERSEDED. No data is deleted.
+        """
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            raise ValueError("Fall nicht gefunden.")
+
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            raise ValueError("Dokument nicht gefunden oder gehört nicht zum Fall.")
+
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            raise ValueError("Dokument hat keine extrahierten Kandidaten.")
+
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            raise ValueError("Kandidat nicht gefunden.")
+
+        return self._reference_event_service.revoke_with_idempotency(
+            idempotency_key=idempotency_key,
+            document_id=document_id,
+            deadline_candidate_index=candidate_index,
+            event_type=event_type,
+            expected_active_confirmation_id=expected_active_confirmation_id,
             redirect_path=redirect_path,
         )

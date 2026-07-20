@@ -26,6 +26,22 @@
 </div>
 {% endif %}
 
+{% if request.query_params.get('corrected') %}
+<div role="status" class="flash-banner flash-banner--success">
+  <strong>Bestätigung wurde korrigiert.</strong>
+  Die bisherige Entscheidung bleibt in der Historie erhalten.
+  Keine rechtliche Bewertung.
+</div>
+{% endif %}
+
+{% if request.query_params.get('revoked') %}
+<div role="status" class="flash-banner flash-banner--info">
+  <strong>Bestätigung wurde widerrufen.</strong>
+  Die bisherige Entscheidung bleibt in der Historie sichtbar.
+  Es gilt keine aktive Bestätigung.
+</div>
+{% endif %}
+
 {# ── Page Title ────────────────────────────────────────────────────── #}
 <h1 class="page-title">Bezugsdatum prüfen</h1>
 
@@ -188,7 +204,7 @@
       <div class="card__body">
 
         {# Confirm detected date — nur wenn unbestätigt #}
-        {% if view.candidate_date_value and view.current_status not in ('confirmed',) %}
+        {% if view.candidate_date_value and view.current_status not in ('confirmed', 'revoked',) %}
         <form method="POST"
               action="{{ url_for('ui_confirm_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
               class="action-form">
@@ -210,8 +226,8 @@
         </form>
         {% endif %}
 
-        {# Reject candidate — nur wenn nicht bereits rejected oder confirmed #}
-        {% if view.current_status not in ('rejected',) %}
+        {# Reject candidate — nur wenn nicht bereits rejected, revoked oder confirmed #}
+        {% if view.current_status not in ('rejected', 'revoked',) %}
         <form method="POST"
               action="{{ url_for('ui_reject_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
               class="action-form">
@@ -231,8 +247,8 @@
         </form>
         {% endif %}
 
-        {# Manual date confirmation — immer verfügbar wenn nicht rejected #}
-        {% if view.current_status not in ('rejected',) %}
+        {# Manual date confirmation — immer verfügbar wenn nicht rejected oder revoked #}
+        {% if view.current_status not in ('rejected', 'revoked',) %}
         <form method="POST"
               action="{{ url_for('ui_manual_confirm', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
               class="action-form">
@@ -282,11 +298,91 @@
         </form>
         {% endif %}
 
-        {# Bereits abgeschlossener Zustand — keine Aktionen verfügbar #}
-        {% if view.current_status in ('confirmed',) and not view.show_actions %}
+        {# ── Correct & Revoke (M6-UI Slice 3) ──────────────────────── #}
+        {% if view.show_correct_revoke %}
+        {# Bestätigung korrigieren #}
+        <form method="POST"
+              action="{{ url_for('ui_correct_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+              class="action-form">
+          <fieldset>
+            <legend>Bestätigung korrigieren</legend>
+
+            <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+            <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+            <input type="hidden" name="expected_active_confirmation_id" value="{{ view.active_confirmation_id }}">
+            <input type="hidden" name="event_type" value="unknown">
+
+            {% if view.active_confirmation and view.active_confirmation.confirmed_date %}
+            <p class="date-preview">
+              Aktuell bestätigt: <time datetime="{{ view.active_confirmation.confirmed_date }}">{{ view.display_confirmed_date or view.active_confirmation.confirmed_date }}</time>
+            </p>
+            {% endif %}
+
+            <div class="form-field">
+              <label for="correct_date">Neues Datum</label>
+              <input
+                type="date"
+                id="correct_date"
+                name="confirmed_date"
+                required
+                min="1900-01-01"
+                max="2099-12-31"
+                aria-describedby="correct_date_hint"
+              >
+              <span id="correct_date_hint" class="form-hint">
+                Geben Sie das korrigierte Datum im Format JJJJ-MM-TT ein.
+              </span>
+            </div>
+
+            <div class="form-field">
+              <label for="correct_note">Beleg / Anmerkung (optional)</label>
+              <input
+                type="text"
+                id="correct_note"
+                name="evidence_note"
+                maxlength="2000"
+                aria-describedby="correct_note_hint"
+              >
+              <span id="correct_note_hint" class="form-hint">
+                Optional: Grund der Korrektur.
+              </span>
+            </div>
+
+            <p class="form-hint">
+              Die bisherige Entscheidung bleibt in der Historie erhalten.
+              Das korrigierte Datum ersetzt die aktive Bestätigung.
+            </p>
+            <button type="submit" class="btn btn--primary">Korrektur speichern</button>
+          </fieldset>
+        </form>
+
+        {# Bestätigung widerrufen #}
+        <form method="POST"
+              action="{{ url_for('ui_revoke_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+              class="action-form action-form--revoke">
+          <fieldset>
+            <legend>Bestätigung widerrufen</legend>
+
+            <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+            <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+            <input type="hidden" name="expected_active_confirmation_id" value="{{ view.active_confirmation_id }}">
+            <input type="hidden" name="event_type" value="unknown">
+
+            <div class="revoke-notice" role="alert">
+              <strong>Widerruf löscht keine Daten.</strong>
+              Die bisherige Entscheidung bleibt in der Historie sichtbar.
+              Nach dem Widerruf gilt für diesen Kandidaten keine aktive Bestätigung.
+            </div>
+
+            <button type="submit" class="btn btn--danger">Bestätigung widerrufen</button>
+          </fieldset>
+        </form>
+        {% endif %}
+
+        {# Bereits widerrufen oder rejected — keine Aktionen #}
+        {% if view.current_status in ('revoked', 'rejected') and not view.show_actions and not view.show_correct_revoke %}
         <div class="action-card--no-actions">
           <p>Dieser Vorgang wurde bereits abgeschlossen.</p>
-          <p>Korrektur und Widerruf sind in dieser Version noch nicht verfügbar.</p>
         </div>
         {% endif %}
 

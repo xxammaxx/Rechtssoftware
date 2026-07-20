@@ -188,4 +188,6 @@ class CandidateDetailView:
     dates_match: bool = False
     status_css: str = ""
     show_actions: bool = False
+    show_correct_revoke: bool = False
+    active_confirmation_id: str = ""
     is_completed: bool = False

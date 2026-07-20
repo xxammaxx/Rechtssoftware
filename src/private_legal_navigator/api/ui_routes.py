@@ -717,3 +717,250 @@ async def ui_manual_confirm(request: Request) -> RedirectResponse | HTMLResponse
 
     redirect_url = f"{redirect_path}?confirmed=1"
     return RedirectResponse(url=redirect_url, status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Route: POST .../candidates/{candidate_index}/correct  (M6-UI Slice 3)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/cases/{case_id}/documents/{document_id}/candidates/{candidate_index}/correct",
+    dependencies=[Depends(ui_post_security)],
+    response_model=None,
+)
+async def ui_correct_candidate(request: Request) -> RedirectResponse | HTMLResponse:
+    """Correct (supersede) an existing active confirmation (POST, CSRF, Idempotent, PRG)."""
+    svc = _get_workspace_service(request)
+
+    case_id_str = request.path_params.get("case_id", "")
+    doc_id_str = request.path_params.get("document_id", "")
+    cand_idx_str = request.path_params.get("candidate_index", "0")
+
+    try:
+        case_id = uuid.UUID(case_id_str)
+        document_id = uuid.UUID(doc_id_str)
+        candidate_index = int(cand_idx_str)
+    except (ValueError, AttributeError):
+        return _render_error(
+            request, 400, "Ungültige Anfrage", "Die angegebenen IDs sind ungültig."
+        )
+
+    try:
+        form = await request.form()
+    except Exception:
+        return _render_error(
+            request,
+            400,
+            "Ungültiges Formular",
+            "Das Formular konnte nicht verarbeitet werden.",
+        )
+
+    try:
+        idempotency_key = require_form_string(
+            form, "idempotency_key", max_length=MAX_IDEMPOTENCY_KEY_LENGTH
+        )
+        confirmed_date_str = require_form_string(
+            form, "confirmed_date", max_length=MAX_DATE_FIELD_LENGTH
+        )
+        expected_active = require_form_string(
+            form, "expected_active_confirmation_id", max_length=64
+        )
+        event_type_str = optional_form_string(form, "event_type", max_length=64) or "unknown"
+        evidence_note = optional_form_string(
+            form, "evidence_note", max_length=MAX_EVIDENCE_NOTE_LENGTH
+        )
+    except (ValueError, TypeError):
+        return _render_error(request, 400, "Ungültiges Formular", "Der Sicherheitsschlüssel fehlt.")
+
+    # Parse and validate date
+    try:
+        confirmed_date = date_type.fromisoformat(confirmed_date_str)
+    except (ValueError, TypeError):
+        return _render_error(
+            request,
+            400,
+            "Ungültiges Datum",
+            "Bitte geben Sie ein gültiges Datum im Format JJJJ-MM-TT ein.",
+        )
+
+    if confirmed_date < MIN_DATE or confirmed_date > MAX_DATE:
+        return _render_error(
+            request,
+            400,
+            "Datum außerhalb des Bereichs",
+            f"Das Datum muss zwischen {MIN_DATE.isoformat()} und {MAX_DATE.isoformat()} liegen.",
+        )
+
+    try:
+        event_type = EventType(event_type_str)
+    except ValueError:
+        event_type = EventType.UNKNOWN
+
+    redirect_path = str(
+        request.url_for(
+            "ui_candidate_detail",
+            case_id=case_id_str,
+            document_id=doc_id_str,
+            candidate_index=cand_idx_str,
+        )
+    )
+
+    try:
+        svc.correct_candidate(
+            idempotency_key=idempotency_key,
+            case_id=case_id,
+            document_id=document_id,
+            candidate_index=candidate_index,
+            event_type=event_type,
+            confirmed_date=confirmed_date,
+            expected_active_confirmation_id=expected_active,
+            redirect_path=redirect_path,
+            evidence_note=evidence_note or "",
+        )
+    except IdempotencyKeyConflictError:
+        return _render_error(
+            request,
+            409,
+            "Bereits verarbeitet",
+            "Diese Aktion wurde bereits ausgeführt. Bitte laden Sie die Seite neu.",
+        )
+    except ValueError as exc:
+        msg = str(exc)
+        if "geändert" in msg:
+            return _render_error(
+                request,
+                409,
+                "Stand geändert",
+                "Der angezeigte Stand wurde inzwischen geändert. "
+                "Bitte laden Sie die aktuelle Ansicht neu.",
+            )
+        return _render_error(request, 404, "Nicht gefunden", msg)
+    except Exception as exc:
+        safe_log_failure(
+            logger,
+            "ui.correct_candidate_failed",
+            error_code="UI_CORRECT_FAILED",
+            exception=exc,
+        )
+        return _render_error(
+            request,
+            500,
+            "Interner Fehler",
+            "Der Vorgang konnte nicht abgeschlossen werden.",
+        )
+
+    safe_log_event(logger, "m6ui.reference_event.corrected")
+
+    redirect_url = f"{redirect_path}?corrected=1"
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Route: POST .../candidates/{candidate_index}/revoke  (M6-UI Slice 3)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/cases/{case_id}/documents/{document_id}/candidates/{candidate_index}/revoke",
+    dependencies=[Depends(ui_post_security)],
+    response_model=None,
+)
+async def ui_revoke_candidate(request: Request) -> RedirectResponse | HTMLResponse:
+    """Revoke (widerrufen) an existing active confirmation (POST, CSRF, Idempotent, PRG)."""
+    svc = _get_workspace_service(request)
+
+    case_id_str = request.path_params.get("case_id", "")
+    doc_id_str = request.path_params.get("document_id", "")
+    cand_idx_str = request.path_params.get("candidate_index", "0")
+
+    try:
+        case_id = uuid.UUID(case_id_str)
+        document_id = uuid.UUID(doc_id_str)
+        candidate_index = int(cand_idx_str)
+    except (ValueError, AttributeError):
+        return _render_error(
+            request, 400, "Ungültige Anfrage", "Die angegebenen IDs sind ungültig."
+        )
+
+    try:
+        form = await request.form()
+    except Exception:
+        return _render_error(
+            request,
+            400,
+            "Ungültiges Formular",
+            "Das Formular konnte nicht verarbeitet werden.",
+        )
+
+    try:
+        idempotency_key = require_form_string(
+            form, "idempotency_key", max_length=MAX_IDEMPOTENCY_KEY_LENGTH
+        )
+        expected_active = require_form_string(
+            form, "expected_active_confirmation_id", max_length=64
+        )
+        event_type_str = optional_form_string(form, "event_type", max_length=64) or "unknown"
+    except (ValueError, TypeError):
+        return _render_error(request, 400, "Ungültiges Formular", "Der Sicherheitsschlüssel fehlt.")
+
+    try:
+        event_type = EventType(event_type_str)
+    except ValueError:
+        event_type = EventType.UNKNOWN
+
+    redirect_path = str(
+        request.url_for(
+            "ui_candidate_detail",
+            case_id=case_id_str,
+            document_id=doc_id_str,
+            candidate_index=cand_idx_str,
+        )
+    )
+
+    try:
+        svc.revoke_candidate(
+            idempotency_key=idempotency_key,
+            case_id=case_id,
+            document_id=document_id,
+            candidate_index=candidate_index,
+            event_type=event_type,
+            expected_active_confirmation_id=expected_active,
+            redirect_path=redirect_path,
+        )
+    except IdempotencyKeyConflictError:
+        return _render_error(
+            request,
+            409,
+            "Bereits verarbeitet",
+            "Diese Aktion wurde bereits ausgeführt. Bitte laden Sie die Seite neu.",
+        )
+    except ValueError as exc:
+        msg = str(exc)
+        if "geändert" in msg:
+            return _render_error(
+                request,
+                409,
+                "Stand geändert",
+                "Der angezeigte Stand wurde inzwischen geändert. "
+                "Bitte laden Sie die aktuelle Ansicht neu.",
+            )
+        return _render_error(request, 404, "Nicht gefunden", msg)
+    except Exception as exc:
+        safe_log_failure(
+            logger,
+            "ui.revoke_candidate_failed",
+            error_code="UI_REVOKE_FAILED",
+            exception=exc,
+        )
+        return _render_error(
+            request,
+            500,
+            "Interner Fehler",
+            "Der Vorgang konnte nicht abgeschlossen werden.",
+        )
+
+    safe_log_event(logger, "m6ui.reference_event.revoked")
+
+    redirect_url = f"{redirect_path}?revoked=1"
+    return RedirectResponse(url=redirect_url, status_code=303)
