@@ -35,11 +35,11 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
         """Idempotent schema initialization (delegates to database.py)."""
         initialize_schema(self._db_path)
 
-    def save_confirmation(self, event: ConfirmedReferenceEvent) -> None:
+    def save_confirmation(self, event: ConfirmedReferenceEvent, *, is_revoke: bool = False) -> None:
         conn = get_connection(self._db_path)
         try:
             conn.execute("BEGIN IMMEDIATE")
-            self._save_confirmation_in_conn(conn, event)
+            self._save_confirmation_in_conn(conn, event, is_revoke=is_revoke)
             conn.commit()
         except Exception:
             conn.rollback()
@@ -47,27 +47,34 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
         finally:
             conn.close()
 
-    def save_confirmation_in_conn(self, conn: object, event: ConfirmedReferenceEvent) -> None:
+    def save_confirmation_in_conn(
+        self, conn: object, event: ConfirmedReferenceEvent, *, is_revoke: bool = False
+    ) -> None:
         """Persist inside an existing transaction (caller owns commit)."""
-        self._save_confirmation_in_conn(conn, event)  # type: ignore[arg-type]
+        self._save_confirmation_in_conn(conn, event, is_revoke=is_revoke)  # type: ignore[arg-type]
 
     @staticmethod
     def _save_confirmation_in_conn(
-        conn: sqlite3.Connection, event: ConfirmedReferenceEvent
+        conn: sqlite3.Connection,
+        event: ConfirmedReferenceEvent,
+        *,
+        is_revoke: bool = False,
     ) -> None:
         """Execute INSERT within an existing connection (caller owns commit)."""
         confirmed_date_str = event.confirmed_date.isoformat() if event.confirmed_date else None
         supersedes_str = (
             str(event.supersedes_confirmation_id) if event.supersedes_confirmation_id else None
         )
+        is_revoke_int = 1 if is_revoke else 0
 
         conn.execute(
             """
             INSERT INTO confirmed_reference_events
                 (confirmation_id, candidate_id, document_id, deadline_candidate_index,
                  event_type, confirmed_date, source_type, confirmation_method,
-                 confirmed_at, confirmed_by, evidence_note, supersedes_confirmation_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 confirmed_at, confirmed_by, evidence_note, supersedes_confirmation_id,
+                 is_revoke)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 str(event.confirmation_id),
@@ -82,6 +89,7 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
                 event.confirmed_by,
                 event.evidence_note,
                 supersedes_str,
+                is_revoke_int,
             ),
         )
 
@@ -147,12 +155,13 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
     def _get_active_confirmation_in_conn(
         conn: sqlite3.Connection, document_id: uuid.UUID, deadline_candidate_index: int
     ) -> ConfirmedReferenceEvent | None:
-        # Active = most recent unsuperseded record
+        # Active = most recent unsuperseded, non-revoked record
         row = conn.execute(
             """
             SELECT * FROM confirmed_reference_events
             WHERE document_id = ?
               AND deadline_candidate_index = ?
+              AND is_revoke = 0
               AND confirmation_id NOT IN (
                   SELECT COALESCE(supersedes_confirmation_id, '')
                   FROM confirmed_reference_events
@@ -500,4 +509,5 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
             confirmed_by=row["confirmed_by"],
             evidence_note=row["evidence_note"],
             supersedes_confirmation_id=supersedes_id,
+            is_revoke=bool(row["is_revoke"]) if "is_revoke" in row else False,
         )

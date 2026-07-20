@@ -26,8 +26,14 @@ CREATE TABLE IF NOT EXISTS confirmed_reference_events (
     confirmed_at TEXT NOT NULL,
     confirmed_by TEXT NOT NULL DEFAULT '',
     evidence_note TEXT NOT NULL DEFAULT '',
-    supersedes_confirmation_id TEXT
+    supersedes_confirmation_id TEXT,
+    is_revoke INTEGER NOT NULL DEFAULT 0
 )
+"""
+
+# Idempotent migration for M6-UI Slice 3 — add is_revoke column
+ADD_IS_REVOKE_COLUMN = """
+ALTER TABLE confirmed_reference_events ADD COLUMN is_revoke INTEGER NOT NULL DEFAULT 0
 """
 
 CREATE_INDEXES = [
@@ -79,6 +85,16 @@ def initialize_schema(db_path: Path) -> None:
             conn.execute(index_sql)
         for index_sql in CREATE_IDEMPOTENCY_INDEXES:
             conn.execute(index_sql)
+        # M6-UI Slice 3 migration — add is_revoke column (idempotent)
+        _migrate_add_column(conn, "confirmed_reference_events", "is_revoke", ADD_IS_REVOKE_COLUMN)
         conn.commit()
     finally:
         conn.close()
+
+
+def _migrate_add_column(conn: sqlite3.Connection, table: str, column: str, alter_sql: str) -> None:
+    """Idempotent column addition — skips if column already exists."""
+    try:
+        conn.execute(f"SELECT {column} FROM {table} LIMIT 0")
+    except sqlite3.OperationalError:
+        conn.execute(alter_sql)

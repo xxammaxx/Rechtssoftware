@@ -43,16 +43,19 @@ class ReferenceEventRepository(ABC):
     """
 
     @abstractmethod
-    def save_confirmation(self, event: ConfirmedReferenceEvent) -> None:
+    def save_confirmation(self, event: ConfirmedReferenceEvent, *, is_revoke: bool = False) -> None:
         """Persist a confirmed reference event.
 
         Args:
             event: The confirmed reference event to persist.
+            is_revoke: True if this event represents a revocation.
         """
         ...
 
     @abstractmethod
-    def save_confirmation_in_conn(self, conn: object, event: ConfirmedReferenceEvent) -> None:
+    def save_confirmation_in_conn(
+        self, conn: object, event: ConfirmedReferenceEvent, *, is_revoke: bool = False
+    ) -> None:
         """Persist a confirmed reference event inside an existing transaction.
 
         Caller owns BEGIN / COMMIT / ROLLBACK on *conn*.

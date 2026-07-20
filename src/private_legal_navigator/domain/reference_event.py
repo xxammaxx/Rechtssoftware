@@ -144,6 +144,7 @@ class ConfirmedReferenceEvent:
         confirmed_by: Human identifier / label (max 100 chars).
         evidence_note: Transient note from the user (max 2000 chars).
         supersedes_confirmation_id: Previous confirmation this replaces.
+        is_revoke: True if this record represents a revocation (M6-UI Slice 3).
     """
 
     confirmation_id: UUID
@@ -158,6 +159,7 @@ class ConfirmedReferenceEvent:
     confirmed_by: str = ""
     evidence_note: str = ""
     supersedes_confirmation_id: UUID | None = None
+    is_revoke: bool = False
 
     def __post_init__(self) -> None:
         if len(self.confirmed_by) > 100:

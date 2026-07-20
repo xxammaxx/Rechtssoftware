@@ -21,7 +21,7 @@ ALLOWED_CONTENT_TYPE = "application/x-www-form-urlencoded"
 # M6-UI Slice 2 action suffixes that extend the candidate page path.
 # CSRF tokens are bound to the page path (/candidates/{idx}) and
 # validated by stripping these known action suffixes from the POST path.
-_ACTION_SUFFIX_PATTERN = re.compile(r"/(confirm|reject|manual-confirm)$")
+_ACTION_SUFFIX_PATTERN = re.compile(r"/(confirm|reject|manual-confirm|correct|revoke)$")
 
 
 async def require_form_content_type(request: Request) -> None:
