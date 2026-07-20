@@ -292,6 +292,8 @@ class LocalConfirmationWorkspaceService:
         candidate_index: int,
         action_path: str = "",
         browser_nonce: str = "",
+        hint_corrected: bool = False,
+        hint_revoked: bool = False,
     ) -> CandidateDetailView | None:
         """Produce a candidate detail view with confirmation history and forms.
 
@@ -440,6 +442,26 @@ class LocalConfirmationWorkspaceService:
         # Active confirmation ID for expected-state binding
         active_confirmation_id = active_confirmation.confirmation_id if active_confirmation else ""
 
+        # --- Success flash message (guarded by server state verification) ---
+        success_message = ""
+        if (
+            hint_corrected
+            and current_status == ConfirmationStatus.CONFIRMED
+            and (active_confirmation is not None)
+        ):
+            # Verify the active confirmation has a correction source
+            for event in history_records:
+                if str(event.confirmation_id) == active_confirmation.confirmation_id:
+                    is_correction = (
+                        event.source_type == SourceType.USER_CORRECTED
+                        or event.confirmation_method == ConfirmationMethod.CORRECTED
+                    )
+                    if is_correction:
+                        success_message = "corrected"
+                    break
+        if hint_revoked and not success_message and current_status == ConfirmationStatus.REVOKED:
+            success_message = "revoked"
+
         return CandidateDetailView(
             case_id=str(case_id),
             document_id=str(document_id),
@@ -469,6 +491,7 @@ class LocalConfirmationWorkspaceService:
             show_correct_revoke=show_correct_revoke,
             active_confirmation_id=active_confirmation_id,
             is_completed=is_completed,
+            success_message=success_message,
         )
 
     def confirm_candidate(

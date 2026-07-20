@@ -509,5 +509,5 @@ class SqliteReferenceEventRepository(ReferenceEventRepository):
             confirmed_by=row["confirmed_by"],
             evidence_note=row["evidence_note"],
             supersedes_confirmation_id=supersedes_id,
-            is_revoke=bool(row["is_revoke"]) if "is_revoke" in row else False,
+            is_revoke=bool(row["is_revoke"]) if "is_revoke" in row.keys() else False,  # noqa: SIM118 (sqlite3.Row.__contains__ checks values on Python 3.14)
         )

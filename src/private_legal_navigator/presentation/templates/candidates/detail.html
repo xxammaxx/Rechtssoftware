@@ -26,7 +26,7 @@
 </div>
 {% endif %}
 
-{% if request.query_params.get('corrected') %}
+{% if view.success_message == 'corrected' %}
 <div role="status" class="flash-banner flash-banner--success">
   <strong>Bestätigung wurde korrigiert.</strong>
   Die bisherige Entscheidung bleibt in der Historie erhalten.
@@ -34,7 +34,7 @@
 </div>
 {% endif %}
 
-{% if request.query_params.get('revoked') %}
+{% if view.success_message == 'revoked' %}
 <div role="status" class="flash-banner flash-banner--info">
   <strong>Bestätigung wurde widerrufen.</strong>
   Die bisherige Entscheidung bleibt in der Historie sichtbar.

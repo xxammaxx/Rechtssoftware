@@ -483,12 +483,14 @@ class TestRevokeIdempotency:
         )
         assert r1.status_code == 303
 
-        # Second revoke with same key
-        page2 = await _get_candidate_page(client, case_id, doc_id, 0)
+        # Second revoke with same key — reuse original CSRF token
+        # (page after revoke no longer renders revoke form, so page2
+        #  has no CSRF token; the original token is still valid for
+        #  the same action path and shows idempotent replay)
         r2 = await client.post(
             f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0/revoke",
             data={
-                "csrf_token": page2["csrf_token"],
+                "csrf_token": page["csrf_token"],
                 "idempotency_key": key,
                 "expected_active_confirmation_id": eac,
                 "event_type": "unknown",
@@ -682,3 +684,188 @@ class TestPrivacyLogging:
         text = resp.text
         assert "confirmation_id" not in text.lower()
         assert "supersedes" not in text.lower()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Flash Banner Security: query param must match server state
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestFlashBannerSecurity:
+    """Verify ?corrected=1 and ?revoked=1 banners are guarded by server state."""
+
+    async def test_corrected_query_does_not_fake_success_for_unconfirmed(self, client: AsyncClient):
+        """?corrected=1 on an unconfirmed candidate should NOT show the banner."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        # Request the candidate page with ?corrected=1 but no confirmation exists
+        resp = await client.get(f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0?corrected=1")
+        assert resp.status_code == 200
+        html = resp.text
+
+        # The corrected banner must NOT appear
+        assert "Bestätigung wurde korrigiert" not in html, (
+            "FAIL: ?corrected=1 banner shown on unconfirmed candidate"
+        )
+
+    async def test_corrected_query_does_not_fake_success_for_revoked_state(
+        self, client: AsyncClient
+    ):
+        """?corrected=1 on a revoked candidate should NOT show the banner."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        # Confirm then revoke
+        await _confirm_candidate(client, case_id, doc_id)
+        page = await _get_candidate_page(client, case_id, doc_id, 0)
+        await client.post(
+            f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0/revoke",
+            data={
+                "csrf_token": page["csrf_token"],
+                "idempotency_key": page["idempotency_key"],
+                "expected_active_confirmation_id": page["expected_active"],
+                "event_type": "unknown",
+            },
+            headers={"Origin": "http://127.0.0.1:8000", "Referer": "http://127.0.0.1:8000/ui/"},
+            follow_redirects=False,
+        )
+
+        # Now request with ?corrected=1
+        resp = await client.get(f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0?corrected=1")
+        assert resp.status_code == 200
+        html = resp.text
+
+        # The corrected banner must NOT appear (state is REVOKED, not CORRECTED)
+        assert "Bestätigung wurde korrigiert" not in html, (
+            "FAIL: ?corrected=1 banner shown on revoked candidate"
+        )
+
+    async def test_revoked_query_does_not_fake_success_for_confirmed_state(
+        self, client: AsyncClient
+    ):
+        """?revoked=1 on a confirmed (active) candidate should NOT show the banner."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        # Confirm the candidate
+        await _confirm_candidate(client, case_id, doc_id)
+
+        # Request with ?revoked=1 but state is CONFIRMED
+        resp = await client.get(f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0?revoked=1")
+        assert resp.status_code == 200
+        html = resp.text
+
+        # The revoked banner must NOT appear
+        assert "Bestätigung wurde widerrufen" not in html, (
+            "FAIL: ?revoked=1 banner shown on confirmed candidate"
+        )
+
+    async def test_revoked_query_does_not_fake_success_for_unconfirmed(self, client: AsyncClient):
+        """?revoked=1 on an unconfirmed candidate should NOT show the banner."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        resp = await client.get(f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0?revoked=1")
+        assert resp.status_code == 200
+        html = resp.text
+
+        # The revoked banner must NOT appear
+        assert "Bestätigung wurde widerrufen" not in html, (
+            "FAIL: ?revoked=1 banner shown on unconfirmed candidate"
+        )
+
+    async def test_corrected_banner_shows_after_real_correct_action(self, client: AsyncClient):
+        """After a real correct action, the corrected banner appears on redirect."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        # Confirm first
+        await _confirm_candidate(client, case_id, doc_id)
+        page = await _get_candidate_page(client, case_id, doc_id, 0)
+
+        # Correct
+        resp = await client.post(
+            f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0/correct",
+            data={
+                "csrf_token": page["csrf_token"],
+                "idempotency_key": page["idempotency_key"],
+                "expected_active_confirmation_id": page["expected_active"],
+                "confirmed_date": "2026-12-15",
+                "event_type": "unknown",
+            },
+            headers={"Origin": "http://127.0.0.1:8000", "Referer": "http://127.0.0.1:8000/ui/"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        assert "corrected=1" in resp.headers.get("location", "")
+
+        # Follow the redirect to verify the banner appears
+        redirect_url = resp.headers["location"]
+        resp2 = await client.get(redirect_url)
+        assert resp2.status_code == 200
+        html = resp2.text
+
+        # The corrected banner SHOULD appear
+        assert "Bestätigung wurde korrigiert" in html, (
+            "FAIL: corrected banner missing after real correct action"
+        )
+
+    async def test_revoked_banner_shows_after_real_revoke_action(self, client: AsyncClient):
+        """After a real revoke action, the revoked banner appears on redirect."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        # Confirm first
+        await _confirm_candidate(client, case_id, doc_id)
+        page = await _get_candidate_page(client, case_id, doc_id, 0)
+
+        # Revoke
+        resp = await client.post(
+            f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0/revoke",
+            data={
+                "csrf_token": page["csrf_token"],
+                "idempotency_key": page["idempotency_key"],
+                "expected_active_confirmation_id": page["expected_active"],
+                "event_type": "unknown",
+            },
+            headers={"Origin": "http://127.0.0.1:8000", "Referer": "http://127.0.0.1:8000/ui/"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        assert "revoked=1" in resp.headers.get("location", "")
+
+        # Follow the redirect to verify the banner appears
+        redirect_url = resp.headers["location"]
+        resp2 = await client.get(redirect_url)
+        assert resp2.status_code == 200
+        html = resp2.text
+
+        # The revoked banner SHOULD appear
+        assert "Bestätigung wurde widerrufen" in html, (
+            "FAIL: revoked banner missing after real revoke action"
+        )
+
+    async def test_vanilla_query_does_not_break_page(self, client: AsyncClient):
+        """A ?corrected=1 or ?revoked=1 query on any page should not crash."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        await _confirm_candidate(client, case_id, doc_id)
+
+        # Both query params together should not crash
+        resp = await client.get(
+            f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0?corrected=1&revoked=1"
+        )
+        assert resp.status_code == 200
+
+    async def test_confirmed_banner_still_works_with_query_param(self, client: AsyncClient):
+        """The existing ?confirmed=1 banner is untouched and still works."""
+        case_id = await _create_case(client)
+        doc_id = await _upload_pdf(client, case_id)
+
+        resp = await client.get(f"/ui/cases/{case_id}/documents/{doc_id}/candidates/0?confirmed=1")
+        assert resp.status_code == 200
+        html = resp.text
+        # The confirmed banner still shows (unchanged behavior)
+        assert "Bezugsdatum wurde bestätigt" in html

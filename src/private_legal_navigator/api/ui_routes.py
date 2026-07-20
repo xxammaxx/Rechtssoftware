@@ -301,6 +301,8 @@ async def ui_candidate_detail(request: Request) -> HTMLResponse:
             candidate_index,
             action_path=str(request.url.path),
             browser_nonce=browser_nonce,
+            hint_corrected=bool(request.query_params.get("corrected")),
+            hint_revoked=bool(request.query_params.get("revoked")),
         )
     except Exception as exc:
         safe_log_failure(
