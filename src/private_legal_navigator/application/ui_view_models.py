@@ -16,6 +16,7 @@ class CaseSummary:
     status: str
     document_count: int
     created_at: str
+    created_at_display: str = ""
 
 
 @dataclass
@@ -40,6 +41,7 @@ class DocumentSummary:
     size_bytes: int
     has_text: bool
     uploaded_at: str
+    uploaded_at_display: str = ""
 
 
 @dataclass
@@ -143,6 +145,10 @@ class ConfirmationHistoryEntry:
     confirmed_at: str  # ISO datetime
     supersedes: str | None
     is_active: bool
+    # Display-oriented derived fields
+    confirmed_at_display: str = ""
+    confirmed_date_display: str = ""
+    status_css: str = ""
 
 
 @dataclass
@@ -174,3 +180,12 @@ class CandidateDetailView:
     legal_validity_assessed: bool = False
     # Success flash message
     success_message: str = ""
+    # Display-oriented derived fields (deterministic, no domain logic)
+    case_label: str = ""
+    display_detected_date: str = ""
+    display_confirmed_date: str = ""
+    dates_differ: bool = False
+    dates_match: bool = False
+    status_css: str = ""
+    show_actions: bool = False
+    is_completed: bool = False

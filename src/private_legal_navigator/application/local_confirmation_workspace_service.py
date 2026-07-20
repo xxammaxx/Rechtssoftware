@@ -10,6 +10,7 @@ Does NOT:
 
 import uuid
 from datetime import date as date_type
+from datetime import datetime
 
 from private_legal_navigator.application.case_repository import CaseRepository
 from private_legal_navigator.application.deadline_service import DeadlineService
@@ -91,6 +92,45 @@ _CONFIRMATION_METHOD_LABELS: dict[ConfirmationMethod, str] = {
 _TRUNCATION_LIMIT = 300
 
 
+# ---------------------------------------------------------------------------
+# Display helpers — pure formatting, no domain logic
+# ---------------------------------------------------------------------------
+
+
+def _format_date_iso(iso_str: str | None) -> str:
+    """Convert ISO date (YYYY-MM-DD) to German display format (DD.MM.YYYY)."""
+    if not iso_str:
+        return ""
+    try:
+        d = date_type.fromisoformat(iso_str)
+        return d.strftime("%d.%m.%Y")
+    except (ValueError, TypeError):
+        return iso_str
+
+
+def _format_datetime_display(iso_str: str | None) -> str:
+    """Convert ISO datetime to German display format (DD.MM.YYYY, HH:MM)."""
+    if not iso_str:
+        return ""
+    try:
+        # Handle both date-only and datetime ISO strings
+        s = iso_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(s)
+        # Convert to local time equivalent (display as-is, just format)
+        return dt.strftime("%d.%m.%Y, %H:%M")
+    except (ValueError, TypeError):
+        return iso_str
+
+
+_STATUS_CSS_MAP: dict[str, str] = {
+    "unconfirmed": "unconfirmed",
+    "confirmed": "confirmed",
+    "rejected": "rejected",
+    "revoked": "revoked",
+    "superseded": "superseded",
+}
+
+
 class LocalConfirmationWorkspaceService:
     """Application-layer orchestrator for the M6-UI confirmation workspace.
 
@@ -131,6 +171,7 @@ class LocalConfirmationWorkspaceService:
                     status=c.status,
                     document_count=doc_count,
                     created_at=c.created_at.isoformat(),
+                    created_at_display=_format_datetime_display(c.created_at.isoformat()),
                 )
             )
         return CaseListView(
@@ -156,6 +197,7 @@ class LocalConfirmationWorkspaceService:
                     size_bytes=d.size_bytes,
                     has_text=bool(d.text_content),
                     uploaded_at=d.created_at.isoformat(),
+                    uploaded_at_display=_format_datetime_display(d.created_at.isoformat()),
                 )
             )
 
@@ -338,6 +380,11 @@ class LocalConfirmationWorkspaceService:
                 if event.supersedes_confirmation_id
                 else None,
                 is_active=status == ConfirmationStatus.CONFIRMED,
+                confirmed_at_display=_format_datetime_display(event.confirmed_at.isoformat()),
+                confirmed_date_display=_format_date_iso(
+                    event.confirmed_date.isoformat() if event.confirmed_date else None
+                ),
+                status_css=_STATUS_CSS_MAP.get(status.value, "unconfirmed"),
             )
             history_entries.append(entry)
 
@@ -357,6 +404,28 @@ class LocalConfirmationWorkspaceService:
             csrf_token = self._csrf_service.generate_form_token(nonce, action_path or "/ui/")
             idempotency_key = CsrfTokenService.generate_idempotency_key()
 
+        # Compute display-oriented derived fields
+        detected_date_iso = c.normalized_date.isoformat() if c.normalized_date else None
+        confirmed_date_iso = active_confirmation.confirmed_date if active_confirmation else None
+
+        display_detected = _format_date_iso(detected_date_iso)
+        display_confirmed = _format_date_iso(confirmed_date_iso) if confirmed_date_iso else ""
+
+        # Determine if dates differ (only when both exist)
+        dates_differ = bool(
+            detected_date_iso and confirmed_date_iso and detected_date_iso != confirmed_date_iso
+        )
+        dates_match = bool(
+            detected_date_iso and confirmed_date_iso and detected_date_iso == confirmed_date_iso
+        )
+
+        # Show actions when not yet acted upon (rejected handles its own rules)
+        show_actions = current_status not in (ConfirmationStatus.CONFIRMED,)
+        is_completed = current_status in (
+            ConfirmationStatus.CONFIRMED,
+            ConfirmationStatus.REJECTED,
+        )
+
         return CandidateDetailView(
             case_id=str(case_id),
             document_id=str(document_id),
@@ -364,7 +433,7 @@ class LocalConfirmationWorkspaceService:
             candidate_index=candidate_index,
             candidate_kind=_KIND_LABELS.get(c.kind, c.kind.value),
             candidate_display_text=display_text,
-            candidate_date_value=c.normalized_date.isoformat() if c.normalized_date else None,
+            candidate_date_value=detected_date_iso,
             candidate_duration_amount=c.amount,
             candidate_duration_unit=_UNIT_LABELS.get(c.unit, c.unit) if c.unit else None,
             candidate_reference_required=c.reference_required,
@@ -376,6 +445,14 @@ class LocalConfirmationWorkspaceService:
             has_history=len(history_entries) > 0,
             csrf_token=csrf_token,
             idempotency_key=idempotency_key,
+            case_label=case.title,
+            display_detected_date=display_detected,
+            display_confirmed_date=display_confirmed,
+            dates_differ=dates_differ,
+            dates_match=dates_match,
+            status_css=_STATUS_CSS_MAP.get(current_status.value, "unconfirmed"),
+            show_actions=show_actions,
+            is_completed=is_completed,
         )
 
     def confirm_candidate(

@@ -179,7 +179,7 @@ class TestUiTemplates:
 
     async def test_templates_have_single_h1(self, client: AsyncClient) -> None:
         resp = await client.get("/ui/cases")
-        assert resp.text.count("<h1>") == 1
+        assert resp.text.count("<h1") == 1
 
     async def test_templates_show_human_review_notice(self, client: AsyncClient) -> None:
         resp = await client.get("/ui/cases")

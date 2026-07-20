@@ -1,18 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>{{ view.document_filename }}</h1>
-
 <nav aria-label="Brotkrümel">
-    <a href="/ui/cases">Fälle</a> →
-    <a href="/ui/cases/{{ view.case_id }}">Fall</a> →
-    <strong>{{ view.document_filename }}</strong>
+  <ol class="breadcrumbs">
+    <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
+    <li><a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}">Fall</a></li>
+    <li><span aria-current="page">{{ view.document_filename }}</span></li>
+  </ol>
 </nav>
+
+<h1 class="page-title">{{ view.document_filename }}</h1>
 
 {# Warnings #}
 {% if view.warnings %}
 <div class="warnings-box" role="alert">
-    <h2>Hinweise</h2>
+    <h2 class="section-title">Hinweise</h2>
     <ul>
     {% for warning in view.warnings %}
         <li class="warning-item">
@@ -25,50 +27,40 @@
 {% endif %}
 
 {# Deadline Candidates #}
-<h2>Datums- und Zeitraumhinweise</h2>
+<h2 class="section-title">Datums- und Zeitraumhinweise</h2>
 
 {% if not view.has_candidates %}
     <p class="empty-state">Keine Datums- oder Zeitraumhinweise erkannt.</p>
 {% else %}
-    <p>Menschliche Prüfung erforderlich. Rechtliche Gültigkeit nicht bewertet.</p>
+    <p class="count-badge">Menschliche Prüfung erforderlich. Rechtliche Gültigkeit nicht bewertet.</p>
 
     <ul class="candidate-list">
     {% for c in view.candidates %}
-        <li class="candidate-card">
-            <span class="candidate-kind">{{ c.kind }}</span>
-            <span class="candidate-text">{{ c.display_text }}</span>
+        <li class="candidate-card-item">
+            <span class="candidate-card-item__kind">{{ c.kind }}</span>
+            <p class="candidate-card-item__text">{{ c.display_text }}</p>
 
             {% if c.date_value %}
-            <span class="candidate-date">Datum: {{ c.date_value }}</span>
+            <p class="candidate-card-item__date">Datum: {{ c.date_value }}</p>
             {% endif %}
 
             {% if c.is_relative %}
-            <span class="candidate-duration">
+            <p class="candidate-card-item__duration">
                 {% if c.duration_amount and c.duration_unit %}
                 {{ c.duration_amount }} {{ c.duration_unit }}{% if c.duration_amount != 1 %}n{% endif %}
                 {% endif %}
-            </span>
-            <span class="candidate-reference-info">
-                Bezugsereignis erforderlich — Prüfung folgt in einer späteren Ausbaustufe.
-            </span>
+            </p>
+            <p class="candidate-card-item__ref">
+                Bezugsereignis erforderlich.
+            </p>
             {% endif %}
         </li>
     {% endfor %}
     </ul>
 {% endif %}
 
-{# Interactive notice #}
-<div class="interactive-notice-box">
-    <p><strong>Interaktive Bestätigung folgt in einer späteren Ausbaustufe.</strong></p>
-    <p>Die folgende Tabelle zeigt vorhandene Bezugsereignis-Kandidaten (sofern vorhanden).</p>
-</div>
-
-{# Permanente Hinweise #}
-<div class="legal-notice">
-    <p>Rechtliche Gültigkeit nicht bewertet.</p>
-    <p>Menschliche Prüfung erforderlich.</p>
-</div>
-
-<p><a href="/ui/cases/{{ view.case_id }}">← Zurück zum Fall</a></p>
+<p class="u-mt-4">
+    <a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}" class="btn btn--secondary btn--small">← Zurück zum Fall</a>
+</p>
 
 {% endblock %}

@@ -1,31 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>{{ view.title }}</h1>
+<nav aria-label="Brotkrümel">
+  <ol class="breadcrumbs">
+    <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
+    <li><span aria-current="page">{{ view.title }}</span></li>
+  </ol>
+</nav>
 
-<p class="case-meta-detail">
-    Status: <strong>{{ view.status }}</strong>
-</p>
+<h1 class="page-title">{{ view.title }}</h1>
 
-<p><a href="/ui/cases">← Zurück zur Fallübersicht</a></p>
+<p class="count-badge">Status: <strong>{{ view.status }}</strong></p>
 
 {% if not view.has_documents %}
     <p class="empty-state">Keine Dokumente im Fall.</p>
 {% else %}
-    <h2>Dokumente ({{ view.documents|length }})</h2>
+    <h2 class="section-title">Dokumente ({{ view.documents|length }})</h2>
 
-    <ul class="document-list">
+    <ul class="item-list">
     {% for doc in view.documents %}
-        <li class="document-item">
-            <a href="/ui/cases/{{ view.case_id }}/documents/{{ doc.document_id }}" class="document-link">
-                <strong>{{ doc.filename }}</strong>
-                <span class="document-meta">
-                    {{ doc.classification }} —
-                    {{ doc.size_bytes }} Bytes —
-                    Hochgeladen: {{ doc.uploaded_at }}
-                </span>
+        <li>
+            <a href="{{ url_for('ui_document_detail', case_id=view.case_id, document_id=doc.document_id) }}"
+               class="item-card">
+                <div class="item-card__title">{{ doc.filename }}</div>
+                <div class="item-card__meta">
+                    <span>{{ doc.classification }}</span>
+                    <span>{{ doc.size_bytes }} Bytes</span>
+                    <span>Hochgeladen: {{ doc.uploaded_at_display or doc.uploaded_at }}</span>
+                </div>
                 {% if not doc.has_text %}
-                <span class="document-warning">Kein Text extrahierbar</span>
+                <span class="item-card__warning">Kein Text extrahierbar</span>
                 {% endif %}
             </a>
         </li>
@@ -33,8 +37,8 @@
     </ul>
 {% endif %}
 
-<p class="interactive-notice">
-    Interaktive Bestätigung folgt in einer späteren Ausbaustufe.
+<p class="u-mt-4">
+    <a href="{{ url_for('ui_case_list') }}" class="btn btn--secondary btn--small">← Zurück zur Fallübersicht</a>
 </p>
 
 {% endblock %}

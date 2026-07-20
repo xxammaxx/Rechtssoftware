@@ -1,31 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Fälle</h1>
+<h1 class="page-title">Fälle</h1>
 
 {% if not view.has_cases %}
     <p class="empty-state">Keine Fälle vorhanden.</p>
 {% else %}
-    <p class="case-count">{{ view.case_count }} Fall{% if view.case_count != 1 %}e{% endif %}</p>
+    <p class="count-badge">{{ view.case_count }} Fall{% if view.case_count != 1 %}e{% endif %}</p>
 
-    <ul class="case-list">
+    <ul class="item-list">
     {% for case in view.cases %}
-        <li class="case-item">
-            <a href="/ui/cases/{{ case.case_id }}" class="case-link">
-                <strong>{{ case.title }}</strong>
-                <span class="case-meta">
-                    {{ case.status }} —
-                    {{ case.document_count }} Dokument{% if case.document_count != 1 %}e{% endif %} —
-                    Erstellt: {{ case.created_at }}
-                </span>
+        <li>
+            <a href="{{ url_for('ui_case_detail', case_id=case.case_id) }}"
+               class="item-card">
+                <div class="item-card__title">{{ case.title }}</div>
+                <div class="item-card__meta">
+                    <span>{{ case.status }}</span>
+                    <span>{{ case.document_count }} Dokument{% if case.document_count != 1 %}e{% endif %}</span>
+                    <span>Erstellt: {{ case.created_at_display or case.created_at }}</span>
+                </div>
             </a>
         </li>
     {% endfor %}
     </ul>
 {% endif %}
-
-<p class="interactive-notice">
-    Interaktive Bestätigung folgt in einer späteren Ausbaustufe.
-</p>
 
 {% endblock %}
