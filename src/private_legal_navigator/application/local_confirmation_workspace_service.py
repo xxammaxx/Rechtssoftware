@@ -12,6 +12,7 @@ import uuid
 from datetime import date as date_type
 from datetime import datetime
 
+from private_legal_navigator.application.calendar_arithmetic import CalendarArithmetic
 from private_legal_navigator.application.case_repository import CaseRepository
 from private_legal_navigator.application.deadline_service import DeadlineService
 from private_legal_navigator.application.document_repository import DocumentRepository
@@ -21,6 +22,9 @@ from private_legal_navigator.application.reference_event_service import (
     ReferenceEventService,
 )
 from private_legal_navigator.application.ui_view_models import (
+    CalculationPreviewResultDTO,
+    CalculationPreviewView,
+    CalculationTraceStepDTO,
     CandidateCard,
     CandidateDetailView,
     CaseDetailView,
@@ -36,8 +40,13 @@ from private_legal_navigator.domain.deadline import (
     DeadlineCandidateKind,
 )
 from private_legal_navigator.domain.reference_event import (
+    CalculationOperation,
+    CalculationStep,
     ConfirmationMethod,
     ConfirmationStatus,
+    ConfirmedReferenceEvent,
+    Duration,
+    DurationUnit,
     EventType,
     SourceType,
 )
@@ -146,6 +155,7 @@ class LocalConfirmationWorkspaceService:
         deadline_service: DeadlineService,
         reference_event_service: ReferenceEventService,
         csrf_service: CsrfTokenService | None = None,
+        calendar_arithmetic: CalendarArithmetic | None = None,
     ) -> None:
         self._case_repo = case_repository
         self._document_repo = document_repository
@@ -153,6 +163,7 @@ class LocalConfirmationWorkspaceService:
         self._deadline_service = deadline_service
         self._reference_event_service = reference_event_service
         self._csrf_service = csrf_service
+        self._calendar_arithmetic = calendar_arithmetic
 
     # ------------------------------------------------------------------ #
     #  Case views
@@ -711,3 +722,303 @@ class LocalConfirmationWorkspaceService:
             expected_active_confirmation_id=expected_active_confirmation_id,
             redirect_path=redirect_path,
         )
+
+    # ── Calculation Preview (M6-UI Slice 4) ─────────────────────────
+
+    def _get_active_confirmation_for_preview(
+        self,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        expected_active_confirmation_id: str,
+    ) -> tuple[ConfirmedReferenceEvent, list[ConfirmedReferenceEvent]]:
+        """Lookup active CONFIRMED event and verify expected-state.
+
+        Returns (active_event, history_records) tuple.
+
+        Raises:
+            ValueError: If no active confirmation exists or expected-state mismatches.
+                Contains "geändert" for stale-state (→ 409 in route handler).
+        """
+        history_records = self._reference_event_service.get_history(document_id, candidate_index)
+
+        active_event = None
+        for event in history_records:
+            if event.is_revoke:
+                continue
+            if event.confirmed_date is None:
+                continue
+            is_superseded = any(
+                other.supersedes_confirmation_id == event.confirmation_id
+                for other in history_records
+            )
+            if not is_superseded:
+                active_event = event
+                break
+
+        if active_event is None:
+            # No active confirmation — if the caller provided an expected ID,
+            # the state changed (revocation). Otherwise, no confirmation exists.
+            if expected_active_confirmation_id and expected_active_confirmation_id.strip():
+                raise ValueError("Der Stand wurde inzwischen geändert.")
+            raise ValueError(
+                "Für eine Rechenvorschau ist zunächst ein aktuell "
+                "bestätigtes Bezugsdatum erforderlich."
+            )
+
+        if str(active_event.confirmation_id) != expected_active_confirmation_id:
+            raise ValueError("Der Stand wurde inzwischen geändert.")
+
+        return active_event, history_records
+
+    def get_preview_view(
+        self,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        browser_nonce: str = "",
+        action_path: str = "",
+    ) -> CalculationPreviewView:
+        """Produce a calculation preview view model (GET, read-only).
+
+        Loads active confirmation. If one exists, loads the M5 candidate
+        data for display. Does NOT perform calculation (POST does that).
+        """
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            raise ValueError("Fall nicht gefunden.")
+
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            raise ValueError("Dokument nicht gefunden oder gehört nicht zum Fall.")
+
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            raise ValueError("Dokument hat keine extrahierten Kandidaten.")
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            raise ValueError("Kandidat nicht gefunden.")
+
+        c = extraction_result.candidates[candidate_index]
+
+        # Lookup active confirmation
+        history_records = self._reference_event_service.get_history(document_id, candidate_index)
+        active_event = None
+        for event in history_records:
+            if event.is_revoke:
+                continue
+            if event.confirmed_date is None:
+                continue
+            is_superseded = any(
+                other.supersedes_confirmation_id == event.confirmation_id
+                for other in history_records
+            )
+            if not is_superseded:
+                active_event = event
+                break
+
+        has_active = active_event is not None
+        active_id = str(active_event.confirmation_id) if active_event else ""
+        active_date_display = (
+            _format_date_iso(active_event.confirmed_date.isoformat())
+            if active_event and active_event.confirmed_date
+            else ""
+        )
+
+        # CSRF token for POST form
+        csrf_token = ""
+        if self._csrf_service:
+            nonce = browser_nonce if browser_nonce else self._csrf_service.generate_browser_nonce()
+            csrf_token = self._csrf_service.generate_form_token(nonce, action_path or "/ui/")
+
+        display_text = c.raw_text
+        if len(display_text) > _TRUNCATION_LIMIT:
+            display_text = display_text[:_TRUNCATION_LIMIT] + "…"
+
+        return CalculationPreviewView(
+            case_id=str(case_id),
+            document_id=str(document_id),
+            candidate_index=candidate_index,
+            document_filename=doc.filename,
+            case_label=case.title,
+            active_confirmation_id=active_id,
+            active_confirmation_date_display=active_date_display,
+            active_confirmation_status="confirmed" if has_active else "",
+            candidate_kind=_KIND_LABELS.get(c.kind, c.kind.value),
+            candidate_display_text=display_text,
+            csrf_token=csrf_token,
+            has_active_confirmation=has_active,
+            has_calculation_error=not has_active,
+            calculation_error_message=(
+                ""
+                if has_active
+                else (
+                    "Für eine Rechenvorschau ist zunächst ein aktuell "
+                    "bestätigtes Bezugsdatum erforderlich."
+                )
+            ),
+        )
+
+    def calculate_preview(
+        self,
+        case_id: uuid.UUID,
+        document_id: uuid.UUID,
+        candidate_index: int,
+        expected_active_confirmation_id: str,
+    ) -> CalculationPreviewView:
+        """Perform calculation preview with expected-state binding (POST).
+
+        Server-side revalidation:
+        1. Cross-resource: case, document, candidate existence
+        2. Active confirmation lookup
+        3. Expected-state check
+        4. Calendar arithmetic via existing port
+        5. DTO transformation for UI
+
+        Returns:
+            CalculationPreviewView with preview_result populated.
+
+        Raises:
+            ValueError: On stale state, missing confirmation, missing arithmetic.
+        """
+        if self._calendar_arithmetic is None:
+            raise ValueError("Rechenvorschau ist nicht verfügbar.")
+
+        # Step 1: Cross-resource validation
+        case = self._case_repo.get_by_id(case_id)
+        if case is None:
+            raise ValueError("Fall nicht gefunden.")
+
+        doc = self._document_service.get_document_text(document_id)
+        if doc is None or doc.case_id != case_id:
+            raise ValueError("Dokument nicht gefunden oder gehört nicht zum Fall.")
+
+        extraction_result = self._deadline_service.extract_candidates(document_id)
+        if extraction_result is None:
+            raise ValueError("Dokument hat keine extrahierten Kandidaten.")
+        if candidate_index < 0 or candidate_index >= len(extraction_result.candidates):
+            raise ValueError("Kandidat nicht gefunden.")
+
+        c = extraction_result.candidates[candidate_index]
+
+        # Step 2: Active confirmation lookup + expected-state
+        active_event, _ = self._get_active_confirmation_for_preview(
+            document_id, candidate_index, expected_active_confirmation_id
+        )
+
+        # Step 3: Build Duration from M5 candidate
+        if not c.amount or not c.unit:
+            raise ValueError("Der Kandidat enthält keine verwendbare Dauer.")
+        duration = self._validate_preview_duration(c.amount, c.unit)
+
+        # Step 4: Calendar arithmetic via existing port
+        calc_candidate = self._calendar_arithmetic.calculate(
+            reference_event=active_event,
+            duration=duration,
+        )
+
+        # Step 5: Transform to DTOs
+        trace_steps = [_build_trace_step_dto(step) for step in calc_candidate.calculation_steps]
+
+        warning_labels = _WARNING_LABELS_PREVIEW
+        warnings = [warning_labels.get(w, w) for w in calc_candidate.warnings]
+
+        preview = CalculationPreviewResultDTO(
+            calculated_date_iso=(
+                calc_candidate.calculated_date.isoformat() if calc_candidate.calculated_date else ""
+            ),
+            calculated_date_display=(
+                _format_date_iso(calc_candidate.calculated_date.isoformat())
+                if calc_candidate.calculated_date
+                else ""
+            ),
+            reference_date_iso=(
+                active_event.confirmed_date.isoformat() if active_event.confirmed_date else ""
+            ),
+            reference_date_display=(
+                _format_date_iso(active_event.confirmed_date.isoformat())
+                if active_event.confirmed_date
+                else ""
+            ),
+            duration_amount=duration.amount,
+            duration_unit=_UNIT_LABELS.get(duration.unit.value, duration.unit.value),
+            duration_calendar_days=duration.calendar_days,
+            trace_steps=trace_steps,
+            warnings=warnings,
+        )
+
+        display_text = c.raw_text
+        if len(display_text) > _TRUNCATION_LIMIT:
+            display_text = display_text[:_TRUNCATION_LIMIT] + "…"
+
+        return CalculationPreviewView(
+            case_id=str(case_id),
+            document_id=str(document_id),
+            candidate_index=candidate_index,
+            document_filename=doc.filename,
+            case_label=case.title,
+            active_confirmation_id=str(active_event.confirmation_id),
+            active_confirmation_date_display=(
+                _format_date_iso(active_event.confirmed_date.isoformat())
+                if active_event.confirmed_date
+                else ""
+            ),
+            active_confirmation_status="confirmed",
+            preview_result=preview,
+            candidate_kind=_KIND_LABELS.get(c.kind, c.kind.value),
+            candidate_display_text=display_text,
+            has_active_confirmation=True,
+        )
+
+    @staticmethod
+    def _validate_preview_duration(amount: int, unit: str) -> Duration:
+        """Validate duration for preview calculation.
+
+        Only DAY and WEEK units supported. Amount must be positive and within bounds.
+        """
+        unit_map: dict[str, DurationUnit] = {
+            "day": DurationUnit.DAY,
+            "Tag": DurationUnit.DAY,
+            "Tage": DurationUnit.DAY,
+            "week": DurationUnit.WEEK,
+            "Woche": DurationUnit.WEEK,
+            "Wochen": DurationUnit.WEEK,
+        }
+
+        if unit not in unit_map:
+            raise ValueError(f"Nicht unterstützte Zeiteinheit: '{unit}'. Erlaubt sind: Tag, Woche.")
+        if not isinstance(amount, int) or amount <= 0:
+            raise ValueError("Die Dauer muss eine positive ganze Zahl sein.")
+        if amount > 36500:
+            raise ValueError("Die Dauer überschreitet das technische Maximum von 36500 Tagen.")
+
+        return Duration(amount=amount, unit=unit_map[unit])
+
+
+# ── Slice 4 helpers (module-level) ──────────────────────────────────
+
+_OPERATION_LABELS: dict[CalculationOperation, str] = {
+    CalculationOperation.ADD_CALENDAR_DAYS: "Addition von Kalendertagen",
+    CalculationOperation.ADD_CALENDAR_WEEKS: "Addition von Kalenderwochen",
+}
+
+_WARNING_LABELS_PREVIEW: dict[str, str] = {
+    "LEGAL_CALCULATION_NOT_PERFORMED": "Keine rechtliche Fristberechnung durchgeführt.",
+    "CALCULATION_PREVIEW_ONLY": "Nur Berechnungsvorschau – nicht rechtsverbindlich.",
+    "NO_WEEKEND_OR_HOLIDAY_ADJUSTMENT": "Keine Wochenend- oder Feiertagsbereinigung.",
+    "NO_DELIVERY_OR_ANNOUNCEMENT_RULE_APPLIED": (
+        "Keine Zustell- oder Bekanntgabefiktion angewendet."
+    ),
+    "HUMAN_REVIEW_REQUIRED": "Menschliche Prüfung erforderlich.",
+}
+
+
+def _build_trace_step_dto(step: CalculationStep) -> CalculationTraceStepDTO:
+    """Transform a domain CalculationStep to a UI-safe Trace DTO."""
+    return CalculationTraceStepDTO(
+        step_number=step.step,
+        operation_label=_OPERATION_LABELS.get(step.operation, step.operation.value),
+        input_date_iso=step.input_date.isoformat(),
+        input_date_display=_format_date_iso(step.input_date.isoformat()),
+        amount=step.amount,
+        output_date_iso=step.output_date.isoformat(),
+        output_date_display=_format_date_iso(step.output_date.isoformat()),
+    )

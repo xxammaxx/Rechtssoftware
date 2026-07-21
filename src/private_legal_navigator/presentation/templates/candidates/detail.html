@@ -379,6 +379,23 @@
         </form>
         {% endif %}
 
+        {# ── Berechnungsvorschau (M6-UI Slice 4) ─────────────────────── #}
+        {% if view.show_correct_revoke %}
+        <section class="card">
+          <div class="card__header">Unverbindliche Rechenvorschau</div>
+          <div class="card__body">
+            <p class="form-hint">
+              Berechnung auf Basis des bestätigten Bezugsdatums.
+              Keine rechtliche Bewertung.
+            </p>
+            <a href="{{ url_for('ui_calculation_preview_get', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+               class="btn btn--primary">
+              Rechenvorschau öffnen
+            </a>
+          </div>
+        </section>
+        {% endif %}
+
         {# Bereits widerrufen oder rejected — keine Aktionen #}
         {% if view.current_status in ('revoked', 'rejected') and not view.show_actions and not view.show_correct_revoke %}
         <div class="action-card--no-actions">

@@ -966,3 +966,198 @@ async def ui_revoke_candidate(request: Request) -> RedirectResponse | HTMLRespon
 
     redirect_url = f"{redirect_path}?revoked=1"
     return RedirectResponse(url=redirect_url, status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Route: GET /ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/preview  (M6-UI Slice 4)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/cases/{case_id}/documents/{document_id}/candidates/{candidate_index}/preview")
+async def ui_calculation_preview_get(request: Request) -> HTMLResponse:
+    """Render calculation preview page (GET, read-only).
+
+    Loads active confirmation and candidate data server-side.
+    Does NOT perform calculation (POST does).
+    """
+    svc = _get_workspace_service(request)
+    templates = _get_templates(request)
+    csrf_service = request.app.state.csrf_service
+
+    case_id_str = request.path_params.get("case_id", "")
+    doc_id_str = request.path_params.get("document_id", "")
+    cand_idx_str = request.path_params.get("candidate_index", "0")
+
+    try:
+        case_id = uuid.UUID(case_id_str)
+        document_id = uuid.UUID(doc_id_str)
+        candidate_index = int(cand_idx_str)
+    except (ValueError, AttributeError):
+        return _render_error(
+            request,
+            404,
+            "Nicht gefunden",
+            "Die angeforderte Seite wurde nicht gefunden.",
+        )
+
+    existing_nonce = request.cookies.get("pln_csrf_nonce", "")
+    is_new_nonce = not existing_nonce
+    browser_nonce = existing_nonce if existing_nonce else csrf_service.generate_browser_nonce()
+
+    try:
+        view = svc.get_preview_view(
+            case_id=case_id,
+            document_id=document_id,
+            candidate_index=candidate_index,
+            browser_nonce=browser_nonce,
+            action_path=str(request.url.path),
+        )
+    except ValueError as exc:
+        msg = str(exc)
+        if "nicht gefunden" in msg.lower():
+            return _render_error(request, 404, "Nicht gefunden", msg)
+        return _render_error(request, 400, "Fehler", msg)
+    except Exception as exc:
+        safe_log_failure(
+            logger,
+            "ui.calculation_preview_get_failed",
+            error_code="UI_PREVIEW_GET_ERROR",
+            exception=exc,
+        )
+        return _render_error(
+            request,
+            500,
+            "Interner Fehler",
+            "Der Vorgang konnte nicht abgeschlossen werden.",
+        )
+
+    response = HTMLResponse(
+        content=templates.get_template("candidates/preview.html").render(
+            {
+                "request": request,
+                "base": _base_context("Unverbindliche Rechenvorschau"),
+                "view": view,
+            }
+        ),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+    if is_new_nonce:
+        response.set_cookie(
+            key="pln_csrf_nonce",
+            value=browser_nonce,
+            httponly=True,
+            samesite="strict",
+            path="/ui",
+            secure=False,
+        )
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Route: POST /ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/preview  (M6-UI Slice 4)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/cases/{case_id}/documents/{document_id}/candidates/{candidate_index}/preview",
+    dependencies=[Depends(ui_post_security)],
+    response_model=None,
+)
+async def ui_calculation_preview_post(request: Request) -> HTMLResponse:
+    """Execute calculation preview (POST, CSRF, Expected-State, Read-only).
+
+    Server-side revalidation:
+    - Loads resources from DB (reference date never from client)
+    - Checks active confirmation
+    - Verifies expected-state
+    - Calls calendar arithmetic port
+    - Renders result (persists nothing)
+    """
+    svc = _get_workspace_service(request)
+    templates = _get_templates(request)
+
+    case_id_str = request.path_params.get("case_id", "")
+    doc_id_str = request.path_params.get("document_id", "")
+    cand_idx_str = request.path_params.get("candidate_index", "0")
+
+    try:
+        case_id = uuid.UUID(case_id_str)
+        document_id = uuid.UUID(doc_id_str)
+        candidate_index = int(cand_idx_str)
+    except (ValueError, AttributeError):
+        return _render_error(
+            request,
+            404,
+            "Nicht gefunden",
+            "Die angeforderte Seite wurde nicht gefunden.",
+        )
+
+    try:
+        form = await request.form()
+    except Exception:
+        return _render_error(
+            request,
+            400,
+            "Ungültiges Formular",
+            "Das Formular konnte nicht verarbeitet werden.",
+        )
+
+    try:
+        expected_active = require_form_string(
+            form, "expected_active_confirmation_id", max_length=64
+        )
+    except (ValueError, TypeError):
+        return _render_error(
+            request,
+            400,
+            "Ungültiges Formular",
+            "Der Sicherheitsschlüssel fehlt.",
+        )
+
+    try:
+        view = svc.calculate_preview(
+            case_id=case_id,
+            document_id=document_id,
+            candidate_index=candidate_index,
+            expected_active_confirmation_id=expected_active,
+        )
+    except ValueError as exc:
+        msg = str(exc)
+        if "geändert" in msg:
+            return _render_error(
+                request,
+                409,
+                "Stand geändert",
+                "Der angezeigte Stand wurde inzwischen geändert. "
+                "Bitte laden Sie die aktuelle Ansicht neu.",
+            )
+        if "nicht gefunden" in msg.lower():
+            return _render_error(request, 404, "Nicht gefunden", msg)
+        return _render_error(request, 400, "Fehler", msg)
+    except Exception as exc:
+        safe_log_failure(
+            logger,
+            "ui.calculation_preview_post_failed",
+            error_code="UI_PREVIEW_POST_ERROR",
+            exception=exc,
+        )
+        return _render_error(
+            request,
+            500,
+            "Interner Fehler",
+            "Der Vorgang konnte nicht abgeschlossen werden.",
+        )
+
+    safe_log_event(logger, "m6ui.calculation_preview.rendered")
+
+    return HTMLResponse(
+        content=templates.get_template("candidates/preview.html").render(
+            {
+                "request": request,
+                "base": _base_context("Unverbindliche Rechenvorschau"),
+                "view": view,
+            }
+        ),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )

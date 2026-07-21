@@ -191,3 +191,70 @@ class CandidateDetailView:
     show_correct_revoke: bool = False
     active_confirmation_id: str = ""
     is_completed: bool = False
+
+
+# ── M6-UI Slice 4: Calculation Preview & Trace ──────────────────────
+
+
+@dataclass
+class CalculationTraceStepDTO:
+    """Ein einzelner Schritt im Rechenweg — für die UI formatiert.
+
+    Enthält KEINE internen IDs, keine UUIDs, keine Domain-Objekte.
+    """
+
+    step_number: int  # 1-based Sequenznummer
+    operation_label: str  # z.B. "Addition von Kalendertagen"
+    input_date_iso: str  # ISO-Datum (YYYY-MM-DD)
+    input_date_display: str  # Deutsches Format (DD.MM.YYYY)
+    amount: int  # Anzahl Kalendertage
+    output_date_iso: str  # ISO-Datum (YYYY-MM-DD)
+    output_date_display: str  # Deutsches Format (DD.MM.YYYY)
+
+
+@dataclass
+class CalculationPreviewResultDTO:
+    """Berechnungsvorschau — bereinigt für die UI.
+
+    Keine internen IDs. Keine Domain-Objekte. Flache Struktur.
+    """
+
+    calculated_date_iso: str  # z.B. "2026-06-29"
+    calculated_date_display: str  # z.B. "29.06.2026"
+    reference_date_iso: str  # Bestätigtes Bezugsdatum (vom Server)
+    reference_date_display: str  # Deutsches Format
+    duration_amount: int  # z.B. 14
+    duration_unit: str  # z.B. "Tag" oder "Woche"
+    duration_calendar_days: int  # In Kalendertage umgerechnet
+    trace_steps: list[CalculationTraceStepDTO] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    human_review_required: bool = True
+    legal_validity_assessed: bool = False
+    is_preview_only: bool = True
+
+
+@dataclass
+class CalculationPreviewView:
+    """Komplettes View-Model für das Preview-Template.
+
+    Aggregiert das Berechnungsergebnis mit Navigationsdaten
+    und dem aktiven Bestätigungsstatus.
+    """
+
+    case_id: str
+    document_id: str
+    candidate_index: int
+    document_filename: str
+    case_label: str
+    active_confirmation_id: str  # Für expected-state im Form
+    active_confirmation_date_display: str
+    active_confirmation_status: str  # "confirmed"
+    preview_result: CalculationPreviewResultDTO | None = None
+    candidate_kind: str = ""
+    candidate_display_text: str = ""
+    csrf_token: str = ""
+    has_active_confirmation: bool = False
+    has_calculation_error: bool = False
+    calculation_error_message: str = ""
+    human_review_required: bool = True
+    legal_validity_assessed: bool = False

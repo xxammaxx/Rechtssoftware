@@ -145,6 +145,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
         reference_event_service=reference_event_service,
         csrf_service=csrf_service,
+        calendar_arithmetic=calendar_arithmetic,
     )
 
     # --- M6-UI: Middleware ---
