@@ -22,8 +22,10 @@ from private_legal_navigator.api.reference_event_routes import router as referen
 from private_legal_navigator.api.routes import router as case_router
 from private_legal_navigator.api.ui_routes import router as ui_router
 from private_legal_navigator.application.calculation_service import CalculationService
+from private_legal_navigator.application.case_timeline_service import CaseTimelineService
 from private_legal_navigator.application.deadline_service import DeadlineService
 from private_legal_navigator.application.document_service import DocumentService
+from private_legal_navigator.application.legal_source_service import LegalSourceService
 from private_legal_navigator.application.local_confirmation_workspace_service import (
     LocalConfirmationWorkspaceService,
 )
@@ -42,11 +44,18 @@ from private_legal_navigator.infrastructure.log_redaction import configure_loggi
 from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
 from private_legal_navigator.infrastructure.rule_based_classifier import RuleBasedClassifier
 from private_legal_navigator.infrastructure.safe_logging import safe_log_failure
+from private_legal_navigator.infrastructure.safe_source_client import SourceClient
 from private_legal_navigator.infrastructure.sqlite_case_repository import (
     SqliteCaseRepository,
 )
+from private_legal_navigator.infrastructure.sqlite_case_timeline_repository import (
+    SqliteCaseTimelineRepository,
+)
 from private_legal_navigator.infrastructure.sqlite_document_repository import (
     SqliteDocumentRepository,
+)
+from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+    SqliteLegalSourceRepository,
 )
 from private_legal_navigator.infrastructure.sqlite_reference_event_repository import (
     SqliteReferenceEventRepository,
@@ -80,6 +89,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Initialize M6-A schema (idempotent)
     ref_repo: SqliteReferenceEventRepository = app.state.reference_event_repository
     ref_repo.initialize_schema()
+    # Initialize M7-A schemas (idempotent)
+    legal_repo: SqliteLegalSourceRepository = app.state.legal_source_repository
+    legal_repo.initialize_schema()
+    timeline_repo: SqliteCaseTimelineRepository = app.state.case_timeline_repository
+    timeline_repo.initialize_schema()
     yield
 
 
@@ -119,6 +133,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # --- M6-UI: CSRF token service ---
     csrf_service = CsrfTokenService(
         CsrfConfig(secret=settings.csrf_secret, token_lifetime_seconds=3600)
+    )
+
+    # ── M7-A: Legal Source Infrastructure ──
+    snapshot_dir = settings.data_dir / "snapshots"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    legal_source_repository = SqliteLegalSourceRepository(settings.database_path)
+    legal_source_repository.initialize_schema()
+    source_client = SourceClient()
+    legal_source_service = LegalSourceService(
+        repo=legal_source_repository,
+        client=source_client,
+        snapshot_dir=snapshot_dir,
+    )
+    legal_source_service.register_default_sources()
+
+    # ── M7-A: Case Timeline Infrastructure ──
+    case_timeline_repository = SqliteCaseTimelineRepository(settings.database_path)
+    case_timeline_repository.initialize_schema()
+    case_timeline_service = CaseTimelineService(
+        timeline_repo=case_timeline_repository,
+        legal_repo=legal_source_repository,
     )
 
     app = FastAPI(
@@ -176,6 +211,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.templates = templates
     app.state.workspace_service = workspace_service
     app.state.csrf_service = csrf_service
+    # M7-A services
+    app.state.legal_source_repository = legal_source_repository
+    app.state.legal_source_service = legal_source_service
+    app.state.case_timeline_repository = case_timeline_repository
+    app.state.case_timeline_service = case_timeline_service
 
     # Initialize M6-A schema
     reference_event_repository.initialize_schema()
