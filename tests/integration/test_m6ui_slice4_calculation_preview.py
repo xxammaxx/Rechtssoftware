@@ -20,7 +20,6 @@ from httpx import ASGITransport, AsyncClient
 
 from private_legal_navigator.config import Settings
 
-
 # ── Test PDF generation ──────────────────────────────────────────────
 
 _SYNTHETIC_PDF_TEXT: str = (
@@ -771,3 +770,43 @@ class TestPreviewErrorPaths:
         page = await _get_preview_page(client, case_id, doc_id)
         assert page["status"] == 200
         assert "Unverbindliche Rechenvorschau" in page["html"]
+
+# ═══════════════════════════════════════════════════════════════════════
+# _validate_preview_duration error paths (line coverage)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestPreviewValidateDuration:
+    """Tests for _validate_preview_duration static method error paths."""
+
+    def test_validate_preview_duration_rejects_unknown_unit(self):
+        """_validate_preview_duration raises ValueError for unknown unit string."""
+        from private_legal_navigator.application.local_confirmation_workspace_service import (
+            LocalConfirmationWorkspaceService,
+        )
+        with pytest.raises(ValueError, match="Nicht unterstützte Zeiteinheit"):
+            LocalConfirmationWorkspaceService._validate_preview_duration(7, "MONTH")
+
+    def test_validate_preview_duration_rejects_zero_amount(self):
+        """_validate_preview_duration raises ValueError for amount <= 0."""
+        from private_legal_navigator.application.local_confirmation_workspace_service import (
+            LocalConfirmationWorkspaceService,
+        )
+        with pytest.raises(ValueError, match="positive ganze Zahl"):
+            LocalConfirmationWorkspaceService._validate_preview_duration(0, "Tag")
+
+    def test_validate_preview_duration_rejects_negative_amount(self):
+        """_validate_preview_duration raises ValueError for negative amount."""
+        from private_legal_navigator.application.local_confirmation_workspace_service import (
+            LocalConfirmationWorkspaceService,
+        )
+        with pytest.raises(ValueError, match="positive ganze Zahl"):
+            LocalConfirmationWorkspaceService._validate_preview_duration(-5, "Tag")
+
+    def test_validate_preview_duration_rejects_above_maximum(self):
+        """_validate_preview_duration raises ValueError for amount > 36500."""
+        from private_legal_navigator.application.local_confirmation_workspace_service import (
+            LocalConfirmationWorkspaceService,
+        )
+        with pytest.raises(ValueError, match="technische Maximum"):
+            LocalConfirmationWorkspaceService._validate_preview_duration(36501, "Tag")

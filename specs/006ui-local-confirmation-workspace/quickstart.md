@@ -35,7 +35,7 @@ Open: `http://127.0.0.1:8000/ui/cases`
 
 ## UI Routes
 
-### Slice 2 — Implemented (Stand Juli 2026)
+### Slice 2 + Slice 4 — Implemented (Stand Juli 2026)
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -46,16 +46,16 @@ Open: `http://127.0.0.1:8000/ui/cases`
 | POST | `/ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/confirm` | Confirm candidate (CSRF, idempotent) |
 | POST | `/ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/reject` | Reject candidate (CSRF, idempotent) |
 | POST | `/ui/cases/{case_id}/documents/{document_id}/candidates/{idx}/manual-confirm` | Manual date entry (CSRF, idempotent) |
+| GET | `/ui/.../candidates/{idx}/preview` | Calculation preview form |
+| POST | `/ui/.../candidates/{idx}/preview` | Execute calculation preview (read-only) |
 
-### Slice 3+ — Planned (not yet implemented)
+### Slice 3 — Planned (not yet implemented)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/ui/.../candidates/{idx}/correct` | Correct confirmation |
 | POST | `/ui/.../candidates/{idx}/revoke` | Revoke confirmation |
 | GET | `/ui/.../history` | Full confirmation history page |
-| GET | `/ui/.../preview` | Calculation preview |
-| POST | `/ui/.../preview` | Request calculation preview |
 
 ## Test Tool Strategy
 

@@ -19,6 +19,9 @@ Aktuell implementiert:
 - Reference Events: Bezugsdatum explizit bestätigen oder ablehnen (M6-A)
 - Calendar Arithmetic: Unverbindliche Berechnungsvorschau (Tage/Wochen) (M6-A)
 - Privacy-Logging mit automatisierter Redaction aller sensiblen Felder (M6-A)
+- M6-UI: Browser-Oberfläche für Fallnavigation, Dokumentenansicht, Kandidaten-Workspace (M6-UI Slices 1, 2, 4)
+- M6-UI: Bestätigungs-Workflow (Confirm/Reject/Manual) mit CSRF und Idempotenz (M6-UI Slice 2)
+- M6-UI: Calculation Preview mit Trace und Server-seitiger Revalidierung (M6-UI Slice 4, read-only)
 - Sanitisierte Exception Boundary (keine Stacktraces in HTTP-Antworten) (M6-A)
 - Dokument-Download und -Auflistung pro Fall
 - Lokale FastAPI-Anwendung auf 127.0.0.1:8000
@@ -32,16 +35,21 @@ automatischen Rechtsentscheidungen. Jede rechtlich relevante Ausgabe
 erfordert menschliche Prüfung.
 
 Noch **nicht** implementiert:
-- M6-UI (Frontend für Reference Events)
+- M6-UI Slice 3 (Correct, Revoke, Confirmation History)
 - M6-B (Feiertags-, Wochenend-, Zustellungsregeln)
 - OCR (optische Texterkennung für gescannte Dokumente)
 - Verbindliche Rechtsfristberechnung (alle Berechnungen sind unverbindliche Vorschauen)
 - Rechtsbewertung
 - Handlungsempfehlungen
 - Entwurfserstellung / Schreiben
-- Frontend
 - Authentifizierung / Mehrbenutzer
 - Verschlüsselung
+
+**M6-UI Status (Juli 2026):**
+- ✅ Slice 1 (Case/Document/Workspace Views) — implementiert
+- ✅ Slice 2 (Confirm, Reject, Manual Confirm + CSRF + Idempotency) — implementiert
+- ✅ Slice 4 (Calculation Preview + Trace) — implementiert
+- ❌ Slice 3 (Correct, Revoke, History) — ausstehend
 
 ## Architektur
 
@@ -132,11 +140,18 @@ src/private_legal_navigator/
 ├── domain/          → Case-Entität, Status, Invarianten
 ├── application/     → Use Cases, Repository-Port
 ├── infrastructure/  → SQLite-Connection, Repository-Impl
-└── api/             → FastAPI-Routen, Schemas, Fehler
+├── api/             → FastAPI-Routen, Schemas, Fehler
+│   └── ui_routes.py → M6-UI HTML-Routen (lesend + schreibend)
+├── presentation/
+│   └── templates/   → Jinja2-HTML-Vorlagen (M6-UI)
+└── static/          → CSS, JS (lokal, kein CDN)
 
 tests/
 ├── unit/            → Domain, Service (mocked)
 ├── integration/     → SQLite-Repository (temp DB)
+│   └── test_m6ui_slice4_calculation_preview.py → Preview-spezifische Tests
+├── e2e/             → Playwright-Browser-Tests
+│   └── fixtures/    → axe.min.js (lokal)
 └── api/             → FastAPI-Endpunkte (ASGI-Transport)
 
 specs/               → Spec-Kit-Artefakte

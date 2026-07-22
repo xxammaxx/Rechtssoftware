@@ -1,4 +1,4 @@
-"""Unit tests for M6-A logging filter (reference date redaction).
+﻿"""Unit tests for M6-A logging filter (reference date redaction).
 
 SYNTHETISCH – KEINE ECHTEN PERSONEN- ODER FALLDATEN
 """
@@ -127,3 +127,33 @@ class TestReferenceEventLogFilter:
         assert result["confirmed_date"] == "[REDACTED]"
         assert result["evidence_text"] == "[REDACTED]"
         assert result["event_type"] == "delivery"
+
+    def test_filter_redacts_dict_args(self, log_filter: ReferenceEventLogFilter) -> None:
+        """Filter redacts sensitive keys in dict args."""
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="test",
+            args=None,
+            exc_info=None,
+        )
+        record.args = {"confirmed_date": "2026-07-15"}
+        log_filter.filter(record)
+        assert record.args["confirmed_date"] == "[REDACTED]"
+
+    def test_filter_redacts_tuple_args(self, log_filter: ReferenceEventLogFilter) -> None:
+        """Filter redacts sensitive keys in tuple args containing dicts."""
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="test",
+            args=None,
+            exc_info=None,
+        )
+        record.args = ({"confirmed_date": "2026-07-15"},)
+        log_filter.filter(record)
+        assert record.args[0]["confirmed_date"] == "[REDACTED]"

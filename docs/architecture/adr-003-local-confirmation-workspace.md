@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (Slice 1 + Slice 2 implemented; Slice 3+ pending)
+Accepted (Slice 1 + Slice 2 + Slice 4 implemented; Slice 3 pending)
 
 ## Context
 
@@ -54,11 +54,12 @@ Browser (127.0.0.1:{port})
   ├── GET  /ui/.../workspace      → DeadlineService + ReferenceEventService → workspace.html
   ├── POST /ui/.../confirm        → ReferenceEventService.confirm_with_idempotency() → redirect
   ├── POST /ui/.../reject         → ReferenceEventService.reject_with_idempotency() → redirect
-  ├── POST /ui/.../manual-confirm → ReferenceEventService.confirm_with_idempotency() → redirect
-  ├── [planned: Slice 3+] POST /ui/.../correct → ReferenceEventService.correct() → redirect
-  ├── [planned: Slice 3+] POST /ui/.../revoke  → ReferenceEventService.revoke() → redirect
-  ├── [planned: Slice 3+] POST /ui/.../preview → CalculationService.calculate_preview → preview.html
-  ├── [planned: Slice 3+] GET  /ui/.../history → ReferenceEventService.get_history() → history.html
+   ├── POST /ui/.../manual-confirm → ReferenceEventService.confirm_with_idempotency() → redirect
+   ├── [planned: Slice 3] POST /ui/.../correct → ReferenceEventService.correct() → redirect
+   ├── [planned: Slice 3] POST /ui/.../revoke  → ReferenceEventService.revoke() → redirect
+   ├── [Slice 4] POST /ui/.../preview → LocalConfirmationWorkspaceService.calculate_preview() → preview.html
+   ├── [Slice 4] GET  /ui/.../preview → LocalConfirmationWorkspaceService.get_preview_view() → preview.html
+   ├── [planned: Slice 3] GET  /ui/.../history → ReferenceEventService.get_history() → history.html
   │
   └── (JSON API unchanged)
       GET /api/v1/cases            → same services, JSON output

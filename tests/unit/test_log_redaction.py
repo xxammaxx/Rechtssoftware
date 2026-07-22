@@ -414,3 +414,17 @@ class TestRedactCaseId:
             extra={"case_id": test_uuid},
         )
         assert str(test_uuid) not in output
+
+    def test_redact_uuid_value(self) -> None:
+        """UUID values are converted to strings by _redact_dict_recursive."""
+        from uuid import uuid4
+        uid = uuid4()
+        result = _redact_dict_recursive(uid)
+        assert result == str(uid)
+
+    def test_redact_date_value(self) -> None:
+        """date values are converted to strings by _redact_dict_recursive."""
+        from datetime import date
+        d = date(2026, 7, 15)
+        result = _redact_dict_recursive(d)
+        assert result == "2026-07-15"

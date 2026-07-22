@@ -356,3 +356,14 @@ class TestCalendarCalculationCandidate:
         assert c.confirmed_reference_event is None
         assert c.duration is None
         assert c.calculated_date is None
+
+    def test_calculation_step_negative_amount_raises(self) -> None:
+        """CalculationStep with amount < 0 raises ValueError."""
+        with pytest.raises(ValueError, match="amount must be >= 0"):
+            CalculationStep(
+                step=1,
+                operation=CalculationOperation.ADD_CALENDAR_DAYS,
+                input_date=date(2026, 1, 1),
+                amount=-1,
+                output_date=date(2026, 1, 1),
+            )

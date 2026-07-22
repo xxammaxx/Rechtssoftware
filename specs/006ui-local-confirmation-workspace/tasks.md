@@ -4,8 +4,8 @@
 
 Tasks are small, testable, and ordered by dependency.
 
-**Status (2026-07-19):** Slice 1 (T1–T7) and Slice 2 (T8–T10 + partial T14) are **implemented and verified**.
-Slice 3+ (T11–T13, T15–T23) are **pending**.
+**Status (2026-07-22):** Slice 1 (T1–T7), Slice 2 (T8–T10 + partial T14), and Slice 4 (T11) are **implemented and verified**.
+Slice 3+ (T12, T13, T15–T23) are **pending**.
 
 ## Task List
 
@@ -75,11 +75,12 @@ Slice 3+ (T11–T13, T15–T23) are **pending**.
 - **Tests:** Confirm sets CONFIRMED; Reject sets REJECTED; Manual entry creates confirmation; Correction supersedes; CSRF required; Idempotency required; PRG redirect; invalid date shows error; server-side revalidation
 - **Dependencies:** T7, T8, T9
 
-#### T11 — Calculation Preview
+#### T11 — Calculation Preview ✅
 - **Goal:** Preview GET/POST with server-side revalidation
-- **Files:** `api/ui_routes.py` (preview routes), `templates/preview_result.html`
-- **Tests:** Preview rendered with correct date; calculation steps visible; all warnings visible; button disabled when not CONFIRMED; human_review_required visible; legal_validity_assessed=false visible; neutral terminology; cross-resource membership check; candidate reloaded from canonical source
-- **Dependencies:** T10
+- **Files:** `api/ui_routes.py` (preview routes), `templates/candidates/preview.html`, `application/local_confirmation_workspace_service.py`
+- **Tests:** 703 tests (90.31% coverage): Preview rendered with correct date; calculation steps visible; all warnings visible; button disabled when not CONFIRMED; human_review_required visible; legal_validity_assessed=false visible; neutral terminology; cross-resource membership check; candidate reloaded from canonical source; read-only evidence (zero DB writes); repeat POST produces identical results; stale expected state → 409; Axe 0 critical/serious; Playwright E2E with real browser + screenshots
+- **Verification:** coverage 90.31%, Axe 0 critical/0 serious, Security: LOW RISK (12/12 passed), Playwright: browser screenshots (6), Restart smoke: PASS, Query-banner fix (9d438b4): effective
+- **Dependencies:** T10 (implemented 2026-07-22)
 
 #### T12 — Confirmation History
 - **Goal:** Display confirmation history with supersession chain

@@ -1,20 +1,18 @@
 """Unit tests for M6-UI Slice 4 calculation preview DTOs and helpers."""
 
+from private_legal_navigator.application.local_confirmation_workspace_service import (
+    _OPERATION_LABELS,
+    _WARNING_LABELS_PREVIEW,
+    _build_trace_step_dto,
+)
 from private_legal_navigator.application.ui_view_models import (
     CalculationPreviewResultDTO,
     CalculationPreviewView,
     CalculationTraceStepDTO,
 )
-from private_legal_navigator.application.local_confirmation_workspace_service import (
-    _build_trace_step_dto,
-    _OPERATION_LABELS,
-    _WARNING_LABELS_PREVIEW,
-)
 from private_legal_navigator.domain.reference_event import (
     CalculationOperation,
     CalculationStep,
-    Duration,
-    DurationUnit,
 )
 
 

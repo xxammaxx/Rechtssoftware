@@ -233,3 +233,19 @@ class TestCaseDetail:
         assert len(view.documents) == 1
         assert view.documents[0].has_text is True
         assert view.documents[0].classification == "sonstiges"
+
+
+class TestCalculatePreview:
+    """Tests for calculate_preview error paths."""
+
+    def test_calculate_preview_raises_without_arithmetic(
+        self, svc: LocalConfirmationWorkspaceService
+    ) -> None:
+        """calculate_preview raises ValueError when calendar_arithmetic is None."""
+        with pytest.raises(ValueError, match="Rechenvorschau ist nicht verfügbar."):
+            svc.calculate_preview(
+                case_id=uuid.uuid4(),
+                document_id=uuid.uuid4(),
+                candidate_index=0,
+                expected_active_confirmation_id=str(uuid.uuid4()),
+            )

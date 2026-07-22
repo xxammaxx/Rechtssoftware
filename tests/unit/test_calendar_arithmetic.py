@@ -284,3 +284,24 @@ class TestArithmetic:
         duration = Duration(amount=2, unit=DurationUnit.WEEK)
         op = self.arithmetic.resolve_operation(duration)
         assert op == CalculationOperation.ADD_CALENDAR_WEEKS
+    # --- add_calendar_days / add_calendar_weeks (direct method coverage) ---
+
+    def test_add_calendar_days(self):
+        """add_calendar_days adds timedelta and returns result."""
+        result = self.arithmetic.add_calendar_days(date(2026, 1, 1), 15)
+        assert result == date(2026, 1, 16)
+
+    def test_add_calendar_days_raises_below_min(self):
+        """add_calendar_days raises ValueError when result < MIN_DATE."""
+        with pytest.raises(ValueError, match="out of range"):
+            self.arithmetic.add_calendar_days(date(1900, 1, 1), -1)
+
+    def test_add_calendar_days_raises_above_max(self):
+        """add_calendar_days raises ValueError when result > MAX_DATE."""
+        with pytest.raises(ValueError, match="out of range"):
+            self.arithmetic.add_calendar_days(date(2099, 12, 31), 1)
+
+    def test_add_calendar_weeks(self):
+        """add_calendar_weeks delegates to add_calendar_days with weeks*7."""
+        result = self.arithmetic.add_calendar_weeks(date(2026, 1, 1), 2)
+        assert result == date(2026, 1, 15)
