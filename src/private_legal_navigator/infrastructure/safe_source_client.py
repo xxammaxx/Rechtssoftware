@@ -8,6 +8,7 @@ No credentials, no cookies, no case data ever sent to remote sources.
 
 import hashlib
 import logging
+import os
 import tempfile
 import uuid
 from pathlib import Path
@@ -186,6 +187,7 @@ def _atomic_write(content: bytes, target_dir: Path) -> Path:
 
     fd, tmp_path = tempfile.mkstemp(dir=str(target_dir), suffix=".tmp")
     try:
+        os.close(fd)  # Close file descriptor before write (Windows compatibility)
         tmp_file = Path(tmp_path)
         tmp_file.write_bytes(content)
         # Move to final location

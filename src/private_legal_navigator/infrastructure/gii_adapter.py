@@ -160,9 +160,19 @@ class GiiAdapter:
 
         items: list[GiiCatalogItem] = []
         for item_elem in root.iter("item"):
-            link = item_elem.get("link", "")
-            title = item_elem.get("title", "")
-            item_type = item_elem.get("type", "")
+            link = ""
+            title = ""
+            item_type = ""
+            # GII catalog uses child elements, not attributes
+            for child in item_elem:
+                tag = child.tag.lower()
+                text = (child.text or "").strip()
+                if tag == "link":
+                    link = text
+                elif tag == "title":
+                    title = text
+                elif tag == "type":
+                    item_type = text
 
             # Derive abbreviation from link (e.g., "BGB" from "https://.../bgb/")
             abbreviation = ""
@@ -209,24 +219,33 @@ class GiiAdapter:
         4. Create SourceSnapshot entity
         5. Parse XML into LegalInstrument + LegalExpression + provisions
         """
-        # 1. Download
+        # 1. Download — upgrade http→https (GII catalog uses http links but site supports https)
         law_url = item.link
         if not law_url.startswith("http"):
             law_url = (
                 GII_BASE_URL + law_url if law_url.startswith("/") else GII_BASE_URL + "/" + law_url
             )
+        if law_url.startswith("http://"):
+            law_url = law_url.replace("http://", "https://", 1)
 
-        xml_bytes = self._client.download(law_url)
+        raw_bytes = self._client.download(law_url)
 
-        # 2. Hash
-        sha256 = compute_sha256(xml_bytes)
+        # 2. Extract XML from ZIP if needed (GII serves ZIP archives)
+        if law_url.endswith(".zip") or raw_bytes[:2] == b"PK":
+            xml_bytes = _extract_xml_from_zip_bytes(raw_bytes, law_url)
+        else:
+            xml_bytes = raw_bytes
 
         # 3. Validate magic bytes before processing
         from private_legal_navigator.infrastructure.safe_xml_parser import validate_xml_magic_bytes
 
-        validate_xml_magic_bytes(xml_bytes)
+        if not validate_xml_magic_bytes(xml_bytes):
+            raise ValueError(f"Downloaded content from {law_url} does not appear to be XML")
 
-        # 4. Save snapshot atomically
+        # 4. Hash
+        sha256 = compute_sha256(xml_bytes)
+
+        # 5. Save snapshot atomically
         from private_legal_navigator.infrastructure.safe_source_client import _atomic_write
 
         snapshot_path = _atomic_write(xml_bytes, self._snapshot_dir)
@@ -556,3 +575,51 @@ def _get_element_text(elem: etree._Element) -> str:
         if child.tail:
             text_parts.append(child.tail)
     return " ".join(t.strip() for t in text_parts).strip()
+
+
+def _extract_xml_from_zip_bytes(zip_bytes: bytes, source_url: str) -> bytes:
+    """Extract the first XML file from a ZIP archive with path traversal protection.
+
+    SEC-007: Path traversal (../) is rejected.
+    SEC-008: Absolute paths are rejected.
+    SEC-009: Symlinks are not possible in basic ZIP.
+    SEC-010: Max 50 files per archive enforced.
+    SEC-011: Max 100 MB extracted total size enforced.
+    """
+    import zipfile
+    from io import BytesIO
+
+    MAX_FILES = 50
+    MAX_TOTAL_SIZE = 100 * 1024 * 1024  # 100 MB
+
+    with zipfile.ZipFile(BytesIO(zip_bytes), "r") as zf:
+        names = zf.namelist()
+        if len(names) > MAX_FILES:
+            raise ValueError(
+                f"ZIP archive contains {len(names)} files, exceeding limit of {MAX_FILES}"
+            )
+
+        # Find the first XML file
+        xml_name = None
+        for name in names:
+            # SEC-007: Reject path traversal
+            if ".." in name:
+                raise ValueError(f"ZIP entry contains path traversal: {name}")
+            # SEC-008: Reject absolute paths
+            if name.startswith("/") or (len(name) > 1 and name[1] == ":"):
+                raise ValueError(f"ZIP entry has absolute path: {name}")
+            if name.lower().endswith(".xml"):
+                xml_name = name
+                break
+
+        if xml_name is None:
+            raise ValueError(
+                f"No XML file found in ZIP archive from {source_url}. Contents: {names[:10]}"
+            )
+
+        # Check total size
+        total_size = sum(info.file_size for info in zf.infolist())
+        if total_size > MAX_TOTAL_SIZE:
+            raise ValueError(f"ZIP total size {total_size} exceeds limit of {MAX_TOTAL_SIZE}")
+
+        return zf.read(xml_name)
