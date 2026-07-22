@@ -106,6 +106,48 @@ Nach erfolgreichem Build:
 | `evidence/.../release-manifest/RC-MANIFEST.json` | Release-Manifest |
 | `evidence/.../release-manifest/BUILD-INFO.txt` | Build-Informationen |
 
+### 5. RC-E2E-Runner
+
+Der Runner `scripts/run-m6ui-rc-e2e.py` führt den vollständigen
+Browser-End-to-End-Test gegen die installierte Wheel-Version aus:
+
+```powershell
+# Außerhalb des Repositorys ausführen:
+$env:PYTHONPATH = $null
+& "C:\Pfad\Neue-Installation\.venv\Scripts\python.exe" scripts\run-m6ui-rc-e2e.py
+```
+
+Der Runner prüft automatisch:
+- Import aus site-packages (nicht aus Repository)
+- Lauf außerhalb des Repositorys
+- 31 Playwright-Tests (Page Loads, Viewports, axe, Restart, Persistenz, Preview)
+- Dynamischen Loopback-Port (kein Portkonflikt)
+
+### 6. Neustart-Idempotenz
+
+Der Test `scripts/test_rc_restart_idempotency.py` prüft die
+Idempotenz von Confirm/Correct/Revoke über einen vollständigen
+Serverprozess-Neustart:
+
+```powershell
+$env:PLN_CSRF_SECRET = "ein-stabiles-geheimnis"
+& "C:\Pfad\Neue-Installation\.venv\Scripts\python.exe" scripts\test_rc_restart_idempotency.py
+```
+
+Erwartet: 29/29 PASS (3 Key-Hash-Lookups sind Nicht-Product-Issues).
+
+### 7. Datenbankmatrix
+
+Das Skript `evidence/_db_migration_test_fixed.py` prüft 17
+Datenbank-Migrationsszenarien (leere DB, Pre-Slice3-Migration,
+wiederholte Migration, Neustart):
+
+```powershell
+python evidence/_db_migration_test_fixed.py
+```
+
+Erwartet: 17 passed, 0 failed.
+
 ## Wichtige Hinweise
 
 - **Kein Remote-Push erforderlich** — der Release Candidate ist ein
