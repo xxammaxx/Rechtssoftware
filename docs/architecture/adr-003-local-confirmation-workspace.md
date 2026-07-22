@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (Slice 1 + Slice 2 + Slice 4 implemented; Slice 3 pending)
+Accepted (Slices 1-4 fully implemented; M6-UI Local Release Candidate v0.1.0-rc)
 
 ## Context
 

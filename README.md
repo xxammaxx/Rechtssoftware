@@ -5,7 +5,7 @@ behördlichen Angelegenheiten.
 
 ## Status
 
-**M6-A — Reference Events & Calendar Arithmetic** — abgeschlossen.
+**M6-UI — Lokaler Release Candidate (v0.1.0-rc)** — abgeschlossen.
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)
@@ -19,8 +19,9 @@ Aktuell implementiert:
 - Reference Events: Bezugsdatum explizit bestätigen oder ablehnen (M6-A)
 - Calendar Arithmetic: Unverbindliche Berechnungsvorschau (Tage/Wochen) (M6-A)
 - Privacy-Logging mit automatisierter Redaction aller sensiblen Felder (M6-A)
-- M6-UI: Browser-Oberfläche für Fallnavigation, Dokumentenansicht, Kandidaten-Workspace (M6-UI Slices 1, 2, 4)
+- M6-UI: Browser-Oberfläche für Fallnavigation, Dokumentenansicht, Kandidaten-Workspace (M6-UI Slice 1)
 - M6-UI: Bestätigungs-Workflow (Confirm/Reject/Manual) mit CSRF und Idempotenz (M6-UI Slice 2)
+- M6-UI: Correct, Revoke, vollständige Bestätigungshistorie (M6-UI Slice 3)
 - M6-UI: Calculation Preview mit Trace und Server-seitiger Revalidierung (M6-UI Slice 4, read-only)
 - Sanitisierte Exception Boundary (keine Stacktraces in HTTP-Antworten) (M6-A)
 - Dokument-Download und -Auflistung pro Fall
@@ -35,7 +36,6 @@ automatischen Rechtsentscheidungen. Jede rechtlich relevante Ausgabe
 erfordert menschliche Prüfung.
 
 Noch **nicht** implementiert:
-- M6-UI Slice 3 (Correct, Revoke, Confirmation History)
 - M6-B (Feiertags-, Wochenend-, Zustellungsregeln)
 - OCR (optische Texterkennung für gescannte Dokumente)
 - Verbindliche Rechtsfristberechnung (alle Berechnungen sind unverbindliche Vorschauen)
@@ -48,8 +48,8 @@ Noch **nicht** implementiert:
 **M6-UI Status (Juli 2026):**
 - ✅ Slice 1 (Case/Document/Workspace Views) — implementiert
 - ✅ Slice 2 (Confirm, Reject, Manual Confirm + CSRF + Idempotency) — implementiert
+- ✅ Slice 3 (Correct, Revoke, History) — implementiert
 - ✅ Slice 4 (Calculation Preview + Trace) — implementiert
-- ❌ Slice 3 (Correct, Revoke, History) — ausstehend
 
 ## Architektur
 
