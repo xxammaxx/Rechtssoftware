@@ -330,7 +330,7 @@ class SqliteCaseTimelineRepository(CaseTimelineRepository):
                 (str(case_id),),
             ).fetchone()
             if case_row is None:
-                raise ValueError(f"Case not found: {case_id}")
+                raise ValueError("Case not found")
 
             # Get active events (non-revoked, CONFIRMED or CORRECTED)
             events = self._list_active_events_conn(conn, case_id)

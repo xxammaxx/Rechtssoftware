@@ -52,14 +52,28 @@ def db_path(tmp_path: Path) -> Path:
 
 def _create_document(db_path: Path, doc_id: uuid.UUID) -> None:
     """Helper to create a document record for FK constraint."""
+    case_id = uuid.uuid4()
     conn = get_connection(db_path)
+    # Create parent case first to satisfy FK constraint
+    conn.execute(
+        """INSERT OR IGNORE INTO cases
+           (case_id, title, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)""",
+        (
+            str(case_id),
+            "SYNTHETISCH – Test Case",
+            "open",
+            "2026-01-01T00:00:00Z",
+            "2026-01-01T00:00:00Z",
+        ),
+    )
     conn.execute(
         """INSERT OR IGNORE INTO documents
            (document_id, case_id, filename, mime_type, size_bytes, storage_path, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
             str(doc_id),
-            str(uuid.uuid4()),
+            str(case_id),
             "test.pdf",
             "application/pdf",
             100,

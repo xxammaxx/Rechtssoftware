@@ -22,6 +22,7 @@ from private_legal_navigator.infrastructure.gii_adapter import (
     GiiParsedInstrument,
     make_gii_source,
 )
+from private_legal_navigator.infrastructure.safe_logging import safe_log_event
 from private_legal_navigator.infrastructure.safe_source_client import SourceClient
 from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
     SqliteLegalSourceRepository,
@@ -53,7 +54,9 @@ class LegalSourceService:
         existing = self._repo.get_source_by_key(gii_source.source_key)
         if existing is None:
             self._repo.save_source(gii_source)
-            logger.info("Registered default source: %s", gii_source.display_name)
+            safe_log_event(
+                logger, "legal_source.registered_default", display_name=gii_source.display_name
+            )
 
     def list_sources(self) -> list[LegalSource]:
         """List all registered legal sources."""
@@ -96,7 +99,7 @@ class LegalSourceService:
         # Find in catalog
         item = self._gii.find_in_catalog(key)
         if item is None:
-            logger.warning("Instrument '%s' not found in GII catalog", key)
+            safe_log_event(logger, "legal_source.instrument_not_found", instrument_key=key)
             return None
 
         # Sync
@@ -105,10 +108,11 @@ class LegalSourceService:
         # Check for existing snapshot with same hash
         existing = self._repo.get_snapshot_by_hash(parsed.snapshot.sha256)
         if existing is not None:
-            logger.info(
-                "Snapshot already exists for %s (hash: %s...) — skipping duplicate",
-                item.abbreviation,
-                parsed.snapshot.sha256[:16],
+            safe_log_event(
+                logger,
+                "legal_source.snapshot_duplicate",
+                abbreviation=item.abbreviation,
+                sha256_prefix=parsed.snapshot.sha256[:16],
             )
             parsed.snapshot.import_status = parsed.snapshot.import_status or ImportStatus.DUPLICATE  # type: ignore[name-defined]
             return parsed
@@ -133,12 +137,13 @@ class LegalSourceService:
         try:
             self._repo.rebuild_fts_index()
         except Exception as exc:
-            logger.warning("FTS index rebuild failed (non-fatal): %s", exc)
+            safe_log_event(logger, "legal_source.fts_rebuild_failed", error_type=type(exc).__name__)
 
-        logger.info(
-            "Synced instrument %s: %d provisions",
-            parsed.instrument.abbreviation,
-            len(parsed.provisions),
+        safe_log_event(
+            logger,
+            "legal_source.instrument_synced",
+            abbreviation=parsed.instrument.abbreviation,
+            provision_count=len(parsed.provisions),
         )
 
         return parsed
