@@ -142,6 +142,7 @@ class CitationResolver:
         result.authority_tier_display = instrument.authority_tier.value
 
         # Step 2: Find current expression
+        assert instrument.instrument_id is not None
         expression = self._repo.get_current_expression(instrument.instrument_id)
         if expression is None:
             expressions = self._repo.list_expressions(instrument.instrument_id)
@@ -179,8 +180,9 @@ class CitationResolver:
             return result
 
         # Try finding by searching provisions for this expression
+        assert expression.expression_id is not None
         provisions = self._repo.get_provisions_for_expression(expression.expression_id)
-        found_provision = None
+        found_provision: LegalProvision | None = None
 
         # Look for paragraph number match
         para_num = parsed.paragraph_number
@@ -200,7 +202,7 @@ class CitationResolver:
                 prov_id = fts_row.get("provision_id")
                 if prov_id:
                     try:
-                        prov = self._repo.get_provision(uuid.UUID(prov_id))
+                        prov = self._repo.get_provision(uuid.UUID(prov_id))  # type: ignore[assignment]
                         if prov and prov.expression_id == expression.expression_id:
                             found_provision = prov
                             break

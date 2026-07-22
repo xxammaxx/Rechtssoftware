@@ -26,6 +26,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from lxml import etree
 
@@ -220,16 +221,24 @@ class GiiAdapter:
         # 2. Hash
         sha256 = compute_sha256(xml_bytes)
 
-        # 3. Save snapshot
-        snapshot_path = self._snapshot_dir / f"{uuid.uuid4().hex}.snap"
-        snapshot_path.write_bytes(xml_bytes)
+        # 3. Validate magic bytes before processing
+        from private_legal_navigator.infrastructure.safe_xml_parser import validate_xml_magic_bytes
+
+        validate_xml_magic_bytes(xml_bytes)
+
+        # 4. Save snapshot atomically
+        from private_legal_navigator.infrastructure.safe_source_client import _atomic_write
+
+        snapshot_path = _atomic_write(xml_bytes, self._snapshot_dir)
 
         retrieved_at = datetime.now()
 
         # 4. Create snapshot entity
+        gii_source = make_gii_source()
+        assert gii_source.source_id is not None
         snapshot = SourceSnapshot(
             snapshot_id=uuid.uuid4(),
-            source_id=make_gii_source().source_id,
+            source_id=gii_source.source_id,
             source_locator=law_url,
             retrieved_at=retrieved_at,
             content_type="application/xml",
@@ -317,6 +326,8 @@ def _parse_law_xml(
     )
 
     # Build expression
+    assert instrument.instrument_id is not None
+    assert snapshot.snapshot_id is not None
     expression = LegalExpression(
         expression_id=uuid.uuid4(),
         instrument_id=instrument.instrument_id,
@@ -336,12 +347,15 @@ def _parse_law_xml(
     )
 
     # Extract provisions
+    assert expression.expression_id is not None
     provisions = _extract_provisions(root, expression.expression_id)
 
     return instrument, expression, provisions
 
 
-def _extract_metadata(root: etree._Element, fallback_abbr: str, fallback_title: str) -> dict:
+def _extract_metadata(
+    root: etree._Element, fallback_abbr: str, fallback_title: str
+) -> dict[str, Any]:
     """Extract metadata from GII XML metadaten section.
 
     Falls back to catalog-provided values if XML metadata is incomplete.
@@ -535,9 +549,7 @@ def _find_text_container(root: etree._Element) -> etree._Element | None:
 
 def _get_element_text(elem: etree._Element) -> str:
     """Get the text content of an XML element, including tail text of children."""
-    if elem.text:
-        return elem.text.strip()
-    text_parts = []
+    text_parts: list[str] = []
     if elem.text:
         text_parts.append(elem.text)
     for child in elem:

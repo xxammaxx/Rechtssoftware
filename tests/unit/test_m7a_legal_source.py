@@ -477,12 +477,6 @@ class TestCaseTimelineRepository:
             CaseLegalLink,
             LegalLinkStatus,
         )
-        from private_legal_navigator.infrastructure.sqlite_case_timeline_repository import (
-            SqliteCaseTimelineRepository,
-        )
-        from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
-            SqliteLegalSourceRepository,
-        )
         from private_legal_navigator.domain.legal_source import (
             AuthorityTier,
             InstrumentType,
@@ -492,6 +486,12 @@ class TestCaseTimelineRepository:
             LegalSource,
             ProvisionType,
             SourceSnapshot,
+        )
+        from private_legal_navigator.infrastructure.sqlite_case_timeline_repository import (
+            SqliteCaseTimelineRepository,
+        )
+        from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+            SqliteLegalSourceRepository,
         )
 
         case_id = uuid.uuid4()
@@ -551,7 +551,7 @@ class TestCaseTimelineRepository:
                 provision_number="§ 1",
                 heading="SYNTHETISCH – Geltungsbereich",
                 text_content="Dieses Gesetz regelt...",
-                text_sha256=hashlib.sha256("Dieses Gesetz regelt...".encode()).hexdigest(),
+                text_sha256=hashlib.sha256(b"Dieses Gesetz regelt...").hexdigest(),
             )
             legal_repo.save_provision(provision)
 

@@ -98,7 +98,7 @@ def iterparse_large_xml(
 
     WARNING: resolve_entities=False is non-negotiable.
     """
-    if isinstance(source, bytes):
+    if isinstance(source, bytes):  # type: ignore[unreachable]
         raise TypeError("iterparse_large_xml requires a file-like object, not bytes")
 
     events = ("end",)

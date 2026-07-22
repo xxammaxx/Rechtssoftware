@@ -13,10 +13,17 @@ M7-A CLI commands:
   python -m private_legal_navigator legal-evidence export --case-id <ID> --output <PATH>
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
 import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from private_legal_navigator.application.legal_source_service import LegalSourceService
+    from private_legal_navigator.config import Settings
 
 
 def main() -> None:
@@ -103,7 +110,7 @@ def _start_server() -> None:
     )
 
 
-def _get_legal_service():
+def _get_legal_service() -> tuple[LegalSourceService, Settings]:
     """Get the legal source service with all dependencies."""
     from private_legal_navigator.application.legal_source_service import LegalSourceService
     from private_legal_navigator.config import Settings
@@ -154,9 +161,9 @@ def _handle_legal_source(args: argparse.Namespace) -> None:
 
         # Verify all snapshots
         repo = SqliteLegalSourceRepository(svc._repo._db_path)
-        sources = repo.list_sources(enabled_only=False)
+        src_list = repo.list_sources(enabled_only=False)
         ok, fail = 0, 0
-        for source in sources:
+        for source in src_list:
             print(f"Checking snapshots for {source.display_name}...")
             # We'd need a list_snapshots method — simplified check
             ok += 1

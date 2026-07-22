@@ -6,6 +6,7 @@ Delegates to repository, client, adapter, and resolver.
 
 import logging
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 from private_legal_navigator.application.citation_resolver import (
@@ -62,7 +63,7 @@ class LegalSourceService:
         """List all registered legal sources."""
         return self._repo.list_sources()
 
-    def get_source_status(self) -> list[dict]:
+    def get_source_status(self) -> list[dict[str, Any]]:
         """Get status overview of all sources with sync info."""
         sources = self._repo.list_sources()
         status_list = []
@@ -114,7 +115,7 @@ class LegalSourceService:
                 abbreviation=item.abbreviation,
                 sha256_prefix=parsed.snapshot.sha256[:16],
             )
-            parsed.snapshot.import_status = parsed.snapshot.import_status or ImportStatus.DUPLICATE  # type: ignore[name-defined]
+            parsed.snapshot.import_status = ImportStatus.DUPLICATE
             return parsed
 
         # Persist snapshot
@@ -123,6 +124,7 @@ class LegalSourceService:
         # Check for existing instrument and update/insert
         existing_inst = self._repo.get_instrument_by_abbreviation(parsed.instrument.abbreviation)
         if existing_inst is not None:
+            assert existing_inst.instrument_id is not None
             parsed.instrument.instrument_id = existing_inst.instrument_id
             parsed.expression.instrument_id = existing_inst.instrument_id
 
@@ -150,7 +152,7 @@ class LegalSourceService:
 
     # ── Search ───────────────────────────────────
 
-    def search(self, query: str, limit: int = 50) -> list[dict]:
+    def search(self, query: str, limit: int = 50) -> list[dict[str, Any]]:
         """Search the legal corpus using FTS5 full-text search."""
         return self._repo.search_provisions_fts(query, limit=limit)
 

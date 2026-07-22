@@ -4,6 +4,7 @@ import sqlite3
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from private_legal_navigator.application.legal_source_repository import LegalSourceRepository
 from private_legal_navigator.domain.legal_source import (
@@ -493,7 +494,7 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
 
     # ── Search ───────────────────────────────────
 
-    def search_provisions_fts(self, query: str, limit: int = 50) -> list[dict]:
+    def search_provisions_fts(self, query: str, limit: int = 50) -> list[dict[str, Any]]:
         conn = get_connection(self._db_path)
         try:
             rows = conn.execute(

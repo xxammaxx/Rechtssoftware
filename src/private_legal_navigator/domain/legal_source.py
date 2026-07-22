@@ -124,7 +124,7 @@ class LegalSource:
     Sources are defined at setup time, not dynamically created.
     """
 
-    source_id: UUID
+    source_id: UUID | None
     source_key: str
     display_name: str
     authority_tier: AuthorityTier
@@ -152,7 +152,7 @@ class SourceSnapshot:
     separate derived data.
     """
 
-    snapshot_id: UUID
+    snapshot_id: UUID | None
     source_id: UUID
     source_locator: str
     retrieved_at: datetime
@@ -180,12 +180,9 @@ class SourceSnapshot:
 
 @dataclass
 class LegalInstrument:
-    """A legal instrument: a statute, regulation, directive, etc.
+    """A legal instrument (law, regulation, directive, etc.)."""
 
-    Example: "Sozialgesetzbuch (SGB) Zehntes Buch (X)"
-    """
-
-    instrument_id: UUID
+    instrument_id: UUID | None
     jurisdiction: str
     instrument_type: InstrumentType
     official_title: str
@@ -205,13 +202,9 @@ class LegalInstrument:
 
 @dataclass
 class LegalExpression:
-    """A specific version/expression of a legal instrument at a point in time.
+    """A specific version/edition/time-slice of a LegalInstrument."""
 
-    Key invariant: This is ONE retrieved snapshot's version.
-    Historical completeness is NEVER claimed.
-    """
-
-    expression_id: UUID
+    expression_id: UUID | None
     instrument_id: UUID
     source_snapshot_id: UUID
     published_at: datetime | None = None
@@ -235,7 +228,7 @@ class LegalProvision:
     Example: § 48 SGB X (Aufhebung eines Verwaltungsaktes)
     """
 
-    provision_id: UUID
+    provision_id: UUID | None
     expression_id: UUID
     provision_type: ProvisionType
     provision_number: str
@@ -260,7 +253,7 @@ class LegalCitation:
     Stores both the original citation text and the resolution result.
     """
 
-    citation_id: UUID
+    citation_id: UUID | None
     source_entity_type: str = ""  # "case", "document", "evidence"
     source_entity_id: UUID | None = None
     citation_text: str = ""

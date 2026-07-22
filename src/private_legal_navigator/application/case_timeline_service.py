@@ -7,6 +7,7 @@ All state changes go through human review (CANDIDATE → CONFIRMED/REJECTED/REVO
 import logging
 import uuid
 from datetime import datetime
+from typing import Any
 
 from private_legal_navigator.domain.case_timeline import (
     CaseLegalEvent,
@@ -91,7 +92,7 @@ class CaseTimelineService:
     def correct_event(
         self,
         event_id: uuid.UUID,
-        **updates: str | datetime | None,
+        **updates: Any,
     ) -> CaseLegalEvent:
         """Correct an existing legal event (creates new version, preserves old)."""
         original = self._require_event(event_id)
@@ -236,7 +237,7 @@ class CaseTimelineService:
         """Build a deterministic evidence pack for a case."""
         return self._timeline_repo.build_evidence_pack(case_id)
 
-    def export_evidence_pack(self, case_id: uuid.UUID) -> dict:
+    def export_evidence_pack(self, case_id: uuid.UUID) -> dict[str, Any]:
         """Export evidence pack as JSON-serializable dict."""
         pack = self._timeline_repo.build_evidence_pack(case_id)
         return {

@@ -9,6 +9,7 @@ All event and link state changes are append-only:
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
 
 # ──────────────────────────────────────────────
@@ -159,7 +160,7 @@ class CaseLegalEvent:
     Revocations set revoked_at. All three time dimensions are tracked.
     """
 
-    event_id: UUID
+    event_id: UUID | None
     case_id: UUID
     event_type: LegalEventType
     occurred_at: datetime | None = None
@@ -196,7 +197,7 @@ class EventRelation:
     Many-to-many. Both events must belong to the same case.
     """
 
-    relation_id: UUID
+    relation_id: UUID | None
     case_id: UUID
     source_event_id: UUID
     target_event_id: UUID
@@ -221,7 +222,7 @@ class CaseLegalLink:
     Corrected/revoked records are preserved via previous_link_id.
     """
 
-    link_id: UUID
+    link_id: UUID | None
     case_id: UUID
     legal_provision_id: UUID
     document_id: UUID | None = None
@@ -251,7 +252,7 @@ class LegalIssue:
     Initially detected by deterministic spotter, later confirmed by human.
     """
 
-    issue_id: UUID
+    issue_id: UUID | None
     case_id: UUID
     title: str
     description: str = ""
@@ -278,7 +279,7 @@ class LegalClaim:
     No LLM needed for M7-A — deterministic or manual population.
     """
 
-    claim_id: UUID
+    claim_id: UUID | None
     case_id: UUID
     legal_issue_id: UUID | None = None
     claim_text: str = ""
@@ -299,7 +300,7 @@ class LegalClaim:
 class ClaimEvidence:
     """A piece of evidence supporting or contradicting a legal claim."""
 
-    evidence_id: UUID
+    evidence_id: UUID | None
     claim_id: UUID
     evidence_type: EvidenceType
     legal_provision_id: UUID | None = None
@@ -337,12 +338,12 @@ class EvidencePack:
     case_title: str = ""
     exported_at: datetime | None = None
     operating_mode: OperatingMode = OperatingMode.OWNER_SELF_HELP
-    confirmed_facts: list[dict] = field(default_factory=list)
-    open_facts: list[dict] = field(default_factory=list)
-    legal_events: list[dict] = field(default_factory=list)
-    legal_issues: list[dict] = field(default_factory=list)
-    confirmed_legal_links: list[dict] = field(default_factory=list)
-    provisions: list[dict] = field(default_factory=list)
-    source_snapshots: list[dict] = field(default_factory=list)
+    confirmed_facts: list[dict[str, Any]] = field(default_factory=list)
+    open_facts: list[dict[str, Any]] = field(default_factory=list)
+    legal_events: list[dict[str, Any]] = field(default_factory=list)
+    legal_issues: list[dict[str, Any]] = field(default_factory=list)
+    confirmed_legal_links: list[dict[str, Any]] = field(default_factory=list)
+    provisions: list[dict[str, Any]] = field(default_factory=list)
+    source_snapshots: list[dict[str, Any]] = field(default_factory=list)
     temporal_warnings: list[str] = field(default_factory=list)
-    integrity: dict = field(default_factory=dict)
+    integrity: dict[str, Any] = field(default_factory=dict)

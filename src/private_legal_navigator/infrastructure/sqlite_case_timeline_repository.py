@@ -4,6 +4,7 @@ import sqlite3
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from private_legal_navigator.application.case_timeline_repository import CaseTimelineRepository
 from private_legal_navigator.domain.case_timeline import (
@@ -409,7 +410,9 @@ class SqliteCaseTimelineRepository(CaseTimelineRepository):
         finally:
             conn.close()
 
-    def _list_active_events_conn(self, conn: sqlite3.Connection, case_id: uuid.UUID) -> list[dict]:
+    def _list_active_events_conn(
+        self, conn: sqlite3.Connection, case_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
         rows = conn.execute(
             "SELECT * FROM case_legal_events WHERE case_id = ? "
             "AND review_status IN ('CONFIRMED', 'CORRECTED') AND revoked_at IS NULL "
@@ -418,7 +421,9 @@ class SqliteCaseTimelineRepository(CaseTimelineRepository):
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def _list_active_links_conn(self, conn: sqlite3.Connection, case_id: uuid.UUID) -> list[dict]:
+    def _list_active_links_conn(
+        self, conn: sqlite3.Connection, case_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
         rows = conn.execute(
             "SELECT cll.*, lp.provision_number, lp.heading as provision_heading, "
             "lp.stable_key, li.abbreviation, li.official_title "

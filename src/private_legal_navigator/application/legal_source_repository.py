@@ -9,6 +9,7 @@ Defines the interface that infrastructure must implement for:
 """
 
 from abc import ABC, abstractmethod
+from typing import Any
 from uuid import UUID
 
 from private_legal_navigator.domain.legal_source import (
@@ -120,6 +121,6 @@ class LegalSourceRepository(ABC):
     # ── Search ───────────────────────────────────
 
     @abstractmethod
-    def search_provisions_fts(self, query: str, limit: int = 50) -> list[dict]: ...
+    def search_provisions_fts(self, query: str, limit: int = 50) -> list[dict[str, Any]]: ...
     @abstractmethod
     def rebuild_fts_index(self) -> None: ...
