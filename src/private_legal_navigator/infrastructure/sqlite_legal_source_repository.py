@@ -104,9 +104,10 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
 
     # ── Snapshots ────────────────────────────────
 
-    def save_snapshot(self, snapshot: SourceSnapshot) -> None:
-        conn = get_connection(self._db_path)
-        try:
+    def save_snapshot(
+        self, snapshot: SourceSnapshot, conn: sqlite3.Connection | None = None
+    ) -> None:
+        if conn is not None:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO legal_source_snapshots
@@ -133,9 +134,39 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
                     snapshot.http_last_modified,
                 ),
             )
-            conn.commit()
+            return
+        # Standalone: create own connection and commit
+        _conn = get_connection(self._db_path)
+        try:
+            _conn.execute(
+                """
+                INSERT OR REPLACE INTO legal_source_snapshots
+                    (snapshot_id, source_id, source_locator, retrieved_at,
+                     content_type, byte_size, sha256, storage_path,
+                     parser_version, import_status, error_summary, immutable,
+                     http_etag, http_last_modified)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(snapshot.snapshot_id),
+                    str(snapshot.source_id),
+                    snapshot.source_locator,
+                    snapshot.retrieved_at.isoformat(),
+                    snapshot.content_type,
+                    snapshot.byte_size,
+                    snapshot.sha256,
+                    snapshot.storage_path,
+                    snapshot.parser_version,
+                    snapshot.import_status.value,
+                    snapshot.error_summary,
+                    1 if snapshot.immutable else 0,
+                    snapshot.http_etag,
+                    snapshot.http_last_modified,
+                ),
+            )
+            _conn.commit()
         finally:
-            conn.close()
+            _conn.close()
 
     def get_snapshot(self, snapshot_id: uuid.UUID) -> SourceSnapshot | None:
         conn = get_connection(self._db_path)
@@ -405,6 +436,127 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
             return [self._row_to_provision(row) for row in rows]
         finally:
             conn.close()
+
+    # ── Batch Atomic Import (SEC-015) ─────────────
+
+    def save_instrument_batch(
+        self,
+        snapshot: SourceSnapshot,
+        instrument: LegalInstrument,
+        expression: LegalExpression,
+        provisions: list[LegalProvision],
+    ) -> None:
+        """Save a complete instrument import in a single atomic transaction.
+
+        SEC-015: If any step fails, nothing is persisted.
+        FTS index is rebuilt after successful commit.
+
+        Raises any exception on failure; caller receives rolled-back state.
+        """
+        from private_legal_navigator.infrastructure.database import transaction
+
+        with transaction(self._db_path) as conn:
+            # 1. Save snapshot
+            conn.execute(
+                """INSERT OR REPLACE INTO legal_source_snapshots
+                    (snapshot_id, source_id, source_locator, retrieved_at,
+                     content_type, byte_size, sha256, storage_path,
+                     parser_version, import_status, error_summary, immutable,
+                     http_etag, http_last_modified)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    str(snapshot.snapshot_id),
+                    str(snapshot.source_id),
+                    snapshot.source_locator,
+                    snapshot.retrieved_at.isoformat(),
+                    snapshot.content_type,
+                    snapshot.byte_size,
+                    snapshot.sha256,
+                    snapshot.storage_path,
+                    snapshot.parser_version,
+                    snapshot.import_status.value,
+                    snapshot.error_summary,
+                    1 if snapshot.immutable else 0,
+                    snapshot.http_etag,
+                    snapshot.http_last_modified,
+                ),
+            )
+
+            # 2. Save instrument
+            now = datetime.now().isoformat()
+            conn.execute(
+                """INSERT OR REPLACE INTO legal_instruments
+                    (instrument_id, jurisdiction, instrument_type, official_title,
+                     short_title, abbreviation, source_identifier, authority_tier,
+                     created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    str(instrument.instrument_id),
+                    instrument.jurisdiction,
+                    instrument.instrument_type.value,
+                    instrument.official_title,
+                    instrument.short_title,
+                    instrument.abbreviation,
+                    instrument.source_identifier,
+                    instrument.authority_tier.value,
+                    (instrument.created_at or datetime.now()).isoformat(),
+                    now,
+                ),
+            )
+
+            # 3. Save expression
+            conn.execute(
+                """INSERT OR REPLACE INTO legal_expressions
+                    (expression_id, instrument_id, source_snapshot_id,
+                     published_at, valid_from, valid_to, retrieved_at,
+                     temporal_status, historical_completeness, temporal_confidence,
+                     source_note)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    str(expression.expression_id),
+                    str(expression.instrument_id),
+                    str(expression.source_snapshot_id),
+                    expression.published_at.isoformat() if expression.published_at else None,
+                    expression.valid_from.isoformat() if expression.valid_from else None,
+                    expression.valid_to.isoformat() if expression.valid_to else None,
+                    expression.retrieved_at.isoformat() if expression.retrieved_at else None,
+                    expression.temporal_status.value,
+                    expression.historical_completeness.value,
+                    expression.temporal_confidence.value,
+                    expression.source_note,
+                ),
+            )
+
+            # 4. Save all provisions
+            for prov in provisions:
+                conn.execute(
+                    """INSERT OR REPLACE INTO legal_provisions
+                        (provision_id, expression_id, provision_type, provision_number,
+                         heading, stable_key, parent_provision_id, sort_key,
+                         text_content, text_sha256)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        str(prov.provision_id),
+                        str(prov.expression_id),
+                        prov.provision_type.value,
+                        prov.provision_number,
+                        prov.heading,
+                        prov.stable_key,
+                        str(prov.parent_provision_id) if prov.parent_provision_id else None,
+                        prov.sort_key,
+                        prov.text_content,
+                        prov.text_sha256,
+                    ),
+                )
+
+            # 5. Rebuild FTS index
+            conn.execute("DELETE FROM legal_provisions_fts")
+            conn.execute(
+                """INSERT INTO legal_provisions_fts (rowid, provision_number, heading, text_content)
+                SELECT rowid, provision_number, heading, text_content FROM legal_provisions"""
+            )
+
+            # Commit happens automatically on context manager exit
 
     # ── Citations ────────────────────────────────
 

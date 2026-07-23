@@ -93,7 +93,7 @@ class LegalSourceService:
         2. Find instrument in catalog
         3. Download and snapshot
         4. Check for duplicate hash (skip if unchanged)
-        5. Parse and persist
+        5. Parse and persist atomically (SEC-015)
         """
         self.register_default_sources()
 
@@ -118,9 +118,6 @@ class LegalSourceService:
             parsed.snapshot.import_status = ImportStatus.DUPLICATE
             return parsed
 
-        # Persist snapshot
-        self._repo.save_snapshot(parsed.snapshot)
-
         # Check for existing instrument and update/insert
         existing_inst = self._repo.get_instrument_by_abbreviation(parsed.instrument.abbreviation)
         if existing_inst is not None:
@@ -128,18 +125,32 @@ class LegalSourceService:
             parsed.instrument.instrument_id = existing_inst.instrument_id
             parsed.expression.instrument_id = existing_inst.instrument_id
 
-        self._repo.save_instrument(parsed.instrument)
-        self._repo.save_expression(parsed.expression)
-
-        # Persist provisions
-        for provision in parsed.provisions:
-            self._repo.save_provision(provision)
-
-        # Rebuild FTS index after adding provisions
+        # SEC-015: Atomic batch import — all or nothing
         try:
-            self._repo.rebuild_fts_index()
+            self._repo.save_instrument_batch(
+                snapshot=parsed.snapshot,
+                instrument=parsed.instrument,
+                expression=parsed.expression,
+                provisions=parsed.provisions,
+            )
+
+            # Mark import as successful
+            self._repo.update_snapshot_status(
+                parsed.snapshot.snapshot_id,  # type: ignore[arg-type]
+                ImportStatus.INDEXED,
+            )
+            parsed.snapshot.import_status = ImportStatus.INDEXED
+
         except Exception as exc:
-            safe_log_event(logger, "legal_source.fts_rebuild_failed", error_type=type(exc).__name__)
+            # SEC-015-B: Snapshot remains with FAILED status
+            self._repo.update_snapshot_status(
+                parsed.snapshot.snapshot_id,  # type: ignore[arg-type]
+                ImportStatus.FAILED,
+                error=str(exc)[:500],
+            )
+            parsed.snapshot.import_status = ImportStatus.FAILED
+            parsed.snapshot.error_summary = str(exc)[:500]
+            raise
 
         safe_log_event(
             logger,

@@ -325,6 +325,46 @@ def get_connection(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+def transaction(db_path: Path):
+    """Context manager for wrapping multiple operations in a single transaction.
+
+    Usage:
+        with transaction(db_path) as conn:
+            save_snapshot(snapshot, conn)
+            save_instrument(instrument, conn)
+            save_provisions(provisions, conn)
+        # Auto-commit on success, auto-rollback on exception
+    """
+
+    class _TransactionContext:
+        def __init__(self, db_path: Path) -> None:
+            self.db_path = db_path
+            self.conn: sqlite3.Connection | None = None
+
+        def __enter__(self) -> sqlite3.Connection:
+            self.conn = get_connection(self.db_path)
+            return self.conn
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: object,
+        ) -> bool:
+            if self.conn is None:
+                return False
+            try:
+                if exc_type is None:
+                    self.conn.commit()
+                else:
+                    self.conn.rollback()
+            finally:
+                self.conn.close()
+            return False  # Don't suppress exceptions
+
+    return _TransactionContext(db_path)
+
+
 def _migrate_add_column(conn: sqlite3.Connection, table: str, column: str, alter_sql: str) -> None:
     """Idempotent column addition — skips if column already exists."""
     try:
