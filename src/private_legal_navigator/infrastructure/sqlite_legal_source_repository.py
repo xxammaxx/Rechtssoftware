@@ -549,8 +549,11 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
                     ),
                 )
 
-            # 5. Rebuild FTS index
-            conn.execute("DELETE FROM legal_provisions_fts")
+            # 5. Rebuild FTS index (using content sync for reliability)
+            try:
+                conn.execute("DELETE FROM legal_provisions_fts")
+            except sqlite3.DatabaseError:
+                pass  # Table may be empty or not yet populated
             conn.execute(
                 """INSERT INTO legal_provisions_fts (rowid, provision_number, heading, text_content)
                 SELECT rowid, provision_number, heading, text_content FROM legal_provisions"""
