@@ -8,8 +8,6 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from private_legal_navigator.domain.legal_source import (
     AuthorityTier,
     ImportStatus,
@@ -27,9 +25,7 @@ from private_legal_navigator.domain.legal_source import (
 from private_legal_navigator.infrastructure.database import (
     get_connection,
     initialize_schema,
-    transaction,
 )
-
 
 # ── Helper ──────────────────────────────────────
 
@@ -83,7 +79,8 @@ class TestMigrations:
                 assert "legal_provisions_fts" in table_names
 
                 # Verify we have exactly the expected number of tables
-                # M1-M6: 4 tables (cases, documents, confirmed_reference_events, idempotency_records)
+                # M1-M6: 4 tables
+                #   (cases, documents, confirmed_reference_events, idempotency_records)
                 # M7-A: 10 tables + 1 FTS virtual
                 assert len(table_names) >= 14
             finally:
@@ -120,7 +117,8 @@ class TestMigrations:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS confirmed_reference_events (
                         confirmation_id TEXT PRIMARY KEY, candidate_id TEXT,
-                        document_id TEXT NOT NULL, deadline_candidate_index INTEGER NOT NULL DEFAULT 0,
+                        document_id TEXT NOT NULL,
+                        deadline_candidate_index INTEGER NOT NULL DEFAULT 0,
                         event_type TEXT NOT NULL, confirmed_date TEXT,
                         source_type TEXT NOT NULL DEFAULT 'auto_detected',
                         confirmation_method TEXT NOT NULL DEFAULT 'auto_suggested',
@@ -251,7 +249,8 @@ class TestMigrations:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS confirmed_reference_events (
                         confirmation_id TEXT PRIMARY KEY, candidate_id TEXT,
-                        document_id TEXT NOT NULL, deadline_candidate_index INTEGER NOT NULL DEFAULT 0,
+                        document_id TEXT NOT NULL,
+                        deadline_candidate_index INTEGER NOT NULL DEFAULT 0,
                         event_type TEXT NOT NULL, confirmed_date TEXT,
                         source_type TEXT NOT NULL DEFAULT 'auto_detected',
                         confirmation_method TEXT NOT NULL DEFAULT 'auto_suggested',
@@ -269,11 +268,17 @@ class TestMigrations:
                     "INSERT INTO cases VALUES (?, ?, ?, ?, ?)", (cid, "Test", "open", now, now)
                 )
                 conn.execute(
-                    "INSERT INTO documents VALUES (?, ?, 'test.pdf', 'application/pdf', 100, '/tmp/test', ?, 'text', NULL, 'bescheid', 0.9, '[]')",
+                    "INSERT INTO documents VALUES ("
+                    "?, ?, 'test.pdf', 'application/pdf', 100, '/tmp/test',"
+                    " ?, 'text', NULL, 'bescheid', 0.9, '[]'"
+                    ")",
                     (did, cid, now),
                 )
                 conn.execute(
-                    "INSERT INTO confirmed_reference_events VALUES (?, ?, ?, 0, 'bescheid_datum', ?, 'auto', 'confirmed', ?, '', 'SYNTHETISCH - test', NULL, 0)",
+                    "INSERT INTO confirmed_reference_events VALUES ("
+                    "?, ?, ?, 0, 'bescheid_datum', ?, 'auto', 'confirmed',"
+                    " ?, '', 'SYNTHETISCH - test', NULL, 0"
+                    ")",
                     (conf_id, "cand-1", did, "2025-01-01", now),
                 )
                 conn.commit()
@@ -389,15 +394,15 @@ class TestFTS:
 
             # Insert synthetic provisions
             from private_legal_navigator.domain.legal_source import (
-                LegalInstrument,
-                LegalExpression,
-                LegalProvision,
-                LegalSource,
-                SourceSnapshot,
                 AuthorityTier,
                 ImportStatus,
                 InstrumentType,
+                LegalExpression,
+                LegalInstrument,
+                LegalProvision,
+                LegalSource,
                 ProvisionType,
+                SourceSnapshot,
                 TemporalCompleteness,
                 TemporalConfidence,
                 TemporalStatus,

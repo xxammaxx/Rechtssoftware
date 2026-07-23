@@ -84,6 +84,7 @@ class LegalLinkStatus(StrEnum):
     REJECTED = "REJECTED"
     CORRECTED = "CORRECTED"
     REVOKED = "REVOKED"
+    SUPERSEDED = "SUPERSEDED"
 
 
 class EvidenceType(StrEnum):

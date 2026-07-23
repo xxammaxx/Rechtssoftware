@@ -13,7 +13,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from private_legal_navigator.domain.case_timeline import LegalEventType
 
-
 router = APIRouter(prefix="/ui", tags=["m7a-ui"])
 
 
@@ -61,6 +60,7 @@ async def legal_source_status(request: Request) -> Any:
         s["snapshot_count"] = len(snaps)
 
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/legal_sources.html",
         {
             "request": request,
@@ -88,6 +88,7 @@ async def legal_source_search_get(request: Request, q: str = "") -> Any:
         results = svc["legal_source"].search(query, limit=50)
 
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/legal_sources_search.html",
         {
             "request": request,
@@ -130,6 +131,7 @@ async def norm_detail(request: Request, provision_id: str) -> Any:
             snapshot = svc["legal_repo"].get_snapshot(expression.source_snapshot_id)
 
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/norm_detail.html",
         {
             "request": request,
@@ -158,6 +160,7 @@ async def case_legal_situation(request: Request, case_id: str) -> Any:
     active_links = svc["timeline"].list_active_links(case_id)
 
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/case_legal_situation.html",
         {
             "request": request,
@@ -292,6 +295,7 @@ async def case_legal_timeline(request: Request, case_id: str) -> Any:
     active_events = svc["timeline"].list_active_events(case_id)
 
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/case_legal_timeline.html",
         {
             "request": request,
@@ -439,6 +443,7 @@ async def evidence_pack(request: Request, case_id: str) -> Any:
     pack = svc["timeline"].build_evidence_pack(case_id)
 
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/evidence_pack.html",
         {
             "request": request,
@@ -460,6 +465,7 @@ async def evidence_pack(request: Request, case_id: str) -> Any:
 async def error_400(request: Request) -> Any:
     svc = _get_services(request)
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/error.html",
         {
             "request": request,
@@ -475,6 +481,7 @@ async def error_400(request: Request) -> Any:
 async def error_403(request: Request) -> Any:
     svc = _get_services(request)
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/error.html",
         {
             "request": request,
@@ -490,6 +497,7 @@ async def error_403(request: Request) -> Any:
 async def error_404(request: Request) -> Any:
     svc = _get_services(request)
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/error.html",
         {
             "request": request,
@@ -505,6 +513,7 @@ async def error_404(request: Request) -> Any:
 async def error_409(request: Request) -> Any:
     svc = _get_services(request)
     return svc["templates"].TemplateResponse(
+        request,
         "m7a/error.html",
         {
             "request": request,

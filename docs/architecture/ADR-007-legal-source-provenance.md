@@ -72,10 +72,10 @@ microservices, no separate databases, no additional processes.
 
 | Layer | New Modules |
 |---|---|
-| `domain/` | `legal_source.py` (Source, Instrument, Provision, Expression, Snapshot entities), `authority_tier.py` (AuthorityTier enum), `source_adapter.py` (LegalSourceAdapter protocol) |
-| `application/` | `legal_source_service.py` (orchestration), `source_sync_service.py` (pipeline coordination), `legal_source_repository.py` (repository port / ABC) |
-| `infrastructure/` | `sqlite_legal_source_repository.py`, `gii_adapter.py` (Gesetze im Internet), `gii_xml_parser.py`, `source_http_client.py` (allowlist-restricted), `snapshots_file_storage.py` |
-| `api/` | `legal_source_routes.py` (search, browse, citation resolution) |
+| `domain/` | `legal_source.py` (LegalSource, AuthorityTier, SourceSnapshot, LegalInstrument, LegalExpression, LegalProvision, LegalCitation — all entities + enums in a single module) |
+| `application/` | `legal_source_service.py` (orchestration), `citation_resolver.py` (citation parsing and resolution), `legal_source_repository.py` (repository port / ABC) |
+| `infrastructure/` | `sqlite_legal_source_repository.py`, `gii_adapter.py` (Gesetze im Internet), `safe_xml_parser.py` (secure XML parsing with XXE protection), `safe_source_client.py` (allowlist-restricted HTTP client with host validation, TLS enforcement, and atomic writes) |
+| `api/` | `m7a_ui_routes.py` (search, browse, citation resolution, legal source status, norm detail) |
 
 **Rationale:**
 - ADR-001 established the modular monolith precisely to accommodate feature growth through
@@ -103,81 +103,126 @@ dependencies. No Elasticsearch, no vector database, no Neo4j.
 
 | Priority | Method | Cost | Latency |
 |---|---|---|---|
-| 1 (highest) | Exact citation resolution (`norm_citation` index lookup) | Indexed B-tree | <1ms |
-| 2 | Exact abbreviation + paragraph match (`abbreviation` + `paragraph_marker` index) | Composite index | <1ms |
+| 1 (highest) | Exact citation resolution (`legal_citations` table lookup) | Indexed B-tree | <1ms |
+| 2 | Exact abbreviation + paragraph match (`abbreviation` + `provision_number` index) | Composite index | <1ms |
 | 3 | Title search (`title` LIKE or FTS5) | FTS5 bm25 | ~2-10ms |
 | 4 | Lexical full-text search (FTS5 on provision text) | FTS5 bm25 | ~5-20ms |
 | 5 | Metadata filter fallback (authority tier, source, temporal range) | Indexed columns | <5ms |
 
 **Schema design (core tables):**
 
+> **Note:** The schemas below reflect the actual v0.2.0 implementation, which evolved from the
+> original ADR-007 draft. Key naming changes: `source_type` → `source_key` (semantic shift from
+> classification to identity), `raw_snapshots` → `legal_source_snapshots`, `instrument_expressions`
+> → `legal_expressions`, `norm_citation` + `paragraph_marker` → `provision_number`.
+
 ```sql
--- Authority tier classification
+-- Registered legal sources (publishers/distributors of legal materials)
 CREATE TABLE IF NOT EXISTS legal_sources (
     source_id TEXT PRIMARY KEY,             -- UUID
-    source_type TEXT NOT NULL,              -- 'gesetze_im_internet', 'bundesgesetzblatt', 'eur_lex', 'court_api'
-    name TEXT NOT NULL,                     -- Human-readable source name
-    authority_tier TEXT NOT NULL,           -- OFFICIAL_PROMULGATION, OFFICIAL_EU_PUBLICATION, etc.
-    base_url TEXT NOT NULL,                 -- Root URL of the legal source
-    last_synced_at TEXT,                    -- ISO datetime of last successful sync
-    sync_status TEXT NOT NULL DEFAULT 'never_synced', -- never_synced, syncing, synced, error
-    created_at TEXT NOT NULL
+    source_key TEXT NOT NULL UNIQUE,        -- machine-readable identifier (e.g. 'gesetze_im_internet')
+    display_name TEXT NOT NULL,             -- Human-readable source name
+    authority_tier TEXT NOT NULL DEFAULT 'UNKNOWN', -- OFFICIAL_PROMULGATION, CONSOLIDATED_NON_OFFICIAL, etc.
+    jurisdiction TEXT NOT NULL DEFAULT 'DE', -- ISO country code
+    enabled INTEGER NOT NULL DEFAULT 1,     -- 0 = disabled, 1 = enabled
+    created_at TEXT NOT NULL,
+    base_url TEXT NOT NULL DEFAULT '',      -- Root URL of the legal source
+    description TEXT NOT NULL DEFAULT ''    -- Optional prose description of the source
 );
 
 -- Individual legal instruments (laws, regulations, directives)
 CREATE TABLE IF NOT EXISTS legal_instruments (
     instrument_id TEXT PRIMARY KEY,         -- UUID
-    source_id TEXT NOT NULL REFERENCES legal_sources(source_id),
-    abbreviation TEXT NOT NULL,             -- e.g., 'VwGO', 'BGB', 'DSGVO'
-    full_title TEXT NOT NULL,               -- e.g., 'Verwaltungsgerichtsordnung'
     jurisdiction TEXT NOT NULL DEFAULT 'DE', -- ISO country code
-    instrument_type TEXT NOT NULL,          -- 'federal_law', 'regulation', 'directive', 'treaty'
-    official_citation TEXT,                 -- e.g., 'BGBl. I S. 686'
-    first_published_at TEXT,               -- Date of first official publication
-    created_at TEXT NOT NULL
+    instrument_type TEXT NOT NULL DEFAULT 'UNKNOWN', -- STATUTE, REGULATION, DIRECTIVE, TREATY, etc.
+    official_title TEXT NOT NULL,           -- e.g., 'Verwaltungsgerichtsordnung'
+    short_title TEXT NOT NULL DEFAULT '',   -- shorter display title
+    abbreviation TEXT NOT NULL DEFAULT '',  -- e.g., 'VwGO', 'BGB', 'DSGVO'
+    source_identifier TEXT NOT NULL DEFAULT '', -- identifies the source system (not FK)
+    authority_tier TEXT NOT NULL DEFAULT 'UNKNOWN', -- per-instrument authority tier
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
 );
 
--- Specific versions of an instrument (one instrument has many expressions)
-CREATE TABLE IF NOT EXISTS instrument_expressions (
+-- Specific versions/expressions of an instrument
+CREATE TABLE IF NOT EXISTS legal_expressions (
     expression_id TEXT PRIMARY KEY,         -- UUID
     instrument_id TEXT NOT NULL REFERENCES legal_instruments(instrument_id),
-    version_label TEXT NOT NULL,            -- e.g., '2025-01-01', 'Neufassung 2024'
-    published_at TEXT NOT NULL,             -- When this version was officially published
+    source_snapshot_id TEXT REFERENCES legal_source_snapshots(snapshot_id),
+    published_at TEXT,                      -- When this version was officially published
     valid_from TEXT,                        -- temporal validity start (may be NULL if unknown)
     valid_to TEXT,                          -- temporal validity end (NULL = currently in force)
-    retrieved_at TEXT NOT NULL,             -- when WE downloaded it (ISO datetime UTC)
-    snapshot_id TEXT NOT NULL REFERENCES raw_snapshots(snapshot_id),
-    temporal_confidence TEXT NOT NULL DEFAULT 'best_effort', -- exact, inferred, best_effort, unknown
-    authority_tier TEXT NOT NULL,           -- per-expression tier (may differ from source default)
-    created_at TEXT NOT NULL
+    retrieved_at TEXT,                      -- when WE downloaded it
+    temporal_status TEXT NOT NULL DEFAULT 'UNKNOWN', -- CURRENT, AMENDED, REPEALED, UNKNOWN
+    historical_completeness TEXT NOT NULL DEFAULT 'CURRENT_ONLY', -- CURRENT_ONLY, PARTIAL_HISTORY, etc.
+    temporal_confidence TEXT NOT NULL DEFAULT 'UNKNOWN', -- CONFIRMED, INFERRED, UNKNOWN
+    source_note TEXT NOT NULL DEFAULT ''    -- optional provenance note
 );
 
 -- Individual provisions (paragraphs, articles)
 CREATE TABLE IF NOT EXISTS legal_provisions (
     provision_id TEXT PRIMARY KEY,          -- UUID
-    expression_id TEXT NOT NULL REFERENCES instrument_expressions(expression_id),
-    norm_citation TEXT NOT NULL,            -- e.g., '§ 70', 'Art. 6', 'Abs. 1 Nr. 2'
-    paragraph_marker TEXT NOT NULL,         -- parsed paragraph identifier for index lookup
-    section_title TEXT NOT NULL DEFAULT '', -- e.g., 'Verwaltungsrechtsweg'
-    provision_text TEXT NOT NULL,           -- full normative text
-    sort_order INTEGER NOT NULL DEFAULT 0,  -- for maintaining structural order within expression
-    created_at TEXT NOT NULL
+    expression_id TEXT NOT NULL REFERENCES legal_expressions(expression_id),
+    provision_type TEXT NOT NULL DEFAULT 'PARAGRAPH', -- PARAGRAPH, ARTICLE, SECTION, CLAUSE, etc.
+    provision_number TEXT NOT NULL,         -- e.g., '§ 70', 'Art. 6', 'Abs. 1 Nr. 2'
+    heading TEXT NOT NULL DEFAULT '',       -- section/paragraph heading
+    stable_key TEXT NOT NULL DEFAULT '',    -- stable structural key for cross-version comparison
+    parent_provision_id TEXT REFERENCES legal_provisions(provision_id),
+    sort_key TEXT NOT NULL DEFAULT '',      -- for maintaining structural order (text, not integer)
+    text_content TEXT NOT NULL DEFAULT '',  -- full normative text
+    text_sha256 TEXT NOT NULL DEFAULT ''    -- SHA-256 hash of text_content for integrity verification
 );
 
--- The FTS5 virtual table for full-text search on provision texts
-CREATE VIRTUAL TABLE IF NOT EXISTS provisions_fts USING fts5(
-    provision_text,
-    section_title,
-    norm_citation,
+-- Citation resolution: maps raw citations to resolved provisions
+CREATE TABLE IF NOT EXISTS legal_citations (
+    citation_id TEXT PRIMARY KEY,           -- UUID
+    source_entity_type TEXT NOT NULL DEFAULT '', -- 'case', 'document', 'evidence'
+    source_entity_id TEXT,                  -- FK to the source entity
+    citation_text TEXT NOT NULL,            -- raw citation string, e.g. '§ 70 VwGO'
+    resolved_instrument_id TEXT REFERENCES legal_instruments(instrument_id),
+    resolved_provision_id TEXT REFERENCES legal_provisions(provision_id),
+    resolved_expression_id TEXT REFERENCES legal_expressions(expression_id),
+    resolution_status TEXT NOT NULL DEFAULT 'PENDING', -- RESOLVED, AMBIGUOUS, NOT_FOUND, PENDING
+    resolution_confidence TEXT NOT NULL DEFAULT 'UNKNOWN', -- EXACT, LIKELY, POSSIBLE, UNKNOWN
+    reviewed_at TEXT,                       -- when a human reviewed the resolution
+    resolution_detail TEXT NOT NULL DEFAULT '' -- optional detail (e.g., 'matched § 70 Abs. 1')
+);
+
+-- FTS5 virtual table for full-text search on provision texts
+CREATE VIRTUAL TABLE IF NOT EXISTS legal_provisions_fts USING fts5(
+    provision_id UNINDEXED,
+    provision_number,
+    heading,
+    text_content,
     content='legal_provisions',
     content_rowid='rowid'
 );
 ```
 
+**Schema deviations from original ADR-007 draft (rationale):**
+
+| Draft Column | Implementation | Rationale |
+|---|---|---|
+| `legal_sources.source_type` | `source_key` | Semantic shift: `source_key` is an identity, not a classification |
+| `legal_sources.name` | `display_name` | Clearer intent: this is for UI display |
+| `legal_sources.last_synced_at` / `sync_status` | Removed; `legal_source_snapshots` tracks sync state | Sync state belongs on snapshots, not sources |
+| `raw_snapshots` table | `legal_source_snapshots` | Consistent `legal_source_*` namespace |
+| `raw_snapshots.sha256_hash` | `sha256` | Simplified — context makes purpose clear |
+| `raw_snapshots.original_url` | `source_locator` | URL-agnostic naming for future non-HTTP sources |
+| `raw_snapshots.is_normalized` | `import_status` (enum) | Richer state: DOWNLOADED → PARSED → NORMALIZED → INDEXED |
+| `instrument_expressions` table | `legal_expressions` | Consistent `legal_*` namespace |
+| `instrument_expressions.authority_tier` | **Deferred** | Per-expression tier override is a future feature |
+| `legal_provisions.norm_citation` + `paragraph_marker` | `provision_number` | Single column is simpler; parse on write, query on read |
+| `legal_provisions.sort_order INTEGER` | `sort_key TEXT` | Text-based sort key handles hierarchical numbering (e.g., "1.2.3") |
+| `legal_provisions.provision_text` | `text_content` | Consistent with FTS column naming |
+| `legal_provisions` no `parent_provision_id` | `parent_provision_id` added | Supports hierarchical provisions (Abs. 1 → Nr. 2) |
+| FTS table `provisions_fts` | `legal_provisions_fts` | Consistent `legal_*` namespace |
+| No `legal_citations` table in draft | `legal_citations` added | Needed for citation resolution tracking across entities |
+
 **Rationale:**
 - SQLite is the established persistence layer for the entire project (ADR-001). Adding legal
   source tables to the same database enables direct SQL joins between norms and case-legal
-  links (ADR-008, `case_legal_links.norm_id`), between snapshots and instruments, and
+  links (ADR-008, `case_legal_links.legal_provision_id`), between snapshots and instruments, and
   between expressions and provisions. A separate database would require cross-database
   references that SQLite does not natively support well.
 - FTS5 is built into SQLite — zero additional dependencies, zero operational complexity. For
@@ -203,52 +248,59 @@ snapshot.
 ```
 PLN_DATA_DIR/
 └── snapshots/
-    └── {source_type}/           -- e.g., 'gesetze_im_internet', 'bundesgesetzblatt'
+    └── {source_key}/            -- e.g., 'gesetze_im_internet', 'bundesgesetzblatt'
         └── {hash[:2]}/          -- Two-char hash prefix for directory sharding
-            └── {hash}.xml       -- Full SHA-256 hash as filename
+            └── {hash}.xml       -- Full 64-character SHA-256 hash as filename
 ```
 
 **Schema:**
 
 ```sql
-CREATE TABLE IF NOT EXISTS raw_snapshots (
+CREATE TABLE IF NOT EXISTS legal_source_snapshots (
     snapshot_id TEXT PRIMARY KEY,           -- UUID
     source_id TEXT NOT NULL REFERENCES legal_sources(source_id),
-    storage_path TEXT NOT NULL,             -- relative path within PLN_DATA_DIR/snapshots/
-    sha256_hash TEXT NOT NULL UNIQUE,       -- SHA-256 of the file content
-    file_size_bytes INTEGER NOT NULL,
-    mime_type TEXT NOT NULL DEFAULT 'application/xml',
-    original_url TEXT NOT NULL,             -- the exact URL fetched
-    downloaded_at TEXT NOT NULL,            -- ISO datetime UTC of download
-    download_duration_ms INTEGER,           -- how long the fetch took
-    http_status INTEGER,                    -- HTTP status code of the response
-    http_etag TEXT,                         -- ETag header if provided
-    http_last_modified TEXT,                -- Last-Modified header if provided
-    is_normalized INTEGER NOT NULL DEFAULT 0, -- 1 = successfully normalized into corpus
-    normalization_error TEXT,               -- error message if normalization failed
-    created_at TEXT NOT NULL
+    source_locator TEXT NOT NULL,           -- the exact URL or identifier fetched
+    retrieved_at TEXT NOT NULL,             -- ISO datetime UTC of download
+    content_type TEXT NOT NULL DEFAULT '',  -- MIME type, e.g. 'application/xml'
+    byte_size INTEGER NOT NULL DEFAULT 0,  -- file size in bytes
+    sha256 TEXT NOT NULL,                   -- SHA-256 of the file content (UNIQUE index enforced separately)
+    storage_path TEXT NOT NULL DEFAULT '',  -- relative path within PLN_DATA_DIR/snapshots/
+    parser_version TEXT NOT NULL DEFAULT '', -- version of the parser used
+    import_status TEXT NOT NULL DEFAULT 'DOWNLOADED', -- DOWNLOADED, PARSED, NORMALIZED, INDEXED, FAILED, DUPLICATE
+    error_summary TEXT NOT NULL DEFAULT '', -- error message if import failed
+    immutable INTEGER NOT NULL DEFAULT 1,   -- 1 = preserved unmodified
+    http_etag TEXT NOT NULL DEFAULT '',     -- ETag header if provided
+    http_last_modified TEXT NOT NULL DEFAULT '' -- Last-Modified header if provided
 );
 ```
 
+The SHA-256 hash is enforced via a separate UNIQUE index (not a column constraint)
+for flexibility in migration:
+
+```sql
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lss_sha256 ON legal_source_snapshots(sha256);
+```
+
 **Invariant enforced at the service layer:** No code path exists that updates, deletes,
-or truncates a raw snapshot file after download. The `raw_snapshots` table has no `UPDATE`
-operations — only `INSERT`. Deletion is only through the user's right to erasure (via
-`CASCADE` on source deletion).
+or truncates a raw snapshot file after download. The `legal_source_snapshots` table has no
+`UPDATE` operations on content columns — only `INSERT`. Deletion is only through the user's
+right to erasure (via `CASCADE` on source deletion).
 
 **Rationale:**
 - The raw snapshot is the **evidence** that a particular legal text was available at a
   particular URL on a particular date. Without it, the normalized corpus is an
   unverifiable claim.
 - SHA-256 provides content-addressable storage: identical content produces identical hashes,
-  enabling deduplication (the `UNIQUE` constraint on `sha256_hash` prevents storing the
+  enabling deduplication (the `UNIQUE` constraint on `sha256` prevents storing the
   same file twice).
 - The hash-as-filename pattern ensures that a file's identity is cryptographically bound to
   its content — tampering is detectable without a separate manifest.
 - Directory sharding (first two hex characters of hash) prevents filesystem bottlenecks in
   the unlikely event of thousands of snapshots.
-- The `is_normalized` flag is set to 1 **after** successful normalization (Decision 4).
-  A snapshot with `is_normalized = 0` and a non-null `normalization_error` represents a
-  parse failure that does not corrupt the corpus.
+- The `import_status` column replaces the original `is_normalized` boolean with a richer
+  state machine: `DOWNLOADED` → `PARSED` → `NORMALIZED` → `INDEXED`. A snapshot with
+  `import_status = 'FAILED'` and a non-null `error_summary` represents a parse failure
+  that does not corrupt the corpus.
 
 ---
 
@@ -264,9 +316,9 @@ own failure boundary:**
 └──────┬──────┘     └──────┬──────┘     └──────┬───────┘     └──────┬──────┘
        │                   │                   │                    │
        ▼                   ▼                   ▼                    ▼
-  raw_snapshots        parser error       normalization          FTS5 rows
-  (immutable)        logged, retryable    error logged,          committed
-                                          raw snapshot          atomically
+  legal_source_        parser error       import_status          FTS5 rows
+  snapshots            logged,            = 'FAILED',            committed
+  (immutable)          retryable          raw snapshot           atomically
                                           preserved
 ```
 
@@ -274,29 +326,30 @@ own failure boundary:**
 - HTTP GET from the source URL via the allowlist-restricted HTTP client
 - Response body written directly to disk under `data_dir/snapshots/`
 - SHA-256 hash computed on the saved file (not just the response bytes)
-- `raw_snapshots` row INSERTed with `is_normalized = 0`
+- `legal_source_snapshots` row INSERTed with `import_status = 'DOWNLOADED'`
 
 **Stage 2 — Parse:**
 - Read raw snapshot from disk
 - Apply secure XML parsing (Decision 8)
 - Produce an in-memory DOM representation
-- On parse failure: set `raw_snapshots.normalization_error`, log the error, do NOT modify
-  the raw snapshot. Parsing can be retried with updated parser later.
+- On parse failure: set `legal_source_snapshots.import_status = 'FAILED'` and
+  `error_summary`, log the error, do NOT modify the raw snapshot. Parsing can be
+  retried with updated parser later.
 
 **Stage 3 — Normalize:**
 - Walk the DOM to extract instruments, expressions, provisions
 - Apply normalization rules (whitespace collapse, structural hierarchy inference,
   citation extraction)
 - Produce domain entity instances ready for persistence
-- On normalization failure: set `raw_snapshots.normalization_error`, log the error, do NOT
-  modify the raw snapshot. Normalization logic can be updated and retried.
+- On normalization failure: set `import_status = 'FAILED'` and `error_summary`, log the
+  error, do NOT modify the raw snapshot. Normalization logic can be updated and retried.
 
 **Stage 4 — Index:**
-- INSERT normalized entities into `legal_instruments`, `instrument_expressions`,
+- INSERT normalized entities into `legal_instruments`, `legal_expressions`,
   `legal_provisions`
 - Trigger FTS5 index update (SQLite FTS5 is synchronous — content table changes
   automatically update the FTS index)
-- Set `raw_snapshots.is_normalized = 1`
+- Set `legal_source_snapshots.import_status = 'INDEXED'`
 - All INSERTs happen in a single transaction — either all entities land or none do
 
 **Rationale:**
@@ -309,6 +362,8 @@ own failure boundary:**
   existing snapshots without re-downloading.
 - The transactional unit at Stage 4 ensures that a partially-normalized corpus is never
   visible to queries — the FTS5 index is either complete or absent for a given snapshot.
+  The `import_status` column (`DOWNLOADED` → `PARSED` → `NORMALIZED` → `INDEXED`) tracks
+  each stage explicitly.
 
 ---
 
@@ -340,11 +395,14 @@ legal status: the consolidated text may contain editorial corrections and does n
 constitute an official promulgation. Users must be aware that for legally binding
 interpretation, the Bundesgesetzblatt is the authoritative source.
 
-**Per-expression tier override:**
-The `instrument_expressions.authority_tier` column allows per-expression overrides.
-A source may default to T3, but a specific expression retrieved from that source could
-be marked T0 if the source also hosts the official promulgation scan. The expression-level
-tier takes precedence over the source-level tier in all UI displays.
+**Per-expression tier override (deferred):**
+The original ADR-007 draft specified an `authority_tier` column on `legal_expressions`
+to allow per-expression overrides. This feature is **deferred to a future milestone**.
+In v0.2.0, the authority tier is assigned at the `legal_sources` level and optionally
+at the `legal_instruments` level (via the `authority_tier` column). When per-expression
+override is added in a future release, the `legal_expressions` table will be extended
+with an `authority_tier` column that takes precedence over the instrument-level and
+source-level tiers in all UI displays.
 
 **Rationale:**
 - In legal work, the provenance of a text is as important as its content. A user citing
@@ -366,7 +424,7 @@ tier takes precedence over the source-level tier in all UI displays.
 **The system CANNOT and MUST NOT claim to hold all historical versions of any legal
 instrument. It stores only what was retrieved, with temporal metadata.**
 
-**Temporal metadata model (`instrument_expressions`):**
+**Temporal metadata model (`legal_expressions`):**
 
 | Field | Meaning | Source | Reliability |
 |---|---|---|---|
@@ -423,9 +481,9 @@ personal data, or search queries from cases.**
    - `SnapshotsFileStorage` (for writing raw snapshots)
 
 2. **No cross-joining during sync:** The SQL queries executed during sync reference only
-   `legal_sources`, `raw_snapshots`, `legal_instruments`, `instrument_expressions`, and
-   `legal_provisions`. They never JOIN with `cases`, `documents`, `deadline_candidates`,
-   or `confirmed_reference_events`.
+    `legal_sources`, `legal_source_snapshots`, `legal_instruments`, `legal_expressions`,
+    `legal_provisions`, and `legal_citations`. They never JOIN with `cases`, `documents`,
+    `deadline_candidates`, or `confirmed_reference_events`.
 
 3. **HTTP requests contain zero case context:** The `SourceHttpClient` sends HTTP GET
    requests with only standard headers (User-Agent, Accept). No cookies, no case IDs in
@@ -523,75 +581,44 @@ If a future source requires DTD for structural validation, the DTD file must be:
 
 ---
 
-### Decision 9: Pluggable Adapter Interface for Future Legal Sources
+### Decision 9: Pluggable Adapter Pattern for Future Legal Sources
 
-**The architecture defines a `LegalSourceAdapter` protocol (ABC) that all source-specific
-implementations must satisfy.** M7-A implements one adapter — `GIIAdapter` (Gesetze im
+**The architecture describes a `LegalSourceAdapter` protocol that all source-specific
+implementations should satisfy.** M7-A implements one adapter — `GIIAdapter` (Gesetze im
 Internet). Future adapters for Bundesgesetzblatt, EUR-Lex, and court decision APIs are
 explicitly designed for but NOT implemented.
 
-**Protocol definition (`domain/source_adapter.py`):**
+**v0.2.0 implementation note:** The `GIIAdapter` implements the adapter pattern without a
+formal abstract base class (ABC). The adapter is a concrete class in
+`infrastructure/gii_adapter.py` that exposes methods matching the pipeline stages
+(discover → fetch → parse → normalize). This is acceptable for v0.2.0 with a single
+adapter. A formal ABC will be extracted when the second adapter (BGBl or EUR-Lex) is
+added — the extraction will be mechanical and backward-compatible.
+
+**Key GIIAdapter methods (actual v0.2.0 interface):**
 
 ```python
-from abc import ABC, abstractmethod
-from pathlib import Path
+class GiiAdapter:
+    """Adapter for www.gesetze-im-internet.de."""
 
-class LegalSourceAdapter(ABC):
-    """Protocol for legal source adapters. All source-specific logic lives here."""
-
-    @property
-    @abstractmethod
-    def source_identifier(self) -> str: ...
-
-    @property
-    @abstractmethod
-    def authority_tier(self) -> AuthorityTier: ...
-
-    @abstractmethod
-    async def discover_instruments(self) -> list[InstrumentMetadata]:
-        """Return metadata for all instruments available from this source."""
+    def __init__(self, source_client: SourceClient, data_dir: Path, ...): ...
+    
+    def fetch_catalog(self) -> list[GiiCatalogItem]:
+        """Fetch and parse the GII table-of-contents XML."""
         ...
-
-    @abstractmethod
-    async def fetch_instrument(
-        self, metadata: InstrumentMetadata, target_dir: Path
-    ) -> RawSnapshotResult:
-        """Download the instrument's XML. Returns snapshot metadata (hash, path, etc.)."""
+    
+    def sync_instrument(self, item: GiiCatalogItem) -> GiiParsedInstrument:
+        """Download one instrument XML, hash it, store snapshot, parse into entities."""
         ...
-
-    @abstractmethod
-    def parse_to_entities(
-        self, snapshot: RawSnapshot
-    ) -> tuple[LegalInstrument, list[InstrumentExpression], list[LegalProvision]]:
-        """Parse a raw snapshot into domain entities. Raises on parse failure."""
-        ...
-
-    @abstractmethod
-    def normalize_provisions(
-        self, provisions: list[LegalProvision]
-    ) -> list[LegalProvision]:
-        """Apply source-specific normalization rules (whitespace, citation extraction)."""
+    
+    def sync_instrument_by_key(self, key: str) -> GiiParsedInstrument | None:
+        """Sync a single instrument by its catalog key (used for targeted re-sync)."""
         ...
 ```
 
-**Adapter registry (application layer):**
-
-The `SourceSyncService` maintains a registry of adapters keyed by `source_identifier`.
-When a sync is triggered for a specific source, the service resolves the adapter and
-calls its methods in sequence. The registry is populated at application startup via
-the app factory:
-
-```python
-# In app.py
-from private_legal_navigator.infrastructure.gii_adapter import GIIAdapter
-
-app.state.source_adapters = {
-    "gesetze_im_internet": GIIAdapter(
-        http_client=app.state.source_http_client,
-        parser=secure_xml_parser,
-    )
-}
-```
+The `GiiParsedInstrument` return type bundles the parsed `LegalInstrument`, its
+`list[LegalProvision]`, a `LegalExpression`, and the `SourceSnapshot` — all produced
+from a single XML download in one pipeline pass.
 
 **Future adapters (NOT in M7-A):**
 
@@ -603,18 +630,16 @@ app.state.source_adapters = {
 | `CourtAPIAdapter` | ECLI-based court decision APIs | OFFICIAL_COURT_PUBLICATION (T2) | Future |
 
 **Rationale:**
-- The adapter protocol is the architecture's **extension point**. Any new legal source
-  can be integrated by implementing the five methods — no changes to the domain model,
-  the sync pipeline, or the repository layer.
-- The protocol enforces the pipeline stages (Decision 4) at the interface level: `fetch` →
-  `parse` → `normalize`. An adapter that tries to skip a stage (e.g., normalizing during
-  parsing) would violate the protocol and fail type checking.
-- The registry pattern (dict keyed by identifier) is simpler than a plugin system with
-  dynamic discovery and is appropriate for a project that currently targets three to four
-  adapters. If adapter count grows significantly, a setuptools entry-point-based discovery
-  can be added without changing the protocol.
-- The `source_identifier` property enables the sync service to be source-agnostic: it
-  loads configuration by identifier, resolves the adapter, and delegates.
+- The adapter pattern is the architecture's **extension point**. Any new legal source
+  can be integrated by implementing the pipeline stages (discover → fetch → parse →
+  normalize) — no changes to the domain model or the repository layer.
+- The v0.2.0 implementation uses a concrete `GIIAdapter` class without a formal ABC.
+  This is acceptable for a single-adapter codebase; a formal base class will be
+  extracted when a second adapter is added.
+- The pattern enforces the pipeline stages (Decision 4) at the implementation level.
+  An adapter implements the stages in sequence, matching the separation of concerns.
+- The `source_identifier` pattern enables the sync service to be source-agnostic: it
+  loads configuration by identifier and delegates to the appropriate adapter.
 
 ---
 
@@ -764,9 +789,10 @@ source for embedding generation. This is documented in the search priority order
    always knows where their legal information came from and how authoritative it is.
 
 2. **Content-addressable integrity:** SHA-256 hashing of raw snapshots provides
-   cryptographic verification that the normalized corpus is derived from authentic
-   source material. A user (or auditor) can recompute the hash of a stored snapshot
-   and compare it to the database record.
+    cryptographic verification that the normalized corpus is derived from authentic
+    source material. A user (or auditor) can recompute the hash of a stored snapshot
+    and compare it to the database record. The UNIQUE index on `legal_source_snapshots.sha256`
+    prevents duplicate snapshots.
 
 3. **Resilience to normalization errors:** The pipeline architecture means that a bug
    in the GII XML parser or normalizer never corrupts the raw snapshots. A fix can be
@@ -805,10 +831,10 @@ source for embedding generation. This is documented in the search priority order
    migrations must account for FTS5 rebuilds when the content table schema changes.
 
 3. **Flat file storage for snapshots:** The filesystem-based snapshot storage adds a second
-   data location to manage alongside the SQLite database. Snapshots must be backed up
-   separately from the database, and path consistency must be maintained. A future
-   operational improvement could be a `data_dir` integrity check that verifies every
-   snapshot referenced in `raw_snapshots` exists on disk with the correct hash.
+    data location to manage alongside the SQLite database. Snapshots must be backed up
+    separately from the database, and path consistency must be maintained. A future
+    operational improvement could be a `data_dir` integrity check that verifies every
+    snapshot referenced in `legal_source_snapshots` exists on disk with the correct hash.
 
 4. **XML parsing is brittle by nature:** Legal XML from government sources evolves over
    time (schema changes, namespace additions, structural reorganization). The GII XML
@@ -842,10 +868,11 @@ source for embedding generation. This is documented in the search priority order
    (`provision_text: Gesetz*`) compensates partially. A German tokenizer can be
    configured later if needed.
 
-3. **Adapter protocol is synchronous:** The `LegalSourceAdapter` methods are defined
-   as synchronous for the parse and normalize stages (CPU-bound work). Download is
-   async (I/O-bound). This mirrors the existing pattern in the codebase and is appropriate
-   for a single-user application where sync is a foreground operation.
+3. **Adapter is synchronous for CPU-bound work:** The `GIIAdapter` performs parsing and
+    normalization synchronously (CPU-bound work). Download is async (I/O-bound). This mirrors
+    the existing pattern in the codebase and is appropriate for a single-user application where
+    sync is a foreground operation. No formal ABC exists yet — this will be extracted when a
+    second adapter is added.
 
 ---
 

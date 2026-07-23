@@ -57,6 +57,17 @@ ADD_IS_REVOKE_COLUMN = """
 ALTER TABLE confirmed_reference_events ADD COLUMN is_revoke INTEGER NOT NULL DEFAULT 0
 """
 
+# M7-A migrations — add reference_confirmation_id FK to case_legal_events
+ADD_REFERENCE_CONFIRMATION_ID_COLUMN = """
+ALTER TABLE case_legal_events ADD COLUMN reference_confirmation_id
+    TEXT REFERENCES confirmed_reference_events(confirmation_id)
+"""
+
+# M7-A: Deduplication index on legal_source_snapshots.sha256 (ADR-007 Decision 3)
+CREATE_UNIQUE_INDEX_SHA256 = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lss_sha256 ON legal_source_snapshots(sha256)
+"""
+
 CREATE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_cases_status ON cases(status)",
     "CREATE INDEX IF NOT EXISTS idx_cases_created_at ON cases(created_at)",
@@ -183,7 +194,8 @@ CREATE TABLE IF NOT EXISTS case_legal_events (
     revoked_at TEXT,
     actor TEXT NOT NULL DEFAULT '',
     amount TEXT NOT NULL DEFAULT '',
-    legal_effect_note TEXT NOT NULL DEFAULT ''
+    legal_effect_note TEXT NOT NULL DEFAULT '',
+    reference_confirmation_id TEXT REFERENCES confirmed_reference_events(confirmation_id)
 )
 """
 
@@ -407,9 +419,19 @@ def initialize_schema(db_path: Path) -> None:
         # FTS5 (idempotent — IF NOT EXISTS handles this)
         conn.execute(CREATE_PROVISIONS_FTS_TABLE)
 
+        # M7-A migration — add reference_confirmation_id FK (idempotent)
+        _migrate_add_column(
+            conn,
+            "case_legal_events",
+            "reference_confirmation_id",
+            ADD_REFERENCE_CONFIRMATION_ID_COLUMN,
+        )
+
         # All M7-A indexes
         for index_sql in M7A_INDEXES:
             conn.execute(index_sql)
+        # M7-A deduplication: unique index on sha256 (ADR-007 Decision 3)
+        conn.execute(CREATE_UNIQUE_INDEX_SHA256)
         conn.commit()
     finally:
         conn.close()

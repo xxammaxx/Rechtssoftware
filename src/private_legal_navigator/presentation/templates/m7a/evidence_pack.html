@@ -7,7 +7,7 @@
 </p>
 
 <h2>Bestätigte Tatsachen</h2>
-{% if pack.get("confirmed_facts") %}
+{% if pack.confirmed_facts %}
 <ul>
 {% for fact in pack.confirmed_facts %}
 <li>{{ fact.title }} ({{ fact.event_type }}) — {{ fact.occurred_at }}</li>
@@ -18,7 +18,7 @@
 {% endif %}
 
 <h2>Offene Tatsachen</h2>
-{% if pack.get("open_facts") %}
+{% if pack.open_facts %}
 <ul>
 {% for fact in pack.open_facts %}
 <li>{{ fact.title }} ({{ fact.event_type }})</li>
@@ -29,9 +29,9 @@
 {% endif %}
 
 <h2>Aktive Rechtsereignisse</h2>
-{% if pack.get("active_events") %}
+{% if pack.legal_events %}
 <ul>
-{% for e in pack.active_events %}
+{% for e in pack.legal_events %}
 <li>{{ e.title }} — {{ e.event_type }} | {{ e.occurred_at }} | Confidence: {{ e.confidence }}</li>
 {% endfor %}
 </ul>
@@ -40,13 +40,13 @@
 {% endif %}
 
 <h2>Bestätigte Normverknüpfungen</h2>
-{% if pack.get("confirmed_links") %}
+{% if pack.confirmed_legal_links %}
 <ul>
-{% for link in pack.confirmed_links %}
+{% for link in pack.confirmed_legal_links %}
 <li>
     {{ link.get("abbreviation", "–") }} § {{ link.get("provision_number", "–") }}
     {% if link.get("heading") %} — {{ link.heading }}{% endif %}
-    <br><small>Quelle: {{ link.get("source", "–") }} | SHA-256: {{ link.get("sha256", "–")[:16] }}…</small>
+    <br><small>Quelle: {{ link.get("source", "–") }} | SHA-256: {{ link.get("sha256", "")[:16] }}…</small>
 </li>
 {% endfor %}
 </ul>
@@ -56,9 +56,9 @@
 
 <h2>Quellenmetadaten</h2>
 <dl>
-    <dt>Schema-Version:</dt><dd>{{ pack.get("schema_version", "0.2.0") }}</dd>
-    <dt>Export-Zeitpunkt:</dt><dd>{{ pack.get("exported_at", "–") }}</dd>
-    <dt>Snapshot-Hashes:</dt><dd>{{ pack.get("snapshot_hashes", []) | join(", ") or "–" }}</dd>
+    <dt>Schema-Version:</dt><dd>{{ pack.schema_version }}</dd>
+    <dt>Export-Zeitpunkt:</dt><dd>{{ pack.exported_at or "–" }}</dd>
+    <dt>Snapshot-Hashes:</dt><dd>{{ pack.integrity.get("snapshot_hashes", []) | join(", ") or "–" }}</dd>
     <dt>Temporale Warnungen:</dt>
     <dd>Konsolidierte, nicht amtliche Fassung. Historische Anwendbarkeit nicht bestätigt.</dd>
 </dl>

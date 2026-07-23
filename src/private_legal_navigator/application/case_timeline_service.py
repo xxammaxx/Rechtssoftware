@@ -40,6 +40,36 @@ class CaseTimelineService:
 
     # ── Event Management ────────────────────────
 
+    def create_event(
+        self,
+        case_id: uuid.UUID,
+        event_type: LegalEventType,
+        *,
+        title: str = "",
+        description: str = "",
+        occurred_at: datetime | None = None,
+        known_at: datetime | None = None,
+        source_document_id: str | None = None,
+    ) -> CaseLegalEvent:
+        """Create a legal event (route-compatible wrapper for add_event_candidate)."""
+        return self.add_event_candidate(
+            case_id=case_id,
+            event_type=event_type,
+            title=title,
+            description=description,
+            occurred_at=occurred_at,
+            known_at=known_at,
+            source_document_id=(uuid.UUID(source_document_id) if source_document_id else None),
+        )
+
+    def list_events(self, case_id: uuid.UUID) -> list[CaseLegalEvent]:
+        """List all legal events for a case."""
+        return self._timeline_repo.list_events(case_id)
+
+    def list_active_events(self, case_id: uuid.UUID) -> list[CaseLegalEvent]:
+        """List active (confirmed, non-revoked) events for a case."""
+        return self._timeline_repo.list_active_events(case_id)
+
     def add_event_candidate(
         self,
         case_id: uuid.UUID,
@@ -90,6 +120,30 @@ class CaseTimelineService:
         return event
 
     def correct_event(
+        self,
+        event_id: uuid.UUID,
+        *,
+        new_title: str = "",
+        new_description: str = "",
+        new_event_type: LegalEventType | None = None,
+        new_occurred_at: datetime | None = None,
+        new_known_at: datetime | None = None,
+    ) -> CaseLegalEvent:
+        """Correct an event (route-compatible wrapper)."""
+        updates: dict[str, Any] = {}
+        if new_title:
+            updates["title"] = new_title
+        if new_description:
+            updates["description"] = new_description
+        if new_event_type is not None:
+            updates["event_type"] = new_event_type
+        if new_occurred_at is not None:
+            updates["occurred_at"] = new_occurred_at
+        if new_known_at is not None:
+            updates["known_at"] = new_known_at
+        return self._correct_event_impl(event_id, **updates)
+
+    def _correct_event_impl(
         self,
         event_id: uuid.UUID,
         **updates: Any,
@@ -148,6 +202,24 @@ class CaseTimelineService:
 
     # ── Link Management ─────────────────────────
 
+    def list_links(self, case_id: uuid.UUID) -> list[CaseLegalLink]:
+        """List all legal links for a case."""
+        return self._timeline_repo.list_links(case_id)
+
+    def link_provision_to_case(
+        self,
+        case_id: uuid.UUID,
+        provision_id: uuid.UUID,
+        *,
+        relevance_note: str = "",
+    ) -> CaseLegalLink:
+        """Create a norm-to-case link (route-compatible wrapper for propose_link)."""
+        return self.propose_link(
+            case_id=case_id,
+            legal_provision_id=provision_id,
+            relevance_note=relevance_note,
+        )
+
     def propose_link(
         self,
         case_id: uuid.UUID,
@@ -193,6 +265,20 @@ class CaseTimelineService:
         return link
 
     def correct_link(
+        self,
+        link_id: uuid.UUID,
+        *,
+        new_provision_id: uuid.UUID | None = None,
+        new_relevance_note: str = "",
+    ) -> CaseLegalLink:
+        """Correct a link (route-compatible wrapper)."""
+        return self._correct_link_impl(
+            link_id=link_id,
+            provision_id=new_provision_id,
+            relevance_note=new_relevance_note,
+        )
+
+    def _correct_link_impl(
         self, link_id: uuid.UUID, *, relevance_note: str = "", provision_id: uuid.UUID | None = None
     ) -> CaseLegalLink:
         """Correct a link (creates new version, preserves old)."""
@@ -211,8 +297,7 @@ class CaseTimelineService:
         )
         self._timeline_repo.save_link(corrected)
 
-        original.status = LegalLinkStatus.REVOKED
-        original.revoked_at = datetime.now()
+        original.status = LegalLinkStatus.SUPERSEDED
         self._timeline_repo.save_link(original)
 
         return corrected
