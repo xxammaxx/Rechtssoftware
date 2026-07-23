@@ -11,9 +11,7 @@ from typing import Any
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from private_legal_navigator.domain.case_timeline import (
-    LegalEventType,
-)
+from private_legal_navigator.domain.case_timeline import LegalEventType
 
 
 router = APIRouter(prefix="/ui", tags=["m7a-ui"])
