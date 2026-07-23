@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Normdetail</h1>
+
+{% if instrument %}
+<p><strong>{{ instrument.abbreviation }}</strong> — {{ instrument.official_title }}</p>
+{% endif %}
+
+<div class="norm-display">
+    <h2>{{ provision.provision_number }}{% if provision.heading %}: {{ provision.heading }}{% endif %}</h2>
+
+    <div class="norm-text">
+        {{ provision.text_content }}
+    </div>
+
+    <div class="norm-metadata">
+        <h3>Quelleninformation</h3>
+        <dl>
+            <dt>Gesetz:</dt>
+            <dd>{{ instrument.official_title if instrument else "–" }}</dd>
+            <dt>Abkürzung:</dt>
+            <dd>{{ instrument.abbreviation if instrument else "–" }}</dd>
+            <dt>Paragraph:</dt>
+            <dd>{{ provision.provision_number }}</dd>
+            <dt>Überschrift:</dt>
+            <dd>{{ provision.heading or "–" }}</dd>
+            <dt>Quelle:</dt>
+            <dd>{{ instrument.source_identifier if instrument else "–" }}</dd>
+            <dt>Snapshot:</dt>
+            <dd>{{ snapshot.snapshot_id if snapshot else "–" }}</dd>
+            <dt>SHA-256:</dt>
+            <dd><code>{{ snapshot.sha256 if snapshot else "–" }}</code></dd>
+            <dt>Abrufzeit:</dt>
+            <dd>{{ snapshot.retrieved_at.isoformat() if snapshot and snapshot.retrieved_at else "–" }}</dd>
+            <dt>Autoritätsstufe:</dt>
+            <dd><strong>{{ instrument.authority_tier.value if instrument else "UNKNOWN" }}</strong></dd>
+            <dt>Historischer Status:</dt>
+            <dd>{{ expression.temporal_status.value if expression else "UNKNOWN" }}{% if expression and expression.source_note %} — {{ expression.source_note }}{% endif %}</dd>
+        </dl>
+    </div>
+
+    <div class="notice notice--warning">
+        <strong>Konsolidierter, nicht amtlicher Gesetzestext.</strong><br>
+        Die historische Anwendbarkeit auf den konkreten Sachverhalt ist nicht bestätigt.
+    </div>
+</div>
+
+<p>
+    <a href="{{ url_for('legal_source_search_get') }}">← Zurück zur Suche</a>
+</p>
+{% endblock %}

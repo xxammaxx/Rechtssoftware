@@ -9,6 +9,7 @@ from private_legal_navigator.application.document_repository import DocumentRepo
 from private_legal_navigator.application.file_storage import FileStorage
 from private_legal_navigator.application.text_extractor import TextExtractor
 from private_legal_navigator.domain.document import Document
+from private_legal_navigator.infrastructure.safe_logging import safe_log_event
 
 logger = logging.getLogger(__name__)
 
@@ -51,11 +52,12 @@ class DocumentService:
         # Classification
         classification = self._classifier.classify(result.text)
 
-        logger.info(
-            "Document classified as %s (confidence=%.2f, patterns=%d)",
-            classification.doc_type,
-            classification.confidence,
-            len(classification.matched_patterns),
+        safe_log_event(
+            logger,
+            "document.classified",
+            doc_type=str(classification.doc_type),
+            confidence=classification.confidence,
+            patterns=len(classification.matched_patterns),
         )
 
         doc = Document(

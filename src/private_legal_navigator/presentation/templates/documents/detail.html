@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav aria-label="Brotkrümel">
+  <ol class="breadcrumbs">
+    <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
+    <li><a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}">Fall</a></li>
+    <li><span aria-current="page">{{ view.document_filename }}</span></li>
+  </ol>
+</nav>
+
+<h1 class="page-title">{{ view.document_filename }}</h1>
+
+{# Warnings #}
+{% if view.warnings %}
+<div class="warnings-box" role="alert">
+    <h2 class="section-title">Hinweise</h2>
+    <ul>
+    {% for warning in view.warnings %}
+        <li class="warning-item">
+            <span class="warning-code">{{ warning.code }}</span>:
+            {{ warning.message }}
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{# Deadline Candidates #}
+<h2 class="section-title">Datums- und Zeitraumhinweise</h2>
+
+{% if not view.has_candidates %}
+    <p class="empty-state">Keine Datums- oder Zeitraumhinweise erkannt.</p>
+{% else %}
+    <p class="count-badge">Menschliche Prüfung erforderlich. Rechtliche Gültigkeit nicht bewertet.</p>
+
+    <ul class="candidate-list">
+    {% for c in view.candidates %}
+        <li class="candidate-card-item">
+            <span class="candidate-card-item__kind">{{ c.kind }}</span>
+            <p class="candidate-card-item__text">{{ c.display_text }}</p>
+
+            {% if c.date_value %}
+            <p class="candidate-card-item__date">Datum: {{ c.date_value }}</p>
+            {% endif %}
+
+            {% if c.is_relative %}
+            <p class="candidate-card-item__duration">
+                {% if c.duration_amount and c.duration_unit %}
+                {{ c.duration_amount }} {{ c.duration_unit }}{% if c.duration_amount != 1 %}n{% endif %}
+                {% endif %}
+            </p>
+            <p class="candidate-card-item__ref">
+                Bezugsereignis erforderlich.
+            </p>
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<p class="u-mt-4">
+    <a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}" class="btn btn--secondary btn--small">← Zurück zum Fall</a>
+</p>
+
+{% endblock %}

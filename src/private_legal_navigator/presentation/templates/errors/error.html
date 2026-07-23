@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="error-page">
+    <p class="error-page__code" aria-hidden="true">{{ error.status_code }}</p>
+    <h1 class="error-page__title">{{ error.title }}</h1>
+
+    <div class="error-box" role="alert">
+        <p>{{ error.message }}</p>
+        {% if error.detail %}
+        <p class="error-detail">{{ error.detail }}</p>
+        {% endif %}
+    </div>
+
+    <div class="error-page__action">
+        <a href="{{ url_for('ui_case_list') }}" class="btn btn--primary">Zurück zur Fallübersicht</a>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav aria-label="Brotkrümel">
+  <ol class="breadcrumbs">
+    <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
+    <li><span aria-current="page">{{ view.title }}</span></li>
+  </ol>
+</nav>
+
+<h1 class="page-title">{{ view.title }}</h1>
+
+<p class="count-badge">Status: <strong>{{ view.status }}</strong></p>
+
+{% if not view.has_documents %}
+    <p class="empty-state">Keine Dokumente im Fall.</p>
+{% else %}
+    <h2 class="section-title">Dokumente ({{ view.documents|length }})</h2>
+
+    <ul class="item-list">
+    {% for doc in view.documents %}
+        <li>
+            <a href="{{ url_for('ui_document_detail', case_id=view.case_id, document_id=doc.document_id) }}"
+               class="item-card">
+                <div class="item-card__title">{{ doc.filename }}</div>
+                <div class="item-card__meta">
+                    <span>{{ doc.classification }}</span>
+                    <span>{{ doc.size_bytes }} Bytes</span>
+                    <span>Hochgeladen: {{ doc.uploaded_at_display or doc.uploaded_at }}</span>
+                </div>
+                {% if not doc.has_text %}
+                <span class="item-card__warning">Kein Text extrahierbar</span>
+                {% endif %}
+            </a>
+        </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+<p class="u-mt-4">
+    <a href="{{ url_for('ui_case_list') }}" class="btn btn--secondary btn--small">← Zurück zur Fallübersicht</a>
+</p>
+
+{% endblock %}

@@ -1,7 +1,7 @@
 # ADR-002 — Confirmed Reference Events and Calendar Arithmetic (M6-A)
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 

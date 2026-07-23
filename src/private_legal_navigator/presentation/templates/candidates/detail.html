@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# ── Breadcrumb ────────────────────────────────────────────────────── #}
+<nav aria-label="Brotkrümel">
+  <ol class="breadcrumbs">
+    <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
+    <li><a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}">{{ view.case_label or "Fall" }}</a></li>
+    <li><a href="{{ url_for('ui_document_detail', case_id=view.case_id, document_id=view.document_id) }}">{{ view.document_filename }}</a></li>
+    <li><span aria-current="page">Bezugsdatum prüfen</span></li>
+  </ol>
+</nav>
+
+{# ── Flash Banner ──────────────────────────────────────────────────── #}
+{% if request.query_params.get('confirmed') %}
+<div role="status" class="flash-banner flash-banner--success">
+  <strong>Bezugsdatum wurde bestätigt.</strong>
+  Die Angabe wurde gespeichert. Keine rechtliche Bewertung.
+</div>
+{% endif %}
+
+{% if request.query_params.get('rejected') %}
+<div role="status" class="flash-banner flash-banner--info">
+  <strong>Vom Nutzer abgelehnt.</strong>
+  Die Zeitangabe wurde abgelehnt.
+</div>
+{% endif %}
+
+{% if view.success_message == 'corrected' %}
+<div role="status" class="flash-banner flash-banner--success">
+  <strong>Bestätigung wurde korrigiert.</strong>
+  Die bisherige Entscheidung bleibt in der Historie erhalten.
+  Keine rechtliche Bewertung.
+</div>
+{% endif %}
+
+{% if view.success_message == 'revoked' %}
+<div role="status" class="flash-banner flash-banner--info">
+  <strong>Bestätigung wurde widerrufen.</strong>
+  Die bisherige Entscheidung bleibt in der Historie sichtbar.
+  Es gilt keine aktive Bestätigung.
+</div>
+{% endif %}
+
+{# ── Page Title ────────────────────────────────────────────────────── #}
+<h1 class="page-title">Bezugsdatum prüfen</h1>
+
+{% if view.is_completed %}
+<p class="page-subtitle">
+  Die gespeicherte Nutzerentscheidung und der erkannte Dokumentwert werden gegenübergestellt.
+</p>
+{% else %}
+<p class="page-subtitle">
+  Vergleichen Sie die erkannte Zeitangabe mit dem tatsächlich maßgeblichen Datum
+  und bestätigen oder verwerfen Sie den Vorschlag.
+</p>
+{% endif %}
+
+{# ── Human Review Notice ───────────────────────────────────────────── #}
+<aside class="notice notice--review" role="note">
+  <strong>Rechtliche Gültigkeit nicht bewertet.</strong>
+  Die Anwendung erkennt und speichert Datumsangaben.
+  Die abschließende Einordnung muss durch einen Menschen erfolgen.
+</aside>
+
+{# ── Workspace Grid (Desktop: 2-spaltig, Mobile: 1-spaltig) ────────── #}
+<div class="workspace-grid">
+
+  {# ── Linke Hauptspalte ──────────────────────────────────────────── #}
+  <div class="workspace-main">
+
+    {# Erkannte Zeitangabe #}
+    <section class="card" aria-labelledby="detected-heading" role="region">
+      <div class="card__header" id="detected-heading">Erkannte Zeitangabe</div>
+      <div class="card__body">
+        <dl class="data-list">
+          <dt>Art</dt>
+          <dd>{{ view.candidate_kind }}</dd>
+
+          {% if view.candidate_date_value %}
+          <dt>Erkanntes Datum</dt>
+          <dd><time datetime="{{ view.candidate_date_value }}">{{ view.display_detected_date or view.candidate_date_value }}</time></dd>
+          {% endif %}
+
+          {% if view.candidate_duration_amount and view.candidate_duration_unit %}
+          <dt>Erkannter Zeitraum</dt>
+          <dd>{{ view.candidate_duration_amount }} {{ view.candidate_duration_unit }}</dd>
+          {% endif %}
+
+          <dt>Text im Dokument</dt>
+          <dd class="evidence-text">{{ view.candidate_display_text }}</dd>
+
+          <dt>Quelle</dt>
+          <dd>Im Dokument erkannt</dd>
+        </dl>
+      </div>
+    </section>
+
+    {# Datumsabweichung (nur wenn relevant) #}
+    {% if view.dates_differ %}
+    <section class="card card--diff" aria-labelledby="diff-heading" role="region">
+      <div class="card__header" id="diff-heading">Abweichung erkannt</div>
+      <div class="card__body">
+        <p class="diff-callout__summary">
+          Das bestätigte Datum weicht von der im Dokument erkannten Zeitangabe ab.
+          Diese Gegenüberstellung stellt keine rechtliche Bewertung dar.
+        </p>
+        <div class="diff-callout__values">
+          <div class="diff-callout__row">
+            <span class="diff-callout__label">Erkannt</span>
+            <span class="diff-callout__value">{{ view.display_detected_date or view.candidate_date_value }}</span>
+          </div>
+          <div class="diff-callout__row">
+            <span class="diff-callout__label">Bestätigt</span>
+            <span class="diff-callout__value">{{ view.display_confirmed_date or view.active_confirmation.confirmed_date }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if view.dates_match and view.active_confirmation %}
+    <aside class="notice notice--review" role="note">
+      Bestätigtes Datum entspricht der erkannten Zeitangabe.
+      Keine rechtliche Bewertung.
+    </aside>
+    {% endif %}
+
+    {% if view.current_status == 'rejected' and not view.active_confirmation %}
+    <aside class="notice notice--review" role="note">
+      Der erkannte Vorschlag wurde vom Nutzer abgelehnt.
+      Keine Berechnung möglich.
+    </aside>
+    {% endif %}
+
+    {# Bestätigungshistorie #}
+    {% if view.has_history %}
+    <section class="card" aria-labelledby="history-heading" role="region">
+      <div class="card__header" id="history-heading">Bestätigungshistorie</div>
+      <div class="card__body card__body--flush">
+        <div class="table-container">
+          <table aria-label="Verlauf der Bestätigungen">
+            <caption class="u-visually-hidden">Bestätigungshistorie — Verlauf der gespeicherten Nutzerentscheidungen</caption>
+            <thead>
+              <tr>
+                <th scope="col">Datum und Zeit</th>
+                <th scope="col">Bestätigtes Datum</th>
+                <th scope="col">Aktion</th>
+                <th scope="col">Quelle</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in view.history %}
+              <tr>
+                <td>{{ entry.confirmed_at_display or entry.confirmed_at }}</td>
+                <td>{{ entry.confirmed_date_display or entry.confirmed_date or '—' }}</td>
+                <td>{{ entry.confirmation_method_label }}</td>
+                <td>{{ entry.source_type_label }}</td>
+                <td class="history-status-cell history-status-cell--{{ entry.status_css or 'unconfirmed' }}">{{ entry.status_label }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+
+  {# ── Rechte Seitenspalte ────────────────────────────────────────── #}
+  <div class="workspace-sidebar">
+
+    {# Aktueller Status #}
+    <section class="card card--status-{{ view.status_css }}" aria-labelledby="status-heading" role="region">
+      <div class="card__header" id="status-heading">Aktueller Status</div>
+      <div class="card__body">
+        <div class="status-display">
+          <span class="status-badge status-{{ view.status_css }}">{{ view.current_status_label }}</span>
+        </div>
+
+        {% if view.active_confirmation %}
+        <dl class="data-list data-list--compact">
+          <dt>Bestätigtes Datum</dt>
+          <dd><time datetime="{{ view.active_confirmation.confirmed_date }}">{{ view.display_confirmed_date or view.active_confirmation.confirmed_date }}</time></dd>
+
+          <dt>Quelle</dt>
+          <dd>{{ view.active_confirmation.source_type_label }}</dd>
+
+          <dt>Methode</dt>
+          <dd>{{ view.active_confirmation.confirmation_method_label }}</dd>
+
+          <dt>Bestätigt am</dt>
+          <dd>{{ view.active_confirmation.confirmed_at_display or view.active_confirmation.confirmed_at }}</dd>
+        </dl>
+        {% endif %}
+      </div>
+    </section>
+
+    {# Aktionen #}
+    <section class="card" aria-labelledby="actions-heading" role="region">
+      <div class="card__header" id="actions-heading">Aktion auswählen</div>
+      <div class="card__body">
+
+        {# Confirm detected date — nur wenn unbestätigt #}
+        {% if view.candidate_date_value and view.current_status not in ('confirmed', 'revoked',) %}
+        <form method="POST"
+              action="{{ url_for('ui_confirm_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+              class="action-form">
+          <fieldset>
+            <legend>Erkanntes Datum bestätigen</legend>
+
+            <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+            <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+            <input type="hidden" name="confirmed_date" value="{{ view.candidate_date_value }}">
+            <input type="hidden" name="event_type" value="unknown">
+
+            <p class="date-preview">{{ view.display_detected_date or view.candidate_date_value }}</p>
+            <p class="form-hint">
+              Das erkannte Datum wird als Bezugsdatum gespeichert.
+              Dies stellt keine rechtliche Bewertung dar.
+            </p>
+            <button type="submit" class="btn btn--primary">Erkanntes Datum bestätigen</button>
+          </fieldset>
+        </form>
+        {% endif %}
+
+        {# Reject candidate — nur wenn nicht bereits rejected, revoked oder confirmed #}
+        {% if view.current_status not in ('rejected', 'revoked',) %}
+        <form method="POST"
+              action="{{ url_for('ui_reject_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+              class="action-form">
+          <fieldset>
+            <legend>Vorschlag ablehnen</legend>
+
+            <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+            <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+            <input type="hidden" name="event_type" value="unknown">
+
+            <p class="form-hint">
+              Der erkannte Vorschlag wird abgelehnt.
+              Danach ist keine Berechnung für diese Angabe möglich.
+            </p>
+            <button type="submit" class="btn btn--secondary">Vorschlag ablehnen</button>
+          </fieldset>
+        </form>
+        {% endif %}
+
+        {# Manual date confirmation — immer verfügbar wenn nicht rejected oder revoked #}
+        {% if view.current_status not in ('rejected', 'revoked',) %}
+        <form method="POST"
+              action="{{ url_for('ui_manual_confirm', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+              class="action-form">
+          <fieldset>
+            <legend>Anderes Datum manuell eingeben</legend>
+
+            <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+            <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+            <input type="hidden" name="event_type" value="unknown">
+
+            <div class="form-field">
+              <label for="manual_date">Datum</label>
+              <input
+                type="date"
+                id="manual_date"
+                name="manual_date"
+                required
+                min="1900-01-01"
+                max="2099-12-31"
+                aria-describedby="manual_date_hint"
+              >
+              <span id="manual_date_hint" class="form-hint">
+                Geben Sie das Datum im Format JJJJ-MM-TT ein (z.&nbsp;B. 2026-01-15).
+              </span>
+            </div>
+
+            <div class="form-field">
+              <label for="evidence_note">Beleg / Anmerkung (optional)</label>
+              <input
+                type="text"
+                id="evidence_note"
+                name="evidence_note"
+                maxlength="2000"
+                aria-describedby="evidence_note_hint"
+              >
+              <span id="evidence_note_hint" class="form-hint">
+                Optional: Woher stammt dieses Datum? (z.&nbsp;B. „Schreiben vom 12.01.2026“)
+              </span>
+            </div>
+
+            <p class="form-hint">
+              Das eingegebene Datum wird als manuelle Nutzerbestätigung gespeichert.
+              Dies stellt keine rechtliche Bewertung dar.
+            </p>
+            <button type="submit" class="btn btn--primary">Datum bestätigen</button>
+          </fieldset>
+        </form>
+        {% endif %}
+
+        {# ── Correct & Revoke (M6-UI Slice 3) ──────────────────────── #}
+        {% if view.show_correct_revoke %}
+        {# Bestätigung korrigieren #}
+        <form method="POST"
+              action="{{ url_for('ui_correct_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+              class="action-form">
+          <fieldset>
+            <legend>Bestätigung korrigieren</legend>
+
+            <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+            <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+            <input type="hidden" name="expected_active_confirmation_id" value="{{ view.active_confirmation_id }}">
+            <input type="hidden" name="event_type" value="unknown">
+
+            {% if view.active_confirmation and view.active_confirmation.confirmed_date %}
+            <p class="date-preview">
+              Aktuell bestätigt: <time datetime="{{ view.active_confirmation.confirmed_date }}">{{ view.display_confirmed_date or view.active_confirmation.confirmed_date }}</time>
+            </p>
+            {% endif %}
+
+            <div class="form-field">
+              <label for="correct_date">Neues Datum</label>
+              <input
+                type="date"
+                id="correct_date"
+                name="confirmed_date"
+                required
+                min="1900-01-01"
+                max="2099-12-31"
+                aria-describedby="correct_date_hint"
+              >
+              <span id="correct_date_hint" class="form-hint">
+                Geben Sie das korrigierte Datum im Format JJJJ-MM-TT ein.
+              </span>
+            </div>
+
+            <div class="form-field">
+              <label for="correct_note">Beleg / Anmerkung (optional)</label>
+              <input
+                type="text"
+                id="correct_note"
+                name="evidence_note"
+                maxlength="2000"
+                aria-describedby="correct_note_hint"
+              >
+              <span id="correct_note_hint" class="form-hint">
+                Optional: Grund der Korrektur.
+              </span>
+            </div>
+
+            <p class="form-hint">
+              Die bisherige Entscheidung bleibt in der Historie erhalten.
+              Das korrigierte Datum ersetzt die aktive Bestätigung.
+            </p>
+            <button type="submit" class="btn btn--primary">Korrektur speichern</button>
+          </fieldset>
+        </form>
+
+        {# Bestätigung widerrufen #}
+        <form method="POST"
+              action="{{ url_for('ui_revoke_candidate', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+              class="action-form action-form--revoke">
+          <fieldset>
+            <legend>Bestätigung widerrufen</legend>
+
+            <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+            <input type="hidden" name="idempotency_key" value="{{ view.idempotency_key }}">
+            <input type="hidden" name="expected_active_confirmation_id" value="{{ view.active_confirmation_id }}">
+            <input type="hidden" name="event_type" value="unknown">
+
+            <div class="revoke-notice" role="alert">
+              <strong>Widerruf löscht keine Daten.</strong>
+              Die bisherige Entscheidung bleibt in der Historie sichtbar.
+              Nach dem Widerruf gilt für diesen Kandidaten keine aktive Bestätigung.
+            </div>
+
+            <button type="submit" class="btn btn--danger">Bestätigung widerrufen</button>
+          </fieldset>
+        </form>
+        {% endif %}
+
+        {# ── Berechnungsvorschau (M6-UI Slice 4) ─────────────────────── #}
+        {% if view.show_correct_revoke %}
+        <section class="card">
+          <div class="card__header">Unverbindliche Rechenvorschau</div>
+          <div class="card__body">
+            <p class="form-hint">
+              Berechnung auf Basis des bestätigten Bezugsdatums.
+              Keine rechtliche Bewertung.
+            </p>
+            <a href="{{ url_for('ui_calculation_preview_get', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}"
+               class="btn btn--primary">
+              Rechenvorschau öffnen
+            </a>
+          </div>
+        </section>
+        {% endif %}
+
+        {# Bereits widerrufen oder rejected — keine Aktionen #}
+        {% if view.current_status in ('revoked', 'rejected') and not view.show_actions and not view.show_correct_revoke %}
+        <div class="action-card--no-actions">
+          <p>Dieser Vorgang wurde bereits abgeschlossen.</p>
+        </div>
+        {% endif %}
+
+      </div>
+    </section>
+
+  </div>
+
+</div>
+
+{% endblock %}

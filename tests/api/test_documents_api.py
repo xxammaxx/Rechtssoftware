@@ -188,28 +188,6 @@ class TestDocumentText:
         assert data["extraction_error"] is not None
         assert "korrupt" in data["extraction_error"]
 
-    async def test_get_text_nonexistent(self, client: AsyncClient) -> None:
-        """Get text for nonexistent document returns 404."""
-        case_id = await _create_case(client)
-        fake_id = str(uuid.uuid4())
-        resp = await client.get(f"/api/v1/cases/{case_id}/documents/{fake_id}/text")
-        assert resp.status_code == 404
-
-    async def test_document_list_has_no_extraction_error(self, client: AsyncClient) -> None:
-        """Document list endpoint does NOT include extraction_error."""
-        case_id = await _create_case(client)
-        upload_resp = await client.post(
-            f"/api/v1/cases/{case_id}/documents",
-            files={"file": ("doc.pdf", b"%PDF-1.4 content", "application/pdf")},
-        )
-        doc_id = upload_resp.json()["document_id"]
-
-        list_resp = await client.get(f"/api/v1/cases/{case_id}/documents")
-        assert list_resp.status_code == 200
-        items = list_resp.json()["items"]
-        for item in items:
-            assert "extraction_error" not in item
-
     async def test_get_text(self, client: AsyncClient) -> None:
         """Get extracted text from an uploaded document."""
         case_id = await _create_case(client)

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Rechtsquellenstatus</h1>
+
+<div class="notice notice--info">
+    <strong>Hinweis:</strong> Konsolidierter, nicht amtlicher Gesetzestext.
+    Quelle: <em>Gesetze im Internet</em> (Bundesministerium der Justiz).
+</div>
+
+<table class="data-table">
+<thead>
+<tr>
+    <th>Quelle</th>
+    <th>Aktiv</th>
+    <th>Autoritätsstufe</th>
+    <th>Letzter Abruf</th>
+    <th>Snapshots</th>
+    <th>Instrumente</th>
+    <th>Integrität</th>
+</tr>
+</thead>
+<tbody>
+{% for s in sources %}
+<tr>
+    <td><strong>{{ s.display_name }}</strong><br><small>{{ s.base_url }}</small></td>
+    <td>{{ "Ja" if s.enabled else "Nein" }}</td>
+    <td>{{ s.authority_tier }}</td>
+    <td>{% if s.get("last_sync") %}{{ s.last_sync }}{% else %}–{% endif %}</td>
+    <td>{{ s.get("snapshot_count", 0) }}</td>
+    <td>{{ s.get("instrument_count", 0) }}</td>
+    <td>{{ "OK" if s.enabled else "–" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% if not sources %}
+<p><em>Keine Rechtsquellen registriert.</em></p>
+{% endif %}
+
+<p><a href="{{ url_for('legal_source_search_get') }}" class="btn btn--primary">Rechtsquellen durchsuchen</a></p>
+{% endblock %}

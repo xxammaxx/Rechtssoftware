@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# ── Breadcrumb ─────────────────────────────────────────────────────── #}
+<nav class="breadcrumb" aria-label="Brotkrumennavigation">
+  <a href="{{ url_for('ui_case_list') }}" class="breadcrumb__link">Fälle</a>
+  <span class="breadcrumb__sep">›</span>
+  <a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}" class="breadcrumb__link">
+    {{ view.case_label }}
+  </a>
+  <span class="breadcrumb__sep">›</span>
+  <a href="{{ url_for('ui_candidate_detail', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}" class="breadcrumb__link">
+    Bezugsdatum prüfen
+  </a>
+  <span class="breadcrumb__sep">›</span>
+  <span class="breadcrumb__current" aria-current="page">Rechenvorschau</span>
+</nav>
+
+{# ── Page Title ─────────────────────────────────────────────────────── #}
+<h1 class="page-title">Unverbindliche Rechenvorschau</h1>
+
+{% if view.has_active_confirmation %}
+<p class="page-subtitle">
+  Rechenvorschau auf Basis des bestätigten Bezugsdatums.
+  Keine rechtliche Bewertung.
+</p>
+{% else %}
+<p class="page-subtitle">
+  Für eine Rechenvorschau ist zunächst ein aktuell bestätigtes Bezugsdatum erforderlich.
+</p>
+{% endif %}
+
+{# ── Human Review Notice ────────────────────────────────────────────── #}
+<aside class="notice notice--review" role="note">
+  <strong>Keine rechtliche Gültigkeit bewertet.</strong>
+  Diese Vorschau zeigt ausschließlich das Ergebnis der dargestellten
+  deterministischen Datumsarithmetik. Rechtliche Fristregeln,
+  Feiertage, Wochenenden und Bekanntgabefiktionen wurden nicht geprüft.
+</aside>
+
+<div class="workspace-grid">
+
+  {# ── Linke Hauptspalte ────────────────────────────────────────── #}
+  <div class="workspace-main">
+
+    {# ── Keine aktive Bestätigung ──────────────────────────────── #}
+    {% if not view.has_active_confirmation %}
+    <section class="card" aria-labelledby="no-conf-heading" role="region">
+      <div class="card__header" id="no-conf-heading">Keine aktive Bestätigung</div>
+      <div class="card__body">
+        <p>{{ view.calculation_error_message }}</p>
+        <p>
+          <a href="{{ url_for('ui_candidate_detail', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}" class="btn btn--primary">
+            Zurück zum Bezugsdatum
+          </a>
+        </p>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── Berechnungsergebnis ───────────────────────────────────── #}
+    {% if view.preview_result is not none %}
+    <section class="card" aria-labelledby="result-heading" role="region">
+      <div class="card__header" id="result-heading">Rechnerisches Ergebnis</div>
+      <div class="card__body">
+        <p class="preview-date">
+          <strong>{{ view.preview_result.calculated_date_display }}</strong>
+        </p>
+        <p class="form-hint">
+          Rechnerisches Ergebnis — keine rechtliche Bewertung.
+        </p>
+      </div>
+    </section>
+
+    {# ── So wurde gerechnet ────────────────────────────────────── #}
+    <section class="card" aria-labelledby="trace-heading" role="region">
+      <div class="card__header" id="trace-heading">So wurde gerechnet</div>
+      <div class="card__body">
+        <ol class="trace-list" aria-label="Rechenweg">
+          {% for step in view.preview_result.trace_steps %}
+          <li class="trace-list__item">
+            <div class="trace-step">
+              <span class="trace-step__number">{{ step.step_number }}</span>
+              <div class="trace-step__content">
+                <div class="trace-step__label">{{ step.operation_label }}</div>
+                <dl class="trace-step__details">
+                  <div>
+                    <dt>Verwendetes Bezugsdatum</dt>
+                    <dd>{{ step.input_date_display }}</dd>
+                  </div>
+                  <div>
+                    <dt>Rechenoperation</dt>
+                    <dd>{{ step.amount }} Kalendertage addieren</dd>
+                  </div>
+                  <div>
+                    <dt>Rechnerisches Ergebnis</dt>
+                    <dd>{{ step.output_date_display }}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+
+        {# ── Nicht angewandte Anpassungen ──────────────────────── #}
+        <div class="notice notice--warning" role="note">
+          <strong>Nicht angewandte Anpassungen:</strong>
+          <ul>
+            <li>Keine Wochenendverschiebung</li>
+            <li>Keine Feiertagsbereinigung</li>
+            <li>Keine Zustellungsfiktion</li>
+            <li>Keine Bekanntgabefiktion</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    {# ── Warnungen ─────────────────────────────────────────────── #}
+    {% if view.preview_result.warnings|length > 0 %}
+    <section class="card" aria-labelledby="warnings-heading" role="region">
+      <div class="card__header" id="warnings-heading">Einschränkungen</div>
+      <div class="card__body">
+        <ul class="warning-list">
+          {% for warning in view.preview_result.warnings %}
+          <li class="warning-list__item">{{ warning }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+
+    {% endif %}
+
+  </div>
+
+  {# ── Rechte Seitenleiste ───────────────────────────────────────── #}
+  <aside class="workspace-sidebar" role="complementary">
+
+    {# ── Verwendetes Bezugsdatum ────────────────────────────────── #}
+    {% if view.has_active_confirmation %}
+    <section class="card" aria-labelledby="ref-heading" role="region">
+      <div class="card__header" id="ref-heading">Verwendetes Bezugsdatum</div>
+      <div class="card__body">
+        <dl class="info-dl">
+          <dt>Bestätigtes Datum</dt>
+          <dd>{{ view.active_confirmation_date_display }}</dd>
+          <dt>Kandidat</dt>
+          <dd>{{ view.candidate_display_text }}</dd>
+          {% if view.candidate_kind %}
+          <dt>Art</dt>
+          <dd>{{ view.candidate_kind }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </section>
+
+    {# ── Berechnungsvorschau Formular ───────────────────────────── #}
+    <section class="card" aria-labelledby="preview-heading" role="region">
+      <div class="card__header" id="preview-heading">Berechnung</div>
+      <div class="card__body">
+        <form method="post" action="{{ request.url.path }}" class="form" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ view.csrf_token }}">
+          <input type="hidden" name="expected_active_confirmation_id" value="{{ view.active_confirmation_id }}">
+
+          <p class="form-hint">
+            Die Vorschau nimmt keine rechtliche Bewertung und keine
+            Wochenend- oder Feiertagsanpassung vor.
+          </p>
+
+          <button type="submit" class="btn btn--primary">
+            {% if view.preview_result is not none %}
+              Erneut berechnen
+            {% else %}
+              Vorschau berechnen
+            {% endif %}
+          </button>
+        </form>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── Zurück ─────────────────────────────────────────────────── #}
+    <section class="card">
+      <div class="card__body">
+        <a href="{{ url_for('ui_candidate_detail', case_id=view.case_id, document_id=view.document_id, candidate_index=view.candidate_index) }}" class="btn btn--secondary">
+          Zurück zum Bezugsdatum
+        </a>
+      </div>
+    </section>
+
+  </aside>
+
+</div>
+
+{% endblock %}

@@ -6,7 +6,7 @@ Pure function: no side effects, no I/O, no network.
 from abc import ABC, abstractmethod
 from datetime import date
 
-from private_legal_navigator.domain.calendar import (
+from private_legal_navigator.domain.reference_event import (
     CalculationOperation,
     CalendarCalculationCandidate,
     ConfirmedReferenceEvent,

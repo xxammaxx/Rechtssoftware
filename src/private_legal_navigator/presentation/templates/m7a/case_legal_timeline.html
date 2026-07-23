@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ case.title }} — Rechtsverlauf</h1>
+
+<h2>Aktive Ereignisse</h2>
+{% if active_events %}
+<table class="data-table">
+<thead><tr><th>Typ</th><th>Titel</th><th>Ereignet am</th><th>Quelle</th><th>Status</th><th>Aktion</th></tr></thead>
+<tbody>
+{% for e in active_events %}
+<tr>
+    <td>{{ e.event_type.value if e.event_type else "–" }}</td>
+    <td>{{ e.title }}</td>
+    <td>{{ e.occurred_at.isoformat() if e.occurred_at else "–" }}</td>
+    <td>{{ e.source_document_id or "–" }}</td>
+    <td>{{ e.review_status.value if e.review_status else "–" }}</td>
+    <td>
+        <form method="post" action="{{ url_for('correct_legal_event', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="event_id" value="{{ e.event_id }}">
+            <input type="text" name="new_title" value="{{ e.title }}" style="width:12em">
+            <button type="submit" class="btn btn--small">Korrigieren</button>
+        </form>
+        <form method="post" action="{{ url_for('revoke_legal_event', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="event_id" value="{{ e.event_id }}">
+            <button type="submit" class="btn btn--small btn--danger">Widerrufen</button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p><em>Keine aktiven Ereignisse.</em></p>
+{% endif %}
+
+<h2>Ereigniskandidaten</h2>
+{% set candidates = events | selectattr("review_status.value", "equalto", "CANDIDATE") | list %}
+{% if candidates %}
+<table class="data-table">
+<thead><tr><th>Typ</th><th>Titel</th><th>Beschreibung</th><th>Bestätigen</th><th>Ablehnen</th></tr></thead>
+<tbody>
+{% for e in candidates %}
+<tr>
+    <td>{{ e.event_type.value if e.event_type else "–" }}</td>
+    <td>{{ e.title }}</td>
+    <td>{{ e.description or "–" }}</td>
+    <td>
+        <form method="post" action="{{ url_for('confirm_legal_event', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="event_id" value="{{ e.event_id }}">
+            <button type="submit" class="btn btn--small btn--success">✓ Bestätigen</button>
+        </form>
+    </td>
+    <td>
+        <form method="post" action="{{ url_for('reject_legal_event', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="event_id" value="{{ e.event_id }}">
+            <button type="submit" class="btn btn--small btn--warning">✗ Ablehnen</button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p><em>Keine Kandidaten.</em></p>
+{% endif %}
+
+<h3>Ereigniskandidat anlegen</h3>
+<form method="post" action="{{ url_for('create_legal_event', case_id=case_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="event-type">Ereignistyp:</label>
+    <select id="event-type" name="event_type" required>
+        <option value="">– Bitte wählen –</option>
+        <option value="DOCUMENT_ISSUED">Dokument erstellt</option>
+        <option value="DOCUMENT_RECEIVED">Dokument erhalten</option>
+        <option value="ADMINISTRATIVE_ACT_EFFECTIVE">VA wirksam</option>
+        <option value="OBJECTION_FILED">Widerspruch eingelegt</option>
+        <option value="DECISION_AMENDED">Entscheidung geändert</option>
+        <option value="DEADLINE_STARTED">Frist begonnen</option>
+        <option value="LEGAL_ACTION_FILED">Klage eingereicht</option>
+        <option value="OTHER">Sonstiges</option>
+    </select>
+    <label for="event-title">Titel:</label>
+    <input type="text" id="event-title" name="title" required placeholder="Kurztitel des Ereignisses">
+    <label for="event-desc">Beschreibung:</label>
+    <textarea id="event-desc" name="description" placeholder="Detaillierte Beschreibung…"></textarea>
+    <label for="event-occurred">Ereignet am:</label>
+    <input type="date" id="event-occurred" name="occurred_at">
+    <label for="event-known">Bekannt seit:</label>
+    <input type="date" id="event-known" name="known_at">
+    <label for="event-source-doc">Quelldokument-ID:</label>
+    <input type="text" id="event-source-doc" name="source_document_id" placeholder="Optional">
+    <button type="submit" class="btn btn--primary">Ereigniskandidat anlegen</button>
+</form>
+
+<p>
+    <a href="{{ url_for('case_legal_situation', case_id=case_id) }}">← Zur Rechtslage</a> |
+    <a href="{{ url_for('evidence_pack', case_id=case_id) }}">Evidence Pack →</a>
+</p>
+{% endblock %}
