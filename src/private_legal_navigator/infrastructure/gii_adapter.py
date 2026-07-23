@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 
 from lxml import etree
 
@@ -174,12 +175,12 @@ class GiiAdapter:
                 elif tag == "type":
                     item_type = text
 
-            # Derive abbreviation from link (e.g., "BGB" from "https://.../bgb/")
+            # Derive abbreviation from link (directory name, not file extension)
             abbreviation = ""
             source_identifier = ""
             if link:
                 abbreviation = _derive_abbreviation(link)
-                source_identifier = link
+                source_identifier = _derive_source_identifier(link)
 
             items.append(
                 GiiCatalogItem(
@@ -197,16 +198,56 @@ class GiiAdapter:
         """Find a specific instrument in the GII catalog by abbreviation or key.
 
         Args:
-            key: Law abbreviation (e.g., 'sgb_10') or source identifier.
+            key: Law abbreviation (e.g., 'SGB X', 'sgb_10') or source identifier.
+
+        Searches in priority order:
+        1. Exact abbreviation match (case-insensitive), preferring full instrument entries
+        2. Normalized URL directory match (key appears as directory in link)
+        3. Broad link substring match (last resort, only for non-generic keys)
         """
         catalog = self.fetch_catalog()
-        key_lower = key.lower()
+        # Sort catalog: prefer entries without chapter suffix (full instruments first)
+        catalog.sort(key=_catalog_sort_key)
+        key_lower = key.lower().strip()
+
+        # Normalize key: convert "SGB X" → "sgb_10" for URL matching
+        key_normalized = _normalize_key_for_url_match(key_lower)
+
+        # Priority 1: Exact abbreviation match
         for item in catalog:
             if item.abbreviation.lower() == key_lower:
                 return item
-            if key_lower in item.link.lower():
+
+        # Priority 2: URL directory match (key appears as directory in link)
+        for item in catalog:
+            link_lower = item.link.lower()
+            # Match when key appears as a path directory component
+            if f"/{key_normalized}/" in link_lower or link_lower.endswith(f"/{key_normalized}"):
                 return item
+
+        # Priority 3: Broad substring match (only for non-generic keys like "xml")
+        if key_lower not in ("xml", "html", "zip", "pdf", "index"):
+            for item in catalog:
+                if key_lower in item.link.lower():
+                    return item
+
         return None
+
+    def find_instruments_by_abbreviation(self, abbrev: str) -> list[GiiCatalogItem]:
+        """Find all catalog items matching an abbreviation (for grouping chapters).
+
+        Returns all items that share the same derived abbreviation, enabling
+        multi-file instruments to be grouped.
+        """
+        catalog = self.fetch_catalog()
+        abbrev_lower = abbrev.lower().strip()
+        results: list[GiiCatalogItem] = []
+        for item in catalog:
+            if item.abbreviation.lower() == abbrev_lower:
+                results.append(item)
+        # Sort: prefer items without chapter suffix (the main instrument)
+        results.sort(key=lambda x: (0 if "_kap" not in x.link.lower() else 1, x.link))
+        return results
 
     # ── Instrument Sync ──────────────────────────
 
@@ -275,6 +316,7 @@ class GiiAdapter:
             snapshot=snapshot,
             abbreviation=item.abbreviation,
             title=item.title,
+            source_identifier=item.source_identifier,
         )
 
         return GiiParsedInstrument(
@@ -302,6 +344,7 @@ def _parse_law_xml(
     snapshot: SourceSnapshot,
     abbreviation: str,
     title: str,
+    source_identifier: str = "",
 ) -> tuple[LegalInstrument, LegalExpression, list[LegalProvision]]:
     """Parse a GII law XML file into domain entities.
 
@@ -332,7 +375,9 @@ def _parse_law_xml(
     # Extract metadata
     metadata = _extract_metadata(root, abbreviation, title)
 
-    # Build instrument
+    # Build instrument — prefer canonical source_identifier over download URL
+    canonical_id = source_identifier or snapshot.source_locator
+
     instrument = LegalInstrument(
         instrument_id=uuid.uuid4(),
         jurisdiction=GII_JURISDICTION,
@@ -340,7 +385,7 @@ def _parse_law_xml(
         official_title=metadata["official_title"],
         short_title=metadata["short_title"],
         abbreviation=metadata["abbreviation"],
-        source_identifier=snapshot.source_locator,
+        source_identifier=canonical_id,
         authority_tier=GII_AUTHORITY_TIER,
     )
 
@@ -413,13 +458,61 @@ def _extract_metadata(
     }
 
 
+def _normalize_key_for_url_match(key: str) -> str:
+    """Normalize a user-provided key for URL directory matching.
+
+    Converts display abbreviations to URL directory format:
+      "SGB X"  → "sgb_10"
+      "sgb_10" → "sgb_10"
+      "bgb"    → "bgb"
+    """
+    key_upper = key.upper().strip()
+
+    # Reverse SGB display name → URL directory
+    sgb_display = re.match(r"SGB\s+([IVXLCDM]+)", key_upper)
+    if sgb_display:
+        roman = sgb_display.group(1)
+        num = _from_roman(roman)
+        if num > 0:
+            return f"sgb_{num}"
+
+    return key.lower()
+
+
+def _from_roman(roman: str) -> int:
+    """Convert Roman numeral to integer. Returns 0 on invalid input."""
+    roman_map = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
+    result = 0
+    prev = 0
+    for char in reversed(roman.upper()):
+        val = roman_map.get(char, 0)
+        if val == 0:
+            return 0
+        if val >= prev:
+            result += val
+        else:
+            result -= val
+        prev = val
+    return result
+
+
 def _normalize_abbreviation(abbrev: str) -> str:
     """Normalize abbreviation for common patterns.
 
     GII uses abbreviated names like 'BGB', 'StGB', 'sgb_10'.
     We normalize compound SGB names to 'SGB X' format.
+
+    File extensions and generic names are rejected to UNKNOWN.
     """
+    if not abbrev or not abbrev.strip():
+        return "UNKNOWN"
+
     abbrev_upper = abbrev.upper().strip()
+
+    # Reject file extensions used as abbreviations (e.g., "XML", "HTML", "PDF")
+    generic_file_abbrevs = {"XML", "HTML", "HTM", "PDF", "ZIP", "TXT", "JSON", "CSV"}
+    if abbrev_upper in generic_file_abbrevs:
+        return "UNKNOWN"
 
     # Normalize SGB book names
     sgb_match = re.match(r"SGB[_ ]*(\d+)", abbrev_upper)
@@ -444,22 +537,84 @@ def _to_roman(num: int) -> str:
     return roman_num
 
 
+def _catalog_sort_key(item: Any) -> tuple[int, str]:
+    """Sort key for catalog items: prefer full instruments over chapter entries.
+
+    Full instruments (no chapter marker) get priority 0.
+    Chapter entries (with _kap, _anhang etc.) get priority 1.
+    """
+    link_lower = item.link.lower()
+    is_chapter = bool(re.search(r"_(kap|anhang|teil|abschnitt|buch|art)", link_lower))
+    return (1 if is_chapter else 0, item.link)
+
+
+def _derive_source_identifier(link: str) -> str:
+    """Derive the canonical source identifier (parent instrument URL) from a download link."""
+    parsed = urlparse(link)
+    path = parsed.path.rstrip("/")
+    path_parts = [p for p in path.split("/") if p]
+
+    if not path_parts:
+        return link
+
+    # Filter out file-like components (containing '.')
+    dir_parts = [p for p in path_parts if "." not in p]
+
+    if not dir_parts:
+        return link
+
+    # For the last directory, strip chapter suffixes
+    last_dir = dir_parts[-1]
+    last_dir = re.sub(r"_(kap|anhang|teil|abschnitt|buch|art).*", "", last_dir, flags=re.IGNORECASE)
+
+    # Reconstruct path
+    canonical_path = "/".join(dir_parts[:-1] + [last_dir]) + "/"
+
+    return urlunparse((parsed.scheme, parsed.netloc, canonical_path, "", "", ""))
+
+
 def _derive_abbreviation(link: str) -> str:
     """Derive abbreviation from GII link URL.
 
-    Examples:
-        https://www.gesetze-im-internet.de/bgb/ → "BGB"
-        https://www.gesetze-im-internet.de/sgb_10/ → "SGB X"
+    The GII catalog serves law documents via directory-based URLs:
+      https://.../bgb/          → "BGB"
+      https://.../sgb_10/xml.zip → "SGB X"  (directory is sgb_10, file is xml.zip)
+      https://.../bgb/index.html → "BGB"
+
+    Key principle: The meaningful law identifier is the last directory name.
+    File-like components (containing '.') are download artifacts, not law identifiers.
+
+    Chapter entries (e.g., sgb_10_kap1_2/xml.zip) are stripped to their parent law.
     """
-    # Extract the last path component
     path = link.rstrip("/")
     parts = path.split("/")
-    last = parts[-1] if parts else ""
 
-    # Remove file extension if present
-    last = re.sub(r"\.[a-z]+$", "", last)
+    # Find the last meaningful directory component
+    # Skip file-like components (containing '.') — these are download artifacts
+    # like xml.zip, index.html, etc.
+    law_dir = ""
+    for part in reversed(parts):
+        if not part:
+            continue
+        if "." in part:
+            # This is a file-like component (xml.zip, index.html) — skip it
+            continue
+        law_dir = part
+        break
 
-    return _normalize_abbreviation(last)
+    if not law_dir and parts:
+        # All parts are file-like — fallback to last part, strip extension
+        last = parts[-1]
+        law_dir = re.sub(r"\.[a-z]+$", "", last)
+
+    if not law_dir:
+        return "UNKNOWN"
+
+    # Strip chapter/part suffixes to derive parent law abbreviation
+    # Examples: sgb_10_kap1_2 → sgb_10, bgb_anhang_1 → bgb
+    law_dir = re.sub(r"_(kap|anhang|teil|abschnitt|buch|art).*", "", law_dir, flags=re.IGNORECASE)
+
+    return _normalize_abbreviation(law_dir)
 
 
 def _extract_provisions(
@@ -468,42 +623,167 @@ def _extract_provisions(
 ) -> list[LegalProvision]:
     """Extract legal provisions from parsed GII XML.
 
-    The GII XML structure for provisions varies by law format.
-    We look for common patterns:
-    - <norm> elements with paragraph metadata
-    - Section headers vs paragraph content
-    - Hierarchical numbering
+    GII XML uses two main structures:
 
-    This is a best-effort extraction. Full structural parsing
-    is handled by future pipeline stages.
+    1. Aggregated format (<dokumente> with <norm> children):
+       <dokumente>
+         <norm>
+           <metadaten><enbez>§ 48</enbez><titel>Heading</titel>...</metadaten>
+           <textdaten><text><Content><P>Text...</P></Content></text></textdaten>
+         </norm>
+       </dokumente>
+
+    2. Single-norm format (root is <norm>):
+       <norm>
+         <metadaten>...</metadaten>
+         <textdaten>...</textdaten>
+       </norm>
+
+    Each <norm> represents a single paragraph/section.
     """
     provisions: list[LegalProvision] = []
 
-    # Strategy: find all text elements containing substantive content
-    # Look for <textdaten> → <text> → <Content> or similar structures
-    text_elements = _find_text_container(root)
+    # Determine which elements to process
+    norm_elements: list[etree._Element] = []
+    root_tag = (root.tag or "").lower() if hasattr(root, "tag") else ""
 
+    if "dokumente" in root_tag:
+        # Aggregated format: each child <norm> is a paragraph
+        for child in root:
+            child_tag = (child.tag or "").lower() if hasattr(child, "tag") else ""
+            if child_tag == "norm":
+                norm_elements.append(child)
+    elif root_tag == "norm":
+        # Single-norm format
+        norm_elements.append(root)
+    else:
+        # Fallback: use the old text container approach for unknown formats
+        return _extract_provisions_fallback(root, expression_id)
+
+    # Process each norm element
+    for norm_idx, norm_elem in enumerate(norm_elements):
+        metadata = _extract_norm_metadata(norm_elem)
+        text_content = _extract_norm_text(norm_elem)
+
+        if (not text_content or len(text_content.strip()) < 5) and not metadata.get("number"):
+            # Empty norms without explicit numbering (e.g., TOC entries) are skipped
+            continue
+
+        # Determine provision number
+        prov_number = metadata.get("number") or f"§{norm_idx + 1}"
+        heading = metadata.get("heading", "")
+
+        # Generate stable key from provision number
+        stable_key = _provision_stable_key(prov_number)
+
+        # Sort key tries to preserve document order
+        sort_key = f"{norm_idx:06d}"
+
+        provision = LegalProvision(
+            provision_id=uuid.uuid4(),
+            expression_id=expression_id,
+            provision_type=ProvisionType.PARAGRAPH,
+            provision_number=prov_number,
+            heading=heading,
+            stable_key=stable_key,
+            sort_key=sort_key,
+            text_content=text_content.strip(),
+            text_sha256=hashlib.sha256(text_content.encode("utf-8")).hexdigest(),
+        )
+
+        provisions.append(provision)
+
+    return provisions
+
+
+def _provision_stable_key(provision_number: str) -> str:
+    """Generate a stable key from a provision number.
+
+    § 48 → norm-48
+    § 48a → norm-48a
+    Art. 1 → art-1
+    """
+    cleaned = provision_number.strip()
+    # Remove § symbol
+    cleaned = cleaned.replace("§", "").strip()
+    # Normalize spaces
+    cleaned = re.sub(r"\s+", "-", cleaned)
+    return f"norm-{cleaned}" if cleaned else "norm-unknown"
+
+
+def _extract_norm_metadata(norm_elem: etree._Element) -> dict[str, str]:
+    """Extract metadata from a <norm> element's <metadaten> section."""
+    result: dict[str, str] = {}
+
+    for child in norm_elem:
+        tag = (child.tag or "").lower() if hasattr(child, "tag") else ""
+        if tag != "metadaten":
+            continue
+        for sub in child:
+            sub_tag = (sub.tag or "").lower() if hasattr(sub, "tag") else ""
+            text = (sub.text or "").strip()
+            if sub_tag == "enbez":
+                result["number"] = text
+            elif sub_tag == "titel":
+                result["heading"] = text
+            elif sub_tag == "jurabk":
+                result["abbreviation"] = text
+            elif sub_tag == "langue":
+                result["long_title"] = text
+            elif sub_tag == "kurzue":
+                result["short_title"] = text
+        break  # Only process first metadaten section
+
+    return result
+
+
+def _extract_norm_text(norm_elem: etree._Element) -> str:
+    """Extract the full text content from a <norm> element's <textdaten> section."""
+    text_parts: list[str] = []
+
+    for child in norm_elem:
+        tag = (child.tag or "").lower() if hasattr(child, "tag") else ""
+        if tag != "textdaten":
+            continue
+        # Collect all text from textdaten, including nested elements
+        _collect_text_recursive(child, text_parts)
+        break  # Only first textdaten section
+
+    return " ".join(text_parts).strip()
+
+
+def _collect_text_recursive(elem: etree._Element, parts: list[str]) -> None:
+    """Recursively collect text content from an element tree."""
+    if elem.text and elem.text.strip():
+        parts.append(elem.text.strip())
+    for child in elem:
+        if hasattr(child, "tag"):
+            _collect_text_recursive(child, parts)
+        if child.tail and child.tail.strip():
+            parts.append(child.tail.strip())
+
+
+def _extract_provisions_fallback(
+    root: etree._Element,
+    expression_id: uuid.UUID,
+) -> list[LegalProvision]:
+    """Fallback provision extraction for unknown XML formats (legacy behavior)."""
+    provisions: list[LegalProvision] = []
+    text_elements = _find_text_container(root)
     if text_elements is None:
         return provisions
 
-    # Look for paragraph-like elements
     para_count = 0
     for elem in text_elements.iter():
         tag = (elem.tag or "").lower() if hasattr(elem, "tag") else ""
-
-        # Skip metadata and non-content elements
         if tag in ("metadaten", "fussnoten", "description"):
             continue
-
         text = _get_element_text(elem)
         if not text or len(text) < 10:
             continue
-
         para_count += 1
         heading = ""
         provision_number = f"§{para_count}"
-
-        # Try to find heading in preceding sibling or parent
         parent = elem.getparent()
         if parent is not None:
             for sibling in parent:
@@ -512,10 +792,7 @@ def _extract_provisions(
                 sibling_tag = (sibling.tag or "").lower() if hasattr(sibling, "tag") else ""
                 if "ueberschrift" in sibling_tag or "heading" in sibling_tag:
                     heading = _get_element_text(sibling)
-
-        # Generate stable key
         stable_key = f"para-{para_count}"
-
         provision = LegalProvision(
             provision_id=uuid.uuid4(),
             expression_id=expression_id,
@@ -527,7 +804,6 @@ def _extract_provisions(
             text_content=text,
             text_sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(),
         )
-
         provisions.append(provision)
 
     return provisions
@@ -589,14 +865,14 @@ def _extract_xml_from_zip_bytes(zip_bytes: bytes, source_url: str) -> bytes:
     import zipfile
     from io import BytesIO
 
-    MAX_FILES = 50
-    MAX_TOTAL_SIZE = 100 * 1024 * 1024  # 100 MB
+    max_files = 50
+    max_total_size = 100 * 1024 * 1024  # 100 MB
 
     with zipfile.ZipFile(BytesIO(zip_bytes), "r") as zf:
         names = zf.namelist()
-        if len(names) > MAX_FILES:
+        if len(names) > max_files:
             raise ValueError(
-                f"ZIP archive contains {len(names)} files, exceeding limit of {MAX_FILES}"
+                f"ZIP archive contains {len(names)} files, exceeding limit of {max_files}"
             )
 
         # Find the first XML file
@@ -619,7 +895,7 @@ def _extract_xml_from_zip_bytes(zip_bytes: bytes, source_url: str) -> bytes:
 
         # Check total size
         total_size = sum(info.file_size for info in zf.infolist())
-        if total_size > MAX_TOTAL_SIZE:
-            raise ValueError(f"ZIP total size {total_size} exceeds limit of {MAX_TOTAL_SIZE}")
+        if total_size > max_total_size:
+            raise ValueError(f"ZIP total size {total_size} exceeds limit of {max_total_size}")
 
         return zf.read(xml_name)

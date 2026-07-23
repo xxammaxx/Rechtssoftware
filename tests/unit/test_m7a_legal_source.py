@@ -694,3 +694,215 @@ class TestXmlSecurity:
         assert validate_xml_magic_bytes(b"<root>test</root>")
         assert not validate_xml_magic_bytes(b"PK\x03\x04")  # ZIP magic
         assert not validate_xml_magic_bytes(b"not xml")
+
+
+# ── M7-A Phase 1: Instrument Identity Tests ──────
+
+
+class TestInstrumentIdentityFix:
+    """ID-001 through ID-006: GII instrument identity and abbreviation correctness."""
+
+    def test_id001_xml_file_extension_not_used_as_abbreviation(self):
+        """ID-001: XML-Dateiendung wird nicht als Gesetzesabkürzung übernommen."""
+        from private_legal_navigator.infrastructure.gii_adapter import (
+            _derive_abbreviation,
+        )
+
+        # Links that end with xml.zip should NOT produce "XML"
+        assert _derive_abbreviation("http://www.gesetze-im-internet.de/sgb_10/xml.zip") == "SGB X"
+        assert _derive_abbreviation("http://www.gesetze-im-internet.de/bgb/xml.zip") == "BGB"
+        assert _derive_abbreviation("http://www.gesetze-im-internet.de/stgb/xml.zip") == "STGB"
+
+        # Direct XML links (no ZIP) should also not produce "XML"
+        assert _derive_abbreviation("http://www.gesetze-im-internet.de/bbg/xml/") != "XML"
+
+    def test_id002_sgb_x_derived_correctly_from_url(self):
+        """ID-002: SGB X wird korrekt aus URL-Metadaten abgeleitet."""
+        from private_legal_navigator.infrastructure.gii_adapter import (
+            _derive_abbreviation,
+            _normalize_abbreviation,
+        )
+
+        # Main instrument URL
+        assert _derive_abbreviation("http://www.gesetze-im-internet.de/sgb_10/xml.zip") == "SGB X"
+
+        # Chapter entry URL — should still derive SGB X
+        assert (
+            _derive_abbreviation("http://www.gesetze-im-internet.de/sgb_10_kap1_2/xml.zip")
+            == "SGB X"
+        )
+
+        # Direct directory URL
+        assert _derive_abbreviation("https://www.gesetze-im-internet.de/sgb_10/") == "SGB X"
+
+        # Normalization: sgb_10 → SGB X
+        assert _normalize_abbreviation("sgb_10") == "SGB X"
+        assert _normalize_abbreviation("SGB 10") == "SGB X"
+
+    def test_id003_multiple_chapter_files_grouped_under_one_instrument(self):
+        """ID-003: Mehrere Kapiteldateien werden einem Instrument zugeordnet."""
+        from private_legal_navigator.infrastructure.gii_adapter import (
+            _derive_abbreviation,
+            _derive_source_identifier,
+        )
+
+        # Main SGB X entry
+        main_link = "http://www.gesetze-im-internet.de/sgb_10/xml.zip"
+        assert _derive_abbreviation(main_link) == "SGB X"
+        main_id = _derive_source_identifier(main_link)
+        assert "sgb_10" in main_id
+
+        # Chapter 1-2 entry — same abbreviation, same canonical source identifier
+        chap_link = "http://www.gesetze-im-internet.de/sgb_10_kap1_2/xml.zip"
+        assert _derive_abbreviation(chap_link) == "SGB X"
+        chap_id = _derive_source_identifier(chap_link)
+        assert "sgb_10" in chap_id
+        assert chap_id == main_id  # Same canonical source
+
+        # Chapter 3 entry — also same
+        chap3_link = "http://www.gesetze-im-internet.de/sgb_10_kap3/xml.zip"
+        assert _derive_abbreviation(chap3_link) == "SGB X"
+        chap3_id = _derive_source_identifier(chap3_link)
+        assert chap3_id == main_id  # Same canonical source
+
+    def test_id004_paragraph_48_sgb_x_exact_resolution(self):
+        """ID-004: § 48 SGB X wird exakt aufgelöst (unit test with synthetic XML)."""
+        import uuid as _uuid
+
+        from lxml import etree
+
+        from private_legal_navigator.infrastructure.gii_adapter import (
+            _extract_provisions,
+        )
+
+        # Build synthetic XML in the GII norm format
+        root = etree.Element("dokumente")
+        norm = etree.SubElement(root, "norm")
+        metadaten = etree.SubElement(norm, "metadaten")
+        etree.SubElement(metadaten, "enbez").text = "§ 48"
+        etree.SubElement(
+            metadaten, "titel"
+        ).text = "Aufhebung eines Verwaltungsaktes mit Dauerwirkung bei Änderung der Verhältnisse"
+        etree.SubElement(metadaten, "jurabk").text = "SGB 10"
+        textdaten = etree.SubElement(norm, "textdaten")
+        text_elem = etree.SubElement(textdaten, "text")
+        content = etree.SubElement(text_elem, "Content")
+        p = etree.SubElement(content, "P")
+        p.text = (
+            "SYNTHETISCH – (1) Soweit in den tatsächlichen oder rechtlichen "
+            "Verhältnissen, die beim Erlass eines Verwaltungsaktes mit Dauerwirkung "
+            "vorgelegen haben, eine wesentliche Änderung eintritt, ist der "
+            "Verwaltungsakt mit Wirkung für die Zukunft aufzuheben."
+        )
+
+        provisions = _extract_provisions(root, _uuid.uuid4())
+        assert len(provisions) == 1
+
+        para48 = provisions[0]
+        assert para48.provision_number == "§ 48"
+        assert "Aufhebung" in para48.heading
+        assert "Verwaltungsaktes" in para48.heading
+        assert para48.stable_key == "norm-48"
+        assert "wesentliche Änderung" in para48.text_content
+        assert len(para48.text_content) > 50
+
+    def test_id005_sgb_ix_not_confused_with_sgb_x(self):
+        """ID-005: § 48 SGB IX wird nicht mit § 48 SGB X verwechselt."""
+        from private_legal_navigator.infrastructure.gii_adapter import (
+            _derive_abbreviation,
+            _normalize_abbreviation,
+        )
+
+        # SGB IX link (book 9)
+        sgb9_link = "http://www.gesetze-im-internet.de/sgb_9/xml.zip"
+        assert _derive_abbreviation(sgb9_link) == "SGB IX"
+
+        # SGB X link (book 10) — different
+        sgb10_link = "http://www.gesetze-im-internet.de/sgb_10/xml.zip"
+        assert _derive_abbreviation(sgb10_link) == "SGB X"
+
+        # Verify they produce different abbreviations
+        assert _derive_abbreviation(sgb9_link) != _derive_abbreviation(sgb10_link)
+
+        # Normalization check
+        assert _normalize_abbreviation("sgb_9") == "SGB IX"
+        assert _normalize_abbreviation("sgb_10") == "SGB X"
+
+    def test_id006_unknown_abbreviation_returns_unknown_not_invented(self):
+        """ID-006: Unbekannte Abkürzung führt zu UNKNOWN, nicht zu erfundenem Treffer."""
+        from private_legal_navigator.infrastructure.gii_adapter import (
+            _derive_abbreviation,
+            _normalize_abbreviation,
+        )
+
+        # File extension alone should resolve to UNKNOWN
+        assert _derive_abbreviation("http://example.com/xml/xml.zip") == "UNKNOWN"
+
+        # Generic file extension should normalize to UNKNOWN
+        assert _normalize_abbreviation("xml") == "UNKNOWN"
+        assert _normalize_abbreviation("XML") == "UNKNOWN"
+        assert _normalize_abbreviation("html") == "UNKNOWN"
+        assert _normalize_abbreviation("pdf") == "UNKNOWN"
+
+        # Empty abbreviation should be UNKNOWN
+        assert _normalize_abbreviation("") == "UNKNOWN"
+
+        # Genuinely unknown but reasonable abbreviation passes through
+        assert _normalize_abbreviation("XYZLAW") == "XYZLAW"
+
+
+class TestCitationResolverIdentity:
+    """Tests for citation resolver with instrument identity awareness."""
+
+    def test_citation_parsing_extracts_sgb_x(self):
+        """Citation parser correctly extracts SGB X from various formats."""
+        from private_legal_navigator.application.citation_resolver import (
+            CitationResolver,
+        )
+        from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+            SqliteLegalSourceRepository,
+        )
+
+        repo = SqliteLegalSourceRepository(":memory:")
+        repo.initialize_schema()
+        resolver = CitationResolver(repo)
+
+        # Parse "§ 48 SGB X"
+        parsed = resolver.parse_citation("§ 48 SGB X")
+        assert parsed.paragraph_number == "48"
+        assert parsed.law_abbreviation == "SGB X"
+
+        # Parse "§ 48 Abs. 1 SGB X"
+        parsed2 = resolver.parse_citation("§ 48 Abs. 1 SGB X")
+        assert parsed2.paragraph_number == "48"
+        assert parsed2.clause_number == "1"
+        assert parsed2.law_abbreviation == "SGB X"
+
+        # Parse "§ 48a SGB X" (paragraph with letter)
+        parsed3 = resolver.parse_citation("§ 48a SGB X")
+        assert parsed3.paragraph_number == "48a"
+
+    def test_citation_resolution_not_found_for_unloaded_instrument(self):
+        """Citation resolution returns NOT_FOUND for instruments not in the database."""
+        import contextlib
+
+        from private_legal_navigator.application.citation_resolver import (
+            CitationResolver,
+        )
+        from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+            SqliteLegalSourceRepository,
+        )
+
+        # Use a temp file DB to ensure connection persists
+        db_path = tempfile.mktemp(suffix=".db")
+        try:
+            repo = SqliteLegalSourceRepository(db_path)
+            repo.initialize_schema()
+            resolver = CitationResolver(repo)
+
+            result = resolver.resolve("§ 48 SGB X")
+            assert result.status.value == "NOT_FOUND"
+            assert "gefunden" in result.detail.lower() or "found" in result.detail.lower()
+        finally:
+            with contextlib.suppress(OSError):
+                Path(db_path).unlink(missing_ok=True)
