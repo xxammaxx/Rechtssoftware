@@ -3,6 +3,7 @@
 import logging as _logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from importlib.metadata import version as _pkg_version
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -159,7 +160,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="PrivateLegalNavigator",
-        version="0.2.0",
+        version=_pkg_version("private-legal-navigator"),
         lifespan=lifespan,
     )
 

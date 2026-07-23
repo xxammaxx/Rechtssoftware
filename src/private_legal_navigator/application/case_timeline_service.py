@@ -101,18 +101,18 @@ class CaseTimelineService:
         self._timeline_repo.save_event(event)
         return event
 
-    def confirm_event(self, event_id: uuid.UUID) -> CaseLegalEvent:
+    def confirm_event(self, event_id: uuid.UUID, *, case_id: uuid.UUID) -> CaseLegalEvent:
         """Confirm a candidate legal event."""
-        event = self._require_event(event_id)
+        event = self._require_event(event_id, case_id)
         if event.review_status != ReviewStatus.CANDIDATE:
             raise ValueError(f"Event {event_id} is not in CANDIDATE status")
         event.review_status = ReviewStatus.CONFIRMED
         self._timeline_repo.save_event(event)
         return event
 
-    def reject_event(self, event_id: uuid.UUID) -> CaseLegalEvent:
+    def reject_event(self, event_id: uuid.UUID, *, case_id: uuid.UUID) -> CaseLegalEvent:
         """Reject a candidate legal event."""
-        event = self._require_event(event_id)
+        event = self._require_event(event_id, case_id)
         if event.review_status != ReviewStatus.CANDIDATE:
             raise ValueError(f"Event {event_id} is not in CANDIDATE status")
         event.review_status = ReviewStatus.REJECTED
@@ -123,6 +123,7 @@ class CaseTimelineService:
         self,
         event_id: uuid.UUID,
         *,
+        case_id: uuid.UUID,
         new_title: str = "",
         new_description: str = "",
         new_event_type: LegalEventType | None = None,
@@ -130,6 +131,7 @@ class CaseTimelineService:
         new_known_at: datetime | None = None,
     ) -> CaseLegalEvent:
         """Correct an event (route-compatible wrapper)."""
+        self._require_event(event_id, case_id)  # Validate cross-case ownership
         updates: dict[str, Any] = {}
         if new_title:
             updates["title"] = new_title
@@ -182,9 +184,9 @@ class CaseTimelineService:
 
         return corrected
 
-    def revoke_event(self, event_id: uuid.UUID) -> CaseLegalEvent:
+    def revoke_event(self, event_id: uuid.UUID, *, case_id: uuid.UUID) -> CaseLegalEvent:
         """Revoke a legal event (preserves record, sets revoked_at)."""
-        event = self._require_event(event_id)
+        event = self._require_event(event_id, case_id)
         if event.review_status not in (ReviewStatus.CONFIRMED, ReviewStatus.CORRECTED):
             raise ValueError(f"Event {event_id} cannot be revoked (must be CONFIRMED or CORRECTED)")
         event.review_status = ReviewStatus.REVOKED
@@ -245,9 +247,9 @@ class CaseTimelineService:
         self._timeline_repo.save_link(link)
         return link
 
-    def confirm_link(self, link_id: uuid.UUID) -> CaseLegalLink:
+    def confirm_link(self, link_id: uuid.UUID, *, case_id: uuid.UUID) -> CaseLegalLink:
         """Confirm a candidate link."""
-        link = self._require_link(link_id)
+        link = self._require_link(link_id, case_id)
         if link.status != LegalLinkStatus.CANDIDATE:
             raise ValueError(f"Link {link_id} is not in CANDIDATE status")
         link.status = LegalLinkStatus.CONFIRMED
@@ -255,9 +257,9 @@ class CaseTimelineService:
         self._timeline_repo.save_link(link)
         return link
 
-    def reject_link(self, link_id: uuid.UUID) -> CaseLegalLink:
+    def reject_link(self, link_id: uuid.UUID, *, case_id: uuid.UUID) -> CaseLegalLink:
         """Reject a candidate link."""
-        link = self._require_link(link_id)
+        link = self._require_link(link_id, case_id)
         if link.status != LegalLinkStatus.CANDIDATE:
             raise ValueError(f"Link {link_id} is not in CANDIDATE status")
         link.status = LegalLinkStatus.REJECTED
@@ -268,10 +270,12 @@ class CaseTimelineService:
         self,
         link_id: uuid.UUID,
         *,
+        case_id: uuid.UUID,
         new_provision_id: uuid.UUID | None = None,
         new_relevance_note: str = "",
     ) -> CaseLegalLink:
         """Correct a link (route-compatible wrapper)."""
+        self._require_link(link_id, case_id)  # Validate cross-case ownership
         return self._correct_link_impl(
             link_id=link_id,
             provision_id=new_provision_id,
@@ -302,9 +306,9 @@ class CaseTimelineService:
 
         return corrected
 
-    def revoke_link(self, link_id: uuid.UUID) -> CaseLegalLink:
+    def revoke_link(self, link_id: uuid.UUID, *, case_id: uuid.UUID) -> CaseLegalLink:
         """Revoke a link (preserves record)."""
-        link = self._require_link(link_id)
+        link = self._require_link(link_id, case_id)
         if link.status not in (LegalLinkStatus.CONFIRMED, LegalLinkStatus.CORRECTED):
             raise ValueError(f"Link {link_id} cannot be revoked")
         link.status = LegalLinkStatus.REVOKED
@@ -344,14 +348,20 @@ class CaseTimelineService:
 
     # ── Helpers ──────────────────────────────────
 
-    def _require_event(self, event_id: uuid.UUID) -> CaseLegalEvent:
+    def _require_event(
+        self, event_id: uuid.UUID, case_id: uuid.UUID | None = None
+    ) -> CaseLegalEvent:
         event = self._timeline_repo.get_event(event_id)
         if event is None:
             raise ValueError(f"Event not found: {event_id}")
+        if case_id is not None and event.case_id != case_id:
+            raise ValueError(f"Event not found: {event_id}")
         return event
 
-    def _require_link(self, link_id: uuid.UUID) -> CaseLegalLink:
+    def _require_link(self, link_id: uuid.UUID, case_id: uuid.UUID | None = None) -> CaseLegalLink:
         link = self._timeline_repo.get_link(link_id)
         if link is None:
+            raise ValueError(f"Link not found: {link_id}")
+        if case_id is not None and link.case_id != case_id:
             raise ValueError(f"Link not found: {link_id}")
         return link

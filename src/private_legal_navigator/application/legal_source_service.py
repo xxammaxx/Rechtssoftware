@@ -5,6 +5,8 @@ Delegates to repository, client, adapter, and resolver.
 """
 
 import logging
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -13,6 +15,7 @@ from private_legal_navigator.application.citation_resolver import (
     CitationResolver,
     ResolvedCitation,
 )
+from private_legal_navigator.application.legal_source_status_dto import LegalSourceStatusDTO
 from private_legal_navigator.domain.legal_source import (
     ImportStatus,
     LegalSource,
@@ -64,19 +67,56 @@ class LegalSourceService:
         return self._repo.list_sources()
 
     def get_source_status(self) -> list[dict[str, Any]]:
-        """Get status overview of all sources with sync info."""
-        sources = self._repo.list_sources()
+        """Get real status overview of all sources with actual statistics."""
+        sources = self._repo.list_sources(enabled_only=False)
         status_list = []
         for source in sources:
-            status_list.append(
-                {
-                    "source_key": source.source_key,
-                    "display_name": source.display_name,
-                    "authority_tier": source.authority_tier.value,
-                    "enabled": source.enabled,
-                    "base_url": source.base_url,
-                }
+            # Get snapshots for this source
+            snapshots = self._repo.list_snapshots_for_source(source.source_key)
+            indexed = sum(1 for s in snapshots if s.import_status.value == "INDEXED")
+            failed = sum(1 for s in snapshots if s.import_status.value == "FAILED")
+
+            # Get instrument and provision counts
+            instrument_count = self._repo.count_instruments(source.source_key)
+            provision_count = self._repo.count_provisions(source.source_key)
+
+            # Determine last retrieval times
+            last_retrieved = ""
+            last_imported = ""
+            if snapshots:
+                last_retrieved = max(s.retrieved_at for s in snapshots).isoformat()
+                indexed_snaps = [s for s in snapshots if s.import_status.value == "INDEXED"]
+                if indexed_snaps:
+                    last_imported = max(s.retrieved_at for s in indexed_snaps).isoformat()
+
+            # Integrity status: NOT_VERIFIED until explicitly verified
+            integrity_status = "NOT_VERIFIED"
+
+            dto = LegalSourceStatusDTO(
+                source_key=source.source_key,
+                display_name=source.display_name,
+                authority_tier=source.authority_tier.value,
+                jurisdiction=source.jurisdiction,
+                enabled=source.enabled,
+                base_url=source.base_url,
+                description=source.description,
+                snapshot_count=len(snapshots),
+                indexed_snapshot_count=indexed,
+                failed_snapshot_count=failed,
+                instrument_count=instrument_count,
+                provision_count=provision_count,
+                last_retrieved_at=last_retrieved,
+                last_successful_import_at=last_imported,
+                integrity_status=integrity_status,
+                integrity_checked_at="",
+                integrity_failure_count=0,
+                status_warnings=[],
             )
+
+            if source.enabled and len(snapshots) == 0:
+                dto.status_warnings.append("Quelle ist aktiviert, aber keine Snapshots vorhanden.")
+
+            status_list.append(dto.to_dict())
         return status_list
 
     # ── GII Sync ─────────────────────────────────
@@ -186,3 +226,83 @@ class LegalSourceService:
             return actual_hash == snapshot.sha256
         except (OSError, ValueError):
             return False
+
+    def verify_all_snapshots(self) -> list[dict[str, Any]]:
+        """Verify all snapshots and return detailed results."""
+        results = []
+        sources = self._repo.list_sources(enabled_only=False)
+        for source in sources:
+            snapshots = self._repo.list_snapshots_for_source(source.source_key)
+            for snap in snapshots:
+                if snap.snapshot_id is not None:
+                    result = self._verify_snapshot_detailed(snap.snapshot_id)
+                    results.append(result)
+        return results
+
+    def _verify_snapshot_detailed(self, snapshot_id: uuid.UUID) -> dict[str, Any]:
+        """Verify a snapshot and return detailed result dict."""
+        snapshot = self._repo.get_snapshot(snapshot_id)
+        if snapshot is None:
+            return {
+                "snapshot_id": str(snapshot_id),
+                "status": "MISSING",
+                "error_code": "SNAPSHOT_NOT_FOUND",
+                "checked_at": datetime.now().isoformat(),
+            }
+
+        result = {
+            "snapshot_id": str(snapshot.snapshot_id),
+            "source_key": "",
+            "expected_sha256": snapshot.sha256,
+            "actual_sha256": "",
+            "database_path": snapshot.storage_path,
+            "file_exists": False,
+            "size_matches": False,
+            "hash_matches": False,
+            "status": "NOT_VERIFIED",
+            "error_code": "",
+            "checked_at": datetime.now().isoformat(),
+        }
+
+        # Get source key for context
+        source = self._repo.get_source(snapshot.source_id)
+        if source:
+            result["source_key"] = source.source_key
+
+        try:
+            path = Path(snapshot.storage_path)
+            if not path.exists():
+                result["status"] = "MISSING"
+                result["error_code"] = "FILE_NOT_FOUND"
+                return result
+
+            result["file_exists"] = True
+            content = path.read_bytes()
+
+            # Size check
+            result["size_matches"] = len(content) == snapshot.byte_size
+
+            # Hash check
+            from private_legal_navigator.infrastructure.safe_source_client import compute_sha256
+
+            actual = compute_sha256(content)
+            result["actual_sha256"] = actual
+            result["hash_matches"] = actual == snapshot.sha256
+
+            if result["hash_matches"] and result["size_matches"]:
+                result["status"] = "VERIFIED"
+            elif not result["hash_matches"]:
+                result["status"] = "FAILED"
+                result["error_code"] = "HASH_MISMATCH"
+            elif not result["size_matches"]:
+                result["status"] = "FAILED"
+                result["error_code"] = "SIZE_MISMATCH"
+        except (OSError, ValueError) as e:
+            result["status"] = "FAILED"
+            result["error_code"] = f"READ_ERROR: {type(e).__name__}"
+
+        return result
+
+    def verify_snapshot_detailed(self, snapshot_id: uuid.UUID) -> dict[str, Any]:
+        """Public method — verify a single snapshot with detailed output."""
+        return self._verify_snapshot_detailed(snapshot_id)

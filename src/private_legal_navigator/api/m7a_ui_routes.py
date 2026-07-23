@@ -48,17 +48,6 @@ async def legal_source_status(request: Request) -> Any:
     svc = _get_services(request)
     status_list = svc["legal_source"].get_source_status()
     csrf_token = svc["csrf"].create_token(str(uuid.uuid4()))
-
-    # Enrich with snapshot count
-    for s in status_list:
-        key = s["source_key"]
-        snaps = (
-            svc["legal_repo"].list_snapshots_for_source(key)
-            if hasattr(svc["legal_repo"], "list_snapshots_for_source")
-            else []
-        )
-        s["snapshot_count"] = len(snaps)
-
     return svc["templates"].TemplateResponse(
         request,
         "m7a/legal_sources.html",
@@ -130,6 +119,9 @@ async def norm_detail(request: Request, provision_id: str) -> Any:
         if expression.source_snapshot_id:
             snapshot = svc["legal_repo"].get_snapshot(expression.source_snapshot_id)
 
+    # Get all cases for the "Link to case" feature
+    cases = svc["case_repo"].list_all()
+
     return svc["templates"].TemplateResponse(
         request,
         "m7a/norm_detail.html",
@@ -141,6 +133,8 @@ async def norm_detail(request: Request, provision_id: str) -> Any:
             "expression": expression,
             "instrument": instrument,
             "snapshot": snapshot,
+            "cases": cases,
+            "provision_id_str": str(provision.provision_id),
         },
     )
 
@@ -210,7 +204,7 @@ async def confirm_norm_link(
     svc["csrf"].validate(csrf_token, case_id)
 
     try:
-        svc["timeline"].confirm_link(link_id)
+        svc["timeline"].confirm_link(link_id, case_id=case_id)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
 
@@ -229,7 +223,7 @@ async def reject_norm_link(
     svc["csrf"].validate(csrf_token, case_id)
 
     try:
-        svc["timeline"].reject_link(link_id)
+        svc["timeline"].reject_link(link_id, case_id=case_id)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
 
@@ -252,6 +246,7 @@ async def correct_norm_link(
     try:
         svc["timeline"].correct_link(
             link_id=link_id,
+            case_id=case_id,
             new_provision_id=uuid.UUID(new_provision_id),
             new_relevance_note=new_relevance_note,
         )
@@ -273,7 +268,7 @@ async def revoke_norm_link(
     svc["csrf"].validate(csrf_token, case_id)
 
     try:
-        svc["timeline"].revoke_link(link_id)
+        svc["timeline"].revoke_link(link_id, case_id=case_id)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
 
@@ -353,7 +348,7 @@ async def confirm_legal_event(
     svc["csrf"].validate(csrf_token, case_id)
 
     try:
-        svc["timeline"].confirm_event(event_id)
+        svc["timeline"].confirm_event(event_id, case_id=case_id)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
 
@@ -372,7 +367,7 @@ async def reject_legal_event(
     svc["csrf"].validate(csrf_token, case_id)
 
     try:
-        svc["timeline"].reject_event(event_id)
+        svc["timeline"].reject_event(event_id, case_id=case_id)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
 
@@ -398,6 +393,7 @@ async def correct_legal_event(
     try:
         svc["timeline"].correct_event(
             event_id=event_id,
+            case_id=case_id,
             new_title=new_title,
             new_description=new_description,
             new_event_type=LegalEventType(new_event_type) if new_event_type else None,
@@ -422,7 +418,7 @@ async def revoke_legal_event(
     svc["csrf"].validate(csrf_token, case_id)
 
     try:
-        svc["timeline"].revoke_event(event_id)
+        svc["timeline"].revoke_event(event_id, case_id=case_id)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err)) from err
 

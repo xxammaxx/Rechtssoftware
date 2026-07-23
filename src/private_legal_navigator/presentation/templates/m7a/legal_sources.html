@@ -13,23 +13,42 @@
     <th>Quelle</th>
     <th>Aktiv</th>
     <th>Autoritätsstufe</th>
-    <th>Letzter Abruf</th>
+    <th>Letzter Import</th>
     <th>Snapshots</th>
     <th>Instrumente</th>
+    <th>Normen</th>
     <th>Integrität</th>
+    <th>Fehler</th>
 </tr>
 </thead>
 <tbody>
 {% for s in sources %}
 <tr>
-    <td><strong>{{ s.display_name }}</strong><br><small>{{ s.base_url }}</small></td>
+    <td>
+        <strong>{{ s.display_name }}</strong>
+        {% if s.description %}<br><small>{{ s.description }}</small>{% endif %}
+        <br><small>{{ s.base_url }}</small>
+    </td>
     <td>{{ "Ja" if s.enabled else "Nein" }}</td>
     <td>{{ s.authority_tier }}</td>
-    <td>{% if s.get("last_sync") %}{{ s.last_sync }}{% else %}–{% endif %}</td>
-    <td>{{ s.get("snapshot_count", 0) }}</td>
-    <td>{{ s.get("instrument_count", 0) }}</td>
-    <td>{{ "OK" if s.enabled else "–" }}</td>
+    <td>{% if s.last_successful_import_at %}{{ s.last_successful_import_at[:19] }}{% else %}–{% endif %}</td>
+    <td>{{ s.snapshot_count }}{% if s.indexed_snapshot_count and s.snapshot_count > 0 %} ({{ s.indexed_snapshot_count }} indiziert){% endif %}</td>
+    <td>{{ s.instrument_count }}</td>
+    <td>{{ s.provision_count }}</td>
+    <td>{{ s.integrity_status }}</td>
+    <td>{% if s.failed_snapshot_count > 0 %}
+        <span class="text--warning">{{ s.failed_snapshot_count }} fehlgeschlagen</span>
+    {% else %}–{% endif %}</td>
 </tr>
+{% if s.status_warnings %}
+<tr class="warning-row">
+    <td colspan="9">
+        {% for warning in s.status_warnings %}
+        <div class="notice notice--warning">{{ warning }}</div>
+        {% endfor %}
+    </td>
+</tr>
+{% endif %}
 {% endfor %}
 </tbody>
 </table>

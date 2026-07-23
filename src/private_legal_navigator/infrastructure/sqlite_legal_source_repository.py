@@ -207,6 +207,52 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
         finally:
             conn.close()
 
+    def list_snapshots_for_source(self, source_key: str) -> list[SourceSnapshot]:
+        """List all snapshots for a given source."""
+        conn = get_connection(self._db_path)
+        try:
+            rows = conn.execute(
+                """SELECT s.* FROM legal_source_snapshots s
+                   JOIN legal_sources ls ON ls.source_id = s.source_id
+                   WHERE ls.source_key = ? ORDER BY s.retrieved_at DESC""",
+                (source_key,),
+            ).fetchall()
+            return [self._row_to_snapshot(row) for row in rows]
+        finally:
+            conn.close()
+
+    def count_instruments(self, source_key: str) -> int:
+        """Count instruments for a given source."""
+        conn = get_connection(self._db_path)
+        try:
+            row = conn.execute(
+                """SELECT COUNT(DISTINCT i.instrument_id) FROM legal_instruments i
+                   JOIN legal_expressions e ON e.instrument_id = i.instrument_id
+                   JOIN legal_source_snapshots s ON s.snapshot_id = e.source_snapshot_id
+                   JOIN legal_sources ls ON ls.source_id = s.source_id
+                   WHERE ls.source_key = ?""",
+                (source_key,),
+            ).fetchone()
+            return row[0] if row else 0
+        finally:
+            conn.close()
+
+    def count_provisions(self, source_key: str) -> int:
+        """Count provisions for a given source."""
+        conn = get_connection(self._db_path)
+        try:
+            row = conn.execute(
+                """SELECT COUNT(*) FROM legal_provisions p
+                   JOIN legal_expressions e ON e.expression_id = p.expression_id
+                   JOIN legal_source_snapshots s ON s.snapshot_id = e.source_snapshot_id
+                   JOIN legal_sources ls ON ls.source_id = s.source_id
+                   WHERE ls.source_key = ?""",
+                (source_key,),
+            ).fetchone()
+            return row[0] if row else 0
+        finally:
+            conn.close()
+
     # ── Instruments ──────────────────────────────
 
     def save_instrument(self, instrument: LegalInstrument) -> None:

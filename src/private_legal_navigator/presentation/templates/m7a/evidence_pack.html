@@ -7,7 +7,9 @@
 </p>
 
 <h2>Bestätigte Tatsachen</h2>
-{% if pack.confirmed_facts %}
+{% if pack.confirmed_facts and pack.confirmed_facts[0].get("_note") == "NOT_TRACKED_IN_THIS_RELEASE" %}
+<p><em>Die Erfassung von Tatsachen ist in dieser Version noch nicht implementiert.</em></p>
+{% elif pack.confirmed_facts %}
 <ul>
 {% for fact in pack.confirmed_facts %}
 <li>{{ fact.title }} ({{ fact.event_type }}) — {{ fact.occurred_at }}</li>
@@ -18,7 +20,9 @@
 {% endif %}
 
 <h2>Offene Tatsachen</h2>
-{% if pack.open_facts %}
+{% if pack.open_facts and pack.open_facts[0].get("_note") == "NOT_TRACKED_IN_THIS_RELEASE" %}
+<p><em>Die Erfassung von Tatsachen ist in dieser Version noch nicht implementiert.</em></p>
+{% elif pack.open_facts %}
 <ul>
 {% for fact in pack.open_facts %}
 <li>{{ fact.title }} ({{ fact.event_type }})</li>
@@ -54,13 +58,54 @@
 <p><em>Keine bestätigten Normverknüpfungen.</em></p>
 {% endif %}
 
+<h2>Rechtsfragen</h2>
+{% if pack.legal_issues and pack.legal_issues[0].get("_note") == "NOT_TRACKED_IN_THIS_RELEASE" %}
+<p><em>Die Erfassung von Rechtsfragen ist in dieser Version noch nicht implementiert.</em></p>
+{% elif pack.legal_issues %}
+<ul>
+{% for issue in pack.legal_issues %}
+<li>{{ issue.title }} — {{ issue.status }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p><em>Keine Rechtsfragen erfasst.</em></p>
+{% endif %}
+
 <h2>Quellenmetadaten</h2>
 <dl>
     <dt>Schema-Version:</dt><dd>{{ pack.schema_version }}</dd>
     <dt>Export-Zeitpunkt:</dt><dd>{{ pack.exported_at or "–" }}</dd>
-    <dt>Snapshot-Hashes:</dt><dd>{{ pack.integrity.get("snapshot_hashes", []) | join(", ") or "–" }}</dd>
+</dl>
+
+<h3>Snapshot-Integrität</h3>
+{% if pack.integrity.get("snapshots") %}
+<table>
+    <thead>
+        <tr><th>Snapshot-ID</th><th>SHA-256</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+    {% for snap in pack.integrity.snapshots %}
+    <tr>
+        <td>{{ snap.snapshot_id[:8] }}…</td>
+        <td><code>{{ snap.sha256[:16] }}…</code></td>
+        <td>{{ snap.status }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p><em>Keine Snapshots verfügbar.</em></p>
+{% endif %}
+
+<dl>
     <dt>Temporale Warnungen:</dt>
-    <dd>Konsolidierte, nicht amtliche Fassung. Historische Anwendbarkeit nicht bestätigt.</dd>
+    {% if pack.temporal_warnings %}
+    {% for warning in pack.temporal_warnings %}
+    <dd>{{ warning }}</dd>
+    {% endfor %}
+    {% else %}
+    <dd>–</dd>
+    {% endif %}
 </dl>
 
 <p>

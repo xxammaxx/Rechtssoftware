@@ -19,7 +19,9 @@ import argparse
 import json
 import sys
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from private_legal_navigator import __version__
 
 if TYPE_CHECKING:
     from private_legal_navigator.application.legal_source_service import LegalSourceService
@@ -54,6 +56,11 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="private-legal-navigator",
         description="Local privacy-first legal assistance tool",
     )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"PrivateLegalNavigator %(prog)s {__version__}",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     # serve
@@ -67,7 +74,9 @@ def _build_parser() -> argparse.ArgumentParser:
     sync_parser = ls_sub.add_parser("sync", help="Sync a legal source instrument")
     sync_parser.add_argument("--source", required=True, help="Source key (e.g., gii)")
     sync_parser.add_argument("--instrument", required=True, help="Instrument key/abbreviation")
-    ls_sub.add_parser("verify", help="Verify snapshot integrity")
+    verify_parser = ls_sub.add_parser("verify", help="Verify snapshot integrity")
+    verify_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    verify_parser.add_argument("--snapshot-id", help="Verify a specific snapshot by UUID")
 
     # legal-search
     search_parser = subparsers.add_parser("legal-search", help="Search the legal corpus")
@@ -87,6 +96,34 @@ def _build_parser() -> argparse.ArgumentParser:
     export_parser.add_argument("--output", required=True, help="Output file path")
 
     return parser
+
+
+def _print_verify_results(results: list[dict[str, Any]]) -> None:
+    """Print verification results in human-readable format."""
+    ok = sum(1 for r in results if r["status"] == "VERIFIED")
+    fail = sum(1 for r in results if r["status"] == "FAILED")
+    missing = sum(1 for r in results if r["status"] == "MISSING")
+    total = len(results)
+
+    print("\nSnapshot Integrity Verification")
+    print(f"{'=' * 50}")
+    print(f"Total snapshots: {total}")
+    print(f"  VERIFIED: {ok}")
+    if fail:
+        print(f"  FAILED:   {fail}")
+    if missing:
+        print(f"  MISSING:  {missing}")
+    print()
+
+    for r in results:
+        if r["status"] != "VERIFIED":
+            sid = r.get("snapshot_id", "?")[:8]
+            print(f"  [{r['status']}] {sid}... — {r.get('error_code', '')}")
+            if r.get("expected_sha256"):
+                print(f"    Expected: {r['expected_sha256'][:16]}...")
+            if r.get("actual_sha256"):
+                print(f"    Actual:   {r['actual_sha256'][:16]}...")
+            print()
 
 
 # ──────────────────────────────────────────────
@@ -155,20 +192,32 @@ def _handle_legal_source(args: argparse.Namespace) -> None:
 
     elif action == "verify":
         svc, _ = _get_legal_service()
-        from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
-            SqliteLegalSourceRepository,
-        )
 
-        # Verify all snapshots
-        repo = SqliteLegalSourceRepository(svc._repo._db_path)
-        src_list = repo.list_sources(enabled_only=False)
-        ok, fail = 0, 0
-        for source in src_list:
-            print(f"Checking snapshots for {source.display_name}...")
-            # We'd need a list_snapshots method — simplified check
-            ok += 1
-        print(f"Verification complete: {ok} ok, {fail} failed")
-        sys.exit(0 if fail == 0 else 5)
+        if hasattr(args, "snapshot_id") and args.snapshot_id:
+            try:
+                sid = uuid.UUID(args.snapshot_id)
+            except ValueError:
+                print(f"Error: Invalid snapshot ID: {args.snapshot_id}", file=sys.stderr)
+                sys.exit(2)
+            result = svc.verify_snapshot_detailed(sid)
+            results = [result]
+            if args.json:
+                print(json.dumps(results, indent=2, ensure_ascii=False))
+            else:
+                _print_verify_results(results)
+            has_failures = any(r["status"] in ("FAILED", "MISSING") for r in results)
+            sys.exit(5 if has_failures else 0)
+        else:
+            results = svc.verify_all_snapshots()
+            if not results:
+                print("No snapshots found. Nothing to verify.")
+                sys.exit(4)
+            if args.json:
+                print(json.dumps(results, indent=2, ensure_ascii=False))
+            else:
+                _print_verify_results(results)
+            has_failures = any(r["status"] in ("FAILED", "MISSING") for r in results)
+            sys.exit(5 if has_failures else 0)
     else:
         print(f"Unknown legal-source action: {action}")
         sys.exit(2)

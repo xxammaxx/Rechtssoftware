@@ -18,7 +18,9 @@
         <li class="search-result-item">
             <strong>{{ r.get("abbreviation", "–") }} — {{ r.get("provision_number", "–") }}</strong>
             {% if r.get("heading") %}<span class="search-result-heading">{{ r.heading }}</span>{% endif %}
-            <p>{{ r.get("snippet", r.get("text_content", ""))[:300] }}{% if r.get("text_content", "")|length > 300 %}…{% endif %}</p>
+            {% set snippet_raw = r.get("snippet", "") %}
+            {% set snippet_clean = snippet_raw.replace('<mark>', '').replace('</mark>', '') if snippet_raw else r.get("text_content", "") %}
+            <p>{{ snippet_clean[:300] }}{% if snippet_clean|length > 300 %}…{% endif %}</p>
             <small>
                 Autorität: {{ r.get("authority_tier", "UNKNOWN") }} |
                 Abruf: {{ r.get("retrieval_date", "–") }}

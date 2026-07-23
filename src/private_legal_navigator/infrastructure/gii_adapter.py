@@ -47,7 +47,6 @@ from private_legal_navigator.domain.legal_source import (
 )
 from private_legal_navigator.infrastructure.safe_source_client import (
     SourceClient,
-    compute_sha256,
 )
 from private_legal_navigator.infrastructure.safe_xml_parser import (
     parse_xml_bytes,
@@ -283,13 +282,12 @@ class GiiAdapter:
         if not validate_xml_magic_bytes(xml_bytes):
             raise ValueError(f"Downloaded content from {law_url} does not appear to be XML")
 
-        # 4. Hash
-        sha256 = compute_sha256(xml_bytes)
+        # 4. Write to content-addressed path (hash is computed during write)
+        from private_legal_navigator.infrastructure.safe_source_client import (
+            _write_content_addressed,
+        )
 
-        # 5. Save snapshot atomically
-        from private_legal_navigator.infrastructure.safe_source_client import _atomic_write
-
-        snapshot_path = _atomic_write(xml_bytes, self._snapshot_dir)
+        snapshot_path, sha256 = _write_content_addressed(xml_bytes, self._snapshot_dir)
 
         retrieved_at = datetime.now()
 

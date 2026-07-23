@@ -1,6 +1,6 @@
 # Changelog — PrivateLegalNavigator
 
-## v0.2.0-rc (2026-07-23) — M7-A Legal Source Foundation + Case Legal Timeline
+## v0.2.0 (2026-07-23) — M7-A Trusted Legal Source Operations & Release Closure
 
 ### ⚠ BREAKING CHANGES
 - **New dependency:** `lxml >= 6.1.0` required for secure XML parsing of legal sources

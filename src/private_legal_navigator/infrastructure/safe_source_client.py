@@ -15,6 +15,7 @@ import os
 import tempfile
 import uuid
 from enum import Enum, auto
+from importlib.metadata import version as _pkg_version
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -126,7 +127,7 @@ class TransportPolicy:
 
 DEFAULT_ALLOWED_HOSTS: tuple[str, ...] = ("gesetze-im-internet.de",)
 DEFAULT_ALLOWED_SCHEMES: tuple[str, ...] = ("https",)
-DEFAULT_USER_AGENT = "PrivateLegalNavigator/0.2.0 (+https://github.com/xxammaxx/Rechtssoftware)"
+DEFAULT_USER_AGENT = f"PrivateLegalNavigator/{_pkg_version('private-legal-navigator')} (+https://github.com/xxammaxx/Rechtssoftware)"
 
 
 class SourceClientConfig:
@@ -225,13 +226,12 @@ class SourceClient:
         return self._get_with_redirects(url, self._config.max_redirects)
 
     def download_to_file(self, url: str, target_dir: Path) -> tuple[bytes, Path, str]:
-        """Download and save to a file atomically.
+        """Download and save to a content-addressed file.
 
         Returns (content, file_path, sha256_hex).
         """
         content = self.download(url)
-        sha256 = hashlib.sha256(content).hexdigest()
-        file_path = _atomic_write(content, target_dir)
+        file_path, sha256 = _write_content_addressed(content, target_dir)
         return content, file_path, sha256
 
     def _get_with_redirects(self, url: str, redirects_left: int) -> bytes:
@@ -314,3 +314,40 @@ def _atomic_write(content: bytes, target_dir: Path) -> Path:
 def compute_sha256(content: bytes) -> str:
     """Compute SHA-256 hash of content as hex string."""
     return hashlib.sha256(content).hexdigest()
+
+
+def _write_content_addressed(content: bytes, target_dir: Path) -> tuple[Path, str]:
+    """Write bytes to a content-addressed path using SHA-256.
+
+    Returns (path, sha256_hex).
+    Files are stored at: target_dir/<sha256[:2]>/<sha256>.xml
+    Deduplication: if file already exists with matching hash, no I/O occurs.
+    """
+    sha256 = compute_sha256(content)
+
+    # Derive content-addressed path
+    prefix = sha256[:2]
+    subdir = target_dir / prefix
+    subdir.mkdir(parents=True, exist_ok=True)
+    target_path = subdir / f"{sha256}.xml"
+
+    # If file already exists and hash matches, return it (dedup)
+    if target_path.exists():
+        try:
+            existing = target_path.read_bytes()
+            if compute_sha256(existing) == sha256:
+                return target_path, sha256
+        except OSError:
+            pass  # Fall through to overwrite
+
+    # Atomic write via temp file + rename
+    fd, tmp_path = tempfile.mkstemp(dir=str(subdir), suffix=".tmp")
+    try:
+        os.close(fd)
+        tmp_file = Path(tmp_path)
+        tmp_file.write_bytes(content)
+        tmp_file.replace(target_path)
+        return target_path, sha256
+    except Exception:
+        Path(tmp_path).unlink(missing_ok=True)
+        raise

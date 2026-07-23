@@ -5,7 +5,7 @@ behördlichen Angelegenheiten.
 
 ## Status
 
-**M7-A — Legal Source Foundation + Case Legal Timeline (v0.2.0-rc)** — implementiert.
+**M7-A — Legal Source Foundation + Case Legal Timeline (v0.2.0)** — implementiert.
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)

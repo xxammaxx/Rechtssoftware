@@ -383,24 +383,36 @@ class SqliteCaseTimelineRepository(CaseTimelineRepository):
                         f"{prov.get('temporal_confidence', 'unknown')}"
                     )
 
-            # Build integrity section
+            # Build integrity section with real verification status
+            integrity_snapshots = []
+            for s in snapshots:
+                hash_val = s.get("sha256", "")
+                status = "NOT_VERIFIED"  # Default: no verification has been performed
+                integrity_snapshots.append(
+                    {
+                        "sha256": hash_val,
+                        "status": status,
+                        "snapshot_id": str(s.get("snapshot_id", "")),
+                    }
+                )
+
             integrity = {
                 "exported_at": datetime.now().isoformat(),
                 "active_events_count": len(events),
                 "active_links_count": len(links),
                 "provisions_count": len(provisions),
                 "snapshots_count": len(snapshots),
-                "snapshot_hashes": [s["sha256"] for s in snapshots if s.get("sha256")],
+                "snapshots": integrity_snapshots,
             }
 
             return EvidencePack(
                 case_id=case_id,
                 case_title=case_row["title"],
                 exported_at=datetime.now(),
-                confirmed_facts=[],  # Facts are not tracked in M7-A MVP
-                open_facts=[],
+                confirmed_facts=[{"_note": "NOT_TRACKED_IN_THIS_RELEASE"}],
+                open_facts=[{"_note": "NOT_TRACKED_IN_THIS_RELEASE"}],
                 legal_events=events,
-                legal_issues=[],
+                legal_issues=[{"_note": "NOT_TRACKED_IN_THIS_RELEASE"}],
                 confirmed_legal_links=links,
                 provisions=provisions,
                 source_snapshots=snapshots,
@@ -425,15 +437,20 @@ class SqliteCaseTimelineRepository(CaseTimelineRepository):
         self, conn: sqlite3.Connection, case_id: uuid.UUID
     ) -> list[dict[str, Any]]:
         rows = conn.execute(
-            "SELECT cll.*, lp.provision_number, lp.heading as provision_heading, "
-            "lp.stable_key, li.abbreviation, li.official_title "
-            "FROM case_legal_links cll "
-            "JOIN legal_provisions lp ON lp.provision_id = cll.legal_provision_id "
-            "JOIN legal_expressions le ON le.expression_id = lp.expression_id "
-            "JOIN legal_instruments li ON li.instrument_id = le.instrument_id "
-            "WHERE cll.case_id = ? AND cll.status IN ('CONFIRMED', 'CORRECTED') "
-            "AND cll.revoked_at IS NULL "
-            "ORDER BY cll.created_at DESC",
+            """SELECT cll.*, lp.provision_number, lp.heading as provision_heading,
+               lp.stable_key, li.abbreviation, li.official_title, li.authority_tier,
+               COALESCE(ls.sha256, '') as sha256,
+               COALESCE(ls.source_locator, '') as source
+               FROM case_legal_links cll
+               JOIN legal_provisions lp ON lp.provision_id = cll.legal_provision_id
+               JOIN legal_expressions le ON le.expression_id = lp.expression_id
+               JOIN legal_instruments li ON li.instrument_id = le.instrument_id
+               LEFT JOIN legal_source_snapshots ls ON ls.snapshot_id = le.source_snapshot_id
+               WHERE cll.case_id = ?
+               AND cll.status IN ('CONFIRMED', 'CORRECTED')
+               AND cll.revoked_at IS NULL
+               AND cll.previous_link_id IS NULL
+               ORDER BY li.abbreviation, lp.provision_number""",
             (str(case_id),),
         ).fetchall()
         return [dict(row) for row in rows]
