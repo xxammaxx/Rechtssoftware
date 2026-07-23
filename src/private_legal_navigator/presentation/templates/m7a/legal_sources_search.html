@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Rechtsquellensuche</h1>
+
+<form method="get" class="search-form" role="search">
+    <label for="search-query">Suchbegriff:</label>
+    <input type="search" id="search-query" name="q" value="{{ query }}"
+           placeholder="Gesetzestitel, Abkürzung, Paragraph oder Volltext…" autofocus>
+    <button type="submit" class="btn btn--primary">Suchen</button>
+</form>
+
+{% if query %}
+    <h2>Ergebnisse für „{{ query }}“ ({{ results|length }})</h2>
+
+    {% if results %}
+        <ul class="search-results">
+        {% for r in results %}
+        <li class="search-result-item">
+            <strong>{{ r.get("abbreviation", "–") }} — {{ r.get("provision_number", "–") }}</strong>
+            {% if r.get("heading") %}<span class="search-result-heading">{{ r.heading }}</span>{% endif %}
+            <p>{{ r.get("snippet", r.get("text_content", ""))[:300] }}{% if r.get("text_content", "")|length > 300 %}…{% endif %}</p>
+            <small>
+                Autorität: {{ r.get("authority_tier", "UNKNOWN") }} |
+                Abruf: {{ r.get("retrieval_date", "–") }}
+                {% if r.get("temporal_status") %}| Zeitlich: {{ r.temporal_status }}{% endif %}
+            </small>
+            {% if r.get("provision_id") %}
+            <br><a href="{{ url_for('norm_detail', provision_id=r.provision_id) }}" class="btn btn--small">Normdetail</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p><em>Keine Treffer gefunden.</em></p>
+    {% endif %}
+{% endif %}
+
+<p><a href="{{ url_for('legal_source_status') }}">← Zurück zum Quellenstatus</a></p>
+{% endblock %}

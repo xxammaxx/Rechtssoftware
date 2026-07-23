@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ case.title }} — Rechtslage</h1>
+
+<p class="notice notice--info">
+    Die Verknüpfung bedeutet nicht, dass die Norm abschließend auf den Fall anwendbar ist.
+</p>
+
+<h2>Normverknüpfungen (aktiv)</h2>
+{% if active_links %}
+<table class="data-table">
+<thead>
+<tr><th>Norm</th><th>Relevanz</th><th>Quelle</th><th>Hash</th><th>Aktion</th></tr>
+</thead>
+<tbody>
+{% for link in active_links %}
+<tr>
+    <td>{{ link.provision_number or link.legal_provision_id }}</td>
+    <td>{{ link.relevance_note or "–" }}</td>
+    <td>{{ link.source or "–" }}</td>
+    <td><small>{{ link.snapshot_hash or "–" }}</small></td>
+    <td>
+        <form method="post" action="{{ url_for('correct_norm_link', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="link_id" value="{{ link.link_id }}">
+            <input type="hidden" name="new_provision_id" value="{{ link.legal_provision_id }}">
+            <input type="text" name="new_relevance_note" placeholder="Neue Relevanznotiz" style="width:12em">
+            <button type="submit" class="btn btn--small">Korrigieren</button>
+        </form>
+        <form method="post" action="{{ url_for('revoke_norm_link', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="link_id" value="{{ link.link_id }}">
+            <button type="submit" class="btn btn--small btn--danger">Widerrufen</button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p><em>Keine aktiven Normverknüpfungen.</em></p>
+{% endif %}
+
+<h2>Verknüpfungskandidaten</h2>
+{% set candidates = links | selectattr("status.value", "equalto", "CANDIDATE") | list %}
+{% if candidates %}
+<table class="data-table">
+<thead><tr><th>Norm</th><th>Relevanz</th><th>Bestätigen</th><th>Ablehnen</th></tr></thead>
+<tbody>
+{% for link in candidates %}
+<tr>
+    <td>{{ link.provision_number or link.legal_provision_id }}</td>
+    <td>{{ link.relevance_note or "–" }}</td>
+    <td>
+        <form method="post" action="{{ url_for('confirm_norm_link', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="link_id" value="{{ link.link_id }}">
+            <button type="submit" class="btn btn--small btn--success">✓ Bestätigen</button>
+        </form>
+    </td>
+    <td>
+        <form method="post" action="{{ url_for('reject_norm_link', case_id=case_id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="link_id" value="{{ link.link_id }}">
+            <button type="submit" class="btn btn--small btn--warning">✗ Ablehnen</button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p><em>Keine Kandidaten.</em></p>
+{% endif %}
+
+<h3>Norm verknüpfen</h3>
+<form method="post" action="{{ url_for('create_norm_link', case_id=case_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="provision-id">Norm-ID:</label>
+    <input type="text" id="provision-id" name="provision_id" required placeholder="UUID der Norm">
+    <label for="relevance-note">Relevanznotiz:</label>
+    <input type="text" id="relevance-note" name="relevance_note" placeholder="Warum ist diese Norm relevant?">
+    <button type="submit" class="btn btn--primary">Als Kandidat verknüpfen</button>
+</form>
+
+<p><a href="{{ url_for('case_legal_timeline', case_id=case_id) }}">Zum Rechtsverlauf →</a></p>
+{% endblock %}

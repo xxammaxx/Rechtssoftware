@@ -325,7 +325,35 @@ def get_connection(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
-def transaction(db_path: Path):
+class _TransactionContext:
+    """Context manager for SQLite transactions."""
+
+    def __init__(self, db_path: Path) -> None:
+        self.db_path = db_path
+        self.conn: sqlite3.Connection | None = None
+
+    def __enter__(self) -> sqlite3.Connection:
+        self.conn = get_connection(self.db_path)
+        return self.conn
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
+        if self.conn is None:
+            return
+        try:
+            if exc_type is None:
+                self.conn.commit()
+            else:
+                self.conn.rollback()
+        finally:
+            self.conn.close()
+
+
+def transaction(db_path: Path) -> _TransactionContext:
     """Context manager for wrapping multiple operations in a single transaction.
 
     Usage:
@@ -335,33 +363,6 @@ def transaction(db_path: Path):
             save_provisions(provisions, conn)
         # Auto-commit on success, auto-rollback on exception
     """
-
-    class _TransactionContext:
-        def __init__(self, db_path: Path) -> None:
-            self.db_path = db_path
-            self.conn: sqlite3.Connection | None = None
-
-        def __enter__(self) -> sqlite3.Connection:
-            self.conn = get_connection(self.db_path)
-            return self.conn
-
-        def __exit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc_val: BaseException | None,
-            exc_tb: object,
-        ) -> bool:
-            if self.conn is None:
-                return False
-            try:
-                if exc_type is None:
-                    self.conn.commit()
-                else:
-                    self.conn.rollback()
-            finally:
-                self.conn.close()
-            return False  # Don't suppress exceptions
-
     return _TransactionContext(db_path)
 
 

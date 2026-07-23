@@ -18,6 +18,7 @@ from private_legal_navigator.api.errors import (
     case_not_found_handler,
     validation_error_handler,
 )
+from private_legal_navigator.api.m7a_ui_routes import router as m7a_ui_router
 from private_legal_navigator.api.reference_event_routes import router as reference_event_router
 from private_legal_navigator.api.routes import router as case_router
 from private_legal_navigator.api.ui_routes import router as ui_router
@@ -253,6 +254,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(document_router)
     app.include_router(reference_event_router)
     app.include_router(ui_router)
+    app.include_router(m7a_ui_router)
 
     # Health check
     @app.get("/health")
