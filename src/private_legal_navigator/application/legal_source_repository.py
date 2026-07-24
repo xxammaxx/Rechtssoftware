@@ -24,6 +24,7 @@ from private_legal_navigator.domain.legal_source import (
     ResolutionStatus,
     SourceSnapshot,
 )
+from private_legal_navigator.domain.sync import SyncItem, SyncRun
 
 
 class LegalSourceRepository(ABC):
@@ -130,3 +131,32 @@ class LegalSourceRepository(ABC):
     def search_provisions_fts(self, query: str, limit: int = 50) -> list[dict[str, Any]]: ...
     @abstractmethod
     def rebuild_fts_index(self) -> None: ...
+
+    # ── Sync (M7-B) ──────────────────────────────
+
+    @abstractmethod
+    def save_sync_run(self, sync_run: SyncRun) -> None:
+        """Persist a new sync run."""
+        ...
+
+    @abstractmethod
+    def update_sync_run(self, sync_run: SyncRun) -> None:
+        """Update an existing sync run (e.g., completion counters and status)."""
+        ...
+
+    @abstractmethod
+    def get_latest_sync_run(
+        self, source_key: str, *, successful_only: bool = True
+    ) -> SyncRun | None:
+        """Retrieve the most recent sync run for a given source."""
+        ...
+
+    @abstractmethod
+    def save_sync_item(self, item: SyncItem) -> None:
+        """Persist a single sync item."""
+        ...
+
+    @abstractmethod
+    def save_sync_items_batch(self, items: list[SyncItem], conn: Any) -> None:
+        """Persist multiple sync items within an existing transaction."""
+        ...

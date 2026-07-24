@@ -327,6 +327,71 @@ M7A_INDEXES = [
 ]
 
 
+# ──────────────────────────────────────────────
+# M7-B: Incremental GII Sync tables
+# ──────────────────────────────────────────────
+
+CREATE_SYNC_RUNS_TABLE = """
+CREATE TABLE IF NOT EXISTS sync_runs (
+    sync_run_id TEXT PRIMARY KEY,
+    source_key TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    completed_at TEXT NOT NULL DEFAULT '',
+    catalog_stand_date TEXT NOT NULL DEFAULT '',
+    catalog_url TEXT NOT NULL DEFAULT '',
+    catalog_sha256 TEXT NOT NULL DEFAULT '',
+    total_in_catalog INTEGER NOT NULL DEFAULT 0,
+    new_count INTEGER NOT NULL DEFAULT 0,
+    changed_count INTEGER NOT NULL DEFAULT 0,
+    unchanged_count INTEGER NOT NULL DEFAULT 0,
+    remote_not_modified_count INTEGER NOT NULL DEFAULT 0,
+    remote_missing_count INTEGER NOT NULL DEFAULT 0,
+    skipped_count INTEGER NOT NULL DEFAULT 0,
+    failed_count INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'RUNNING',
+    dry_run INTEGER NOT NULL DEFAULT 0,
+    error_summary TEXT NOT NULL DEFAULT ''
+)
+"""
+
+CREATE_SYNC_ITEMS_TABLE = """
+CREATE TABLE IF NOT EXISTS sync_items (
+    sync_item_id TEXT PRIMARY KEY,
+    sync_run_id TEXT NOT NULL,
+    source_identifier TEXT NOT NULL,
+    abbreviation TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL DEFAULT '',
+    item_status TEXT NOT NULL DEFAULT 'PENDING',
+    previous_sha256 TEXT NOT NULL DEFAULT '',
+    new_sha256 TEXT NOT NULL DEFAULT '',
+    snapshot_id TEXT NOT NULL DEFAULT '',
+    instrument_id TEXT NOT NULL DEFAULT '',
+    expression_id TEXT NOT NULL DEFAULT '',
+    http_status INTEGER,
+    http_etag TEXT NOT NULL DEFAULT '',
+    http_last_modified TEXT NOT NULL DEFAULT '',
+    byte_size INTEGER NOT NULL DEFAULT 0,
+    error_summary TEXT NOT NULL DEFAULT '',
+    checked_at TEXT NOT NULL DEFAULT '',
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (sync_run_id) REFERENCES sync_runs(sync_run_id) ON DELETE CASCADE
+)
+"""
+
+M7B_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_sr_source ON sync_runs(source_key)",
+    "CREATE INDEX IF NOT EXISTS idx_sr_status ON sync_runs(status)",
+    "CREATE INDEX IF NOT EXISTS idx_si_run ON sync_items(sync_run_id)",
+    "CREATE INDEX IF NOT EXISTS idx_si_status ON sync_items(item_status)",
+    "CREATE INDEX IF NOT EXISTS idx_si_source_identifier ON sync_items(source_identifier)",
+]
+
+# M7-B migration: add last_catalog_stand_date to legal_sources
+ADD_LAST_CATALOG_STAND_DATE_COLUMN = """
+ALTER TABLE legal_sources ADD COLUMN last_catalog_stand_date TEXT NOT NULL DEFAULT ''
+"""
+
+
 def get_connection(db_path: Path) -> sqlite3.Connection:
     """Create a new SQLite connection with recommended pragmas."""
     conn = sqlite3.connect(str(db_path))
@@ -432,6 +497,21 @@ def initialize_schema(db_path: Path) -> None:
             conn.execute(index_sql)
         # M7-A deduplication: unique index on sha256 (ADR-007 Decision 3)
         conn.execute(CREATE_UNIQUE_INDEX_SHA256)
+
+        # M7-B: Incremental GII Sync tables
+        conn.execute(CREATE_SYNC_RUNS_TABLE)
+        conn.execute(CREATE_SYNC_ITEMS_TABLE)
+        for index_sql in M7B_INDEXES:
+            conn.execute(index_sql)
+
+        # M7-B migration: add last_catalog_stand_date to legal_sources (idempotent)
+        _migrate_add_column(
+            conn,
+            "legal_sources",
+            "last_catalog_stand_date",
+            ADD_LAST_CATALOG_STAND_DATE_COLUMN,
+        )
+
         conn.commit()
     finally:
         conn.close()

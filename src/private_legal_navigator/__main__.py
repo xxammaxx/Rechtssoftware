@@ -71,9 +71,34 @@ def _build_parser() -> argparse.ArgumentParser:
     ls_sub = ls_parser.add_subparsers(dest="ls_action", required=True)
 
     ls_sub.add_parser("status", help="Show source registry status")
-    sync_parser = ls_sub.add_parser("sync", help="Sync a legal source instrument")
-    sync_parser.add_argument("--source", required=True, help="Source key (e.g., gii)")
-    sync_parser.add_argument("--instrument", required=True, help="Instrument key/abbreviation")
+    # ── M7-B: sync (incremental) ──
+    sync_parser = ls_sub.add_parser("sync", help="Sync legal source instruments")
+    sync_parser.add_argument("--source", default="gii", help="Source key (default: gii)")
+    sync_parser.add_argument("--instrument", help="Single instrument key/abbreviation")
+    sync_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=True,
+        help="Preview changes without downloading (default)",
+    )
+    sync_parser.add_argument(
+        "--apply",
+        action="store_true",
+        default=False,
+        help="Actually download and import changed instruments",
+    )
+    sync_parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Force full sync (ignore catalog stand-date gate)",
+    )
+
+    # ── M7-B: sync-status ──
+    status_parser = ls_sub.add_parser("sync-status", help="Show sync run history")
+    status_parser.add_argument("--source", default="gesetze-im-internet", help="Source key")
+    status_parser.add_argument("--last", type=int, default=5, help="Number of recent runs to show")
+
     verify_parser = ls_sub.add_parser("verify", help="Verify snapshot integrity")
     verify_parser.add_argument("--json", action="store_true", help="Output as JSON")
     verify_parser.add_argument("--snapshot-id", help="Verify a specific snapshot by UUID")
@@ -177,18 +202,26 @@ def _handle_legal_source(args: argparse.Namespace) -> None:
         sys.exit(0)
 
     elif action == "sync":
-        svc, _ = _get_legal_service()
-        print(f"Synchronizing {args.instrument} from {args.source}...")
-        parsed = svc.sync_gii_instrument(args.instrument)
-        if parsed is None:
-            print(f"Error: Instrument '{args.instrument}' not found in GII catalog.")
-            sys.exit(3)
-        print(f"Done: {parsed.instrument.official_title}")
-        print(f"  Abbreviation: {parsed.instrument.abbreviation}")
-        print(f"  Provisions: {len(parsed.provisions)}")
-        print(f"  Snapshot SHA-256: {parsed.snapshot.sha256}")
-        print(f"  Authority: {parsed.instrument.authority_tier.value}")
-        sys.exit(0)
+        if args.instrument:
+            # Single-instrument sync (legacy M7-A mode)
+            svc, _ = _get_legal_service()
+            print(f"Synchronizing {args.instrument} from {args.source}...")
+            parsed = svc.sync_gii_instrument(args.instrument)
+            if parsed is None:
+                print(f"Error: Instrument '{args.instrument}' not found in GII catalog.")
+                sys.exit(3)
+            print(f"Done: {parsed.instrument.official_title}")
+            print(f"  Abbreviation: {parsed.instrument.abbreviation}")
+            print(f"  Provisions: {len(parsed.provisions)}")
+            print(f"  Snapshot SHA-256: {parsed.snapshot.sha256}")
+            print(f"  Authority: {parsed.instrument.authority_tier.value}")
+            sys.exit(0)
+        else:
+            # M7-B: Incremental catalog-wide sync
+            _handle_incremental_sync(args)
+
+    elif action == "sync-status":
+        _handle_sync_status(args)
 
     elif action == "verify":
         svc, _ = _get_legal_service()
@@ -221,6 +254,121 @@ def _handle_legal_source(args: argparse.Namespace) -> None:
     else:
         print(f"Unknown legal-source action: {action}")
         sys.exit(2)
+
+
+def _handle_incremental_sync(args: argparse.Namespace) -> None:
+    """M7-B: Incremental GII catalog-wide sync (dry-run or apply)."""
+    from private_legal_navigator.application.sync_service import (
+        SyncExecutionService,
+        SyncPlanningService,
+    )
+    from private_legal_navigator.config import Settings
+    from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
+    from private_legal_navigator.infrastructure.safe_source_client import SourceClient
+    from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+        SqliteLegalSourceRepository,
+    )
+
+    settings = Settings()
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_dir = settings.data_dir / "snapshots"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+
+    repo = SqliteLegalSourceRepository(settings.database_path)
+    repo.initialize_schema()
+    client = SourceClient()
+
+    from private_legal_navigator.application.legal_source_service import LegalSourceService
+
+    legal_svc = LegalSourceService(repo, client, snapshot_dir)
+
+    gii_adapter = GiiAdapter(client, snapshot_dir)
+
+    planner = SyncPlanningService(repo, client, gii_adapter)
+    executor = SyncExecutionService(repo, legal_svc, client, gii_adapter)
+
+    dry_run = not args.apply
+
+    print(f"\n{'DRY-RUN' if dry_run else 'APPLY'}: Incremental GII Sync")
+    print(f"{'=' * 60}")
+
+    # Phase 1: Plan
+    print("Planning...")
+    plan = planner.plan(source_key=args.source, force=args.force)
+
+    if plan.warnings:
+        for w in plan.warnings:
+            print(f"  WARNING: {w}")
+
+    # Count summary
+    items = plan.items
+    new = sum(1 for i in items if i.item_status.value == "NEW")
+    known = sum(1 for i in items if i.item_status.value == "KNOWN")
+    remote_missing = sum(1 for i in items if i.item_status.value == "REMOTE_MISSING")
+    skipped = sum(1 for i in items if i.item_status.value == "SKIPPED")
+
+    print(f"\nCatalog items: {len(items)}")
+    print(f"  NEW:            {new}")
+    print(f"  KNOWN:          {known}")
+    print(f"  REMOTE_MISSING: {remote_missing}")
+    if skipped:
+        print(f"  SKIPPED:        {skipped}")
+
+    if dry_run:
+        print(f"\nEstimated downloads: {new + known}")
+        print(f"Estimated download size: ~{plan.estimated_download_bytes / (1024 * 1024):.1f} MB")
+        print(f"\nDry-run complete. No changes made.")
+        print(f"Run with --apply to execute this plan.")
+        sys.exit(1)
+    else:
+        # Phase 2: Execute
+        print(f"\nDownloading and importing {new + known} instruments...")
+        sync_run = executor.execute(plan, dry_run=False)
+
+        print(f"\nSync complete: {sync_run.status.value}")
+        print(f"  New:            {sync_run.new_count}")
+        print(f"  Changed:        {sync_run.changed_count}")
+        print(f"  Unchanged:      {sync_run.unchanged_count}")
+        print(f"  Remote missing: {sync_run.remote_missing_count}")
+        print(f"  Failed:         {sync_run.failed_count}")
+        if sync_run.error_summary:
+            print(f"  Errors:         {sync_run.error_summary[:200]}")
+
+        if sync_run.failed_count > 0:
+            sys.exit(2)
+        sys.exit(0)
+
+
+def _handle_sync_status(args: argparse.Namespace) -> None:
+    """M7-B: Show sync run history."""
+    from private_legal_navigator.config import Settings
+    from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+        SqliteLegalSourceRepository,
+    )
+
+    settings = Settings()
+    repo = SqliteLegalSourceRepository(settings.database_path)
+    repo.initialize_schema()
+
+    latest = repo.get_latest_sync_run(args.source, successful_only=False)
+
+    if latest is None:
+        print(f"No sync history found for source '{args.source}'.")
+        sys.exit(0)
+
+    print(f"\nSync History: {args.source}")
+    print(f"{'=' * 60}")
+    print(f"  Last sync:        {latest.started_at}")
+    print(f"  Status:           {latest.status.value}")
+    print(f"  Catalog date:     {latest.catalog_stand_date}")
+    print(f"  Total in catalog: {latest.total_in_catalog}")
+    print(f"  New:              {latest.new_count}")
+    print(f"  Changed:          {latest.changed_count}")
+    print(f"  Unchanged:        {latest.unchanged_count}")
+    print(f"  Failed:           {latest.failed_count}")
+    if latest.completed_at:
+        print(f"  Completed:        {latest.completed_at}")
+    sys.exit(0)
 
 
 def _handle_legal_search(args: argparse.Namespace) -> None:
