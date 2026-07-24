@@ -349,19 +349,25 @@ class CaseTimelineService:
     # ── Helpers ──────────────────────────────────
 
     def _require_event(
-        self, event_id: uuid.UUID, case_id: uuid.UUID | None = None
+        self, event_id: uuid.UUID, case_id: uuid.UUID | str | None = None
     ) -> CaseLegalEvent:
         event = self._timeline_repo.get_event(event_id)
         if event is None:
             raise ValueError(f"Event not found: {event_id}")
-        if case_id is not None and event.case_id != case_id:
-            raise ValueError(f"Event not found: {event_id}")
+        if case_id is not None:
+            cid = uuid.UUID(case_id) if isinstance(case_id, str) else case_id
+            if event.case_id != cid:
+                raise ValueError(f"Event not found: {event_id}")
         return event
 
-    def _require_link(self, link_id: uuid.UUID, case_id: uuid.UUID | None = None) -> CaseLegalLink:
+    def _require_link(
+        self, link_id: uuid.UUID, case_id: uuid.UUID | str | None = None
+    ) -> CaseLegalLink:
         link = self._timeline_repo.get_link(link_id)
         if link is None:
             raise ValueError(f"Link not found: {link_id}")
-        if case_id is not None and link.case_id != case_id:
-            raise ValueError(f"Link not found: {link_id}")
+        if case_id is not None:
+            cid = uuid.UUID(case_id) if isinstance(case_id, str) else case_id
+            if link.case_id != cid:
+                raise ValueError(f"Link not found: {link_id}")
         return link

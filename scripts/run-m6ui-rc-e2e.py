@@ -22,17 +22,15 @@ PYTHONPATH must NOT contain the repository src/ directory.
 """
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
-import signal
 import socket
 import subprocess
 import sys
 import tempfile
 import time
-import traceback
-from datetime import datetime, timezone
 from pathlib import Path
 
 # ──────────────────────────────────────────────
@@ -166,18 +164,6 @@ class RCServer:
 
     def start(self) -> bool:
         """Start the server from the installed package."""
-        from private_legal_navigator.app import create_app
-        from private_legal_navigator.config import Settings
-        import uvicorn
-        import multiprocessing
-
-        settings = Settings(
-            data_dir=self.data_dir,
-            host="127.0.0.1",
-            port=self.port,
-            csrf_secret=self.csrf_secret,
-        )
-        app = create_app(settings)
 
         # Run uvicorn in a subprocess
         env = os.environ.copy()
@@ -214,7 +200,7 @@ class RCServer:
         # Check if process exited
         if self.process.poll() is not None:
             stdout, stderr = self.process.communicate(timeout=5)
-            print(f"  [SERVER] Process exited early!")
+            print("  [SERVER] Process exited early!")
             print(f"  [SERVER] stderr: {stderr.decode()[:500]}")
         return False
 
@@ -266,19 +252,20 @@ def seed_test_data(data_dir: Path) -> dict:
     All data is synthetic (prefixed "SYNTHETISCH").
     """
     import pymupdf
+
     from private_legal_navigator.application.case_service import CaseService
     from private_legal_navigator.application.document_service import DocumentService
+    from private_legal_navigator.infrastructure.local_file_storage import (
+        LocalFileStorage,
+    )
+    from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
+    from private_legal_navigator.infrastructure.rule_based_classifier import RuleBasedClassifier
     from private_legal_navigator.infrastructure.sqlite_case_repository import (
         SqliteCaseRepository,
     )
     from private_legal_navigator.infrastructure.sqlite_document_repository import (
         SqliteDocumentRepository,
     )
-    from private_legal_navigator.infrastructure.local_file_storage import (
-        LocalFileStorage,
-    )
-    from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
-    from private_legal_navigator.infrastructure.rule_based_classifier import RuleBasedClassifier
     from private_legal_navigator.infrastructure.sqlite_reference_event_repository import (
         SqliteReferenceEventRepository,
     )
@@ -345,9 +332,9 @@ def run_browser_tests(base_url: str, seed: dict, axe_js_path: Path | None):
     requires CSRF token extraction from page HTML and is better tested via
     the existing pytest integration tests (703 tests covering all scenarios).
     """
-    from playwright.sync_api import sync_playwright
     import urllib.request
-    import json as _json
+
+    from playwright.sync_api import sync_playwright
 
     case_id = seed["case_id"]
     document_id = seed["document_id"]
@@ -594,7 +581,7 @@ def main():
     (data_dir / "documents").mkdir(exist_ok=True)
 
     print(f"{'=' * 60}")
-    print(f"  M6-UI RC E2E Runner")
+    print("  M6-UI RC E2E Runner")
     print(f"{'=' * 60}")
     print(f"  Python:         {sys.executable}")
     import private_legal_navigator
@@ -633,7 +620,7 @@ def main():
 
         # ── Browser tests ──
         section("Playwright Browser Tests")
-        browser_results = run_browser_tests(server.base_url, seed, axe_js_path)
+        run_browser_tests(server.base_url, seed, axe_js_path)
 
         # ── Restart test ──
         section("Restart Test")
@@ -670,7 +657,11 @@ def main():
 
         preview_ok = False
         for cand_idx in range(3):
-            preview_url = f"{server.base_url}/ui/cases/{seed['case_id']}/documents/{seed['document_id']}/candidates/{cand_idx}/preview"
+            preview_url = (
+                f"{server.base_url}/ui/cases/{seed['case_id']}"
+                f"/documents/{seed['document_id']}"
+                f"/candidates/{cand_idx}/preview"
+            )
             try:
                 resp = _ur.urlopen(preview_url, timeout=10)
                 if resp.status == 200:
@@ -708,10 +699,8 @@ def main():
         # Verify port is closed after stop
         import urllib.request
 
-        try:
+        with contextlib.suppress(Exception):
             urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=2)
-        except Exception:
-            pass
 
     print(f"\n{'=' * 60}")
     if results["failed"] == 0:

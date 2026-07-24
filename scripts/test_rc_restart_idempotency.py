@@ -9,6 +9,7 @@ Environment:
     PLN_CSRF_SECRET  - stable CSRF secret
 """
 
+import contextlib
 import http.cookiejar
 import json
 import os
@@ -37,7 +38,7 @@ def _self_check():
             sys.exit(1)
         pp = os.environ.get("PYTHONPATH", "")
         if "src" in pp:
-            print(f"FATAL: PYTHONPATH contains src/")
+            print("FATAL: PYTHONPATH contains src/")
             sys.exit(1)
         print(f"[SELF-CHECK] Package OK: {pkg_path}")
     except ImportError as e:
@@ -116,9 +117,8 @@ class _RefererHandler(urllib.request.BaseHandler):
         self.base_url = base_url
 
     def http_request(self, req):
-        if req.data:
-            if not req.has_header("Referer"):
-                req.add_unredirected_header("Referer", self.base_url + "/ui/cases/")
+        if req.data and not req.has_header("Referer"):
+            req.add_unredirected_header("Referer", self.base_url + "/ui/cases/")
         return req
 
 
@@ -161,7 +161,7 @@ def main():
     base_url = f"http://127.0.0.1:{port}"
 
     print(f"{'=' * 60}")
-    print(f"  RC Restart Idempotency Test")
+    print("  RC Restart Idempotency Test")
     print(f"{'=' * 60}")
     print(f"  Python:   {sys.executable}")
     print(f"  Data dir: {data_dir}")
@@ -185,20 +185,21 @@ def main():
         # ── Seed test data ──
         _section("Seed Test Data")
         import pymupdf
+
         from private_legal_navigator.application.case_service import CaseService
         from private_legal_navigator.application.document_service import DocumentService
-        from private_legal_navigator.infrastructure.sqlite_case_repository import (
-            SqliteCaseRepository,
-        )
-        from private_legal_navigator.infrastructure.sqlite_document_repository import (
-            SqliteDocumentRepository,
-        )
         from private_legal_navigator.infrastructure.local_file_storage import (
             LocalFileStorage,
         )
         from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
         from private_legal_navigator.infrastructure.rule_based_classifier import (
             RuleBasedClassifier,
+        )
+        from private_legal_navigator.infrastructure.sqlite_case_repository import (
+            SqliteCaseRepository,
+        )
+        from private_legal_navigator.infrastructure.sqlite_document_repository import (
+            SqliteDocumentRepository,
         )
         from private_legal_navigator.infrastructure.sqlite_reference_event_repository import (
             SqliteReferenceEventRepository,
@@ -333,10 +334,8 @@ def main():
         _section("Restart Server")
         _stop_server(proc)
         # Wait for port to close
-        try:
+        with contextlib.suppress(Exception):
             urllib.request.urlopen(f"{base_url}/health", timeout=2)
-        except Exception:
-            pass
         _test("Server stopped", True)
         proc2 = _start_server(data_dir, port, csrf_secret)
         pid_after = proc2.pid
@@ -393,7 +392,8 @@ def main():
 
         # Verify the confirmed_reference_events have the correct history
         history_rows = conn.execute(
-            "SELECT event_type, is_revoke, confirmed_date FROM confirmed_reference_events ORDER BY confirmed_at"
+            "SELECT event_type, is_revoke, confirmed_date "
+            "FROM confirmed_reference_events ORDER BY confirmed_at"
         ).fetchall()
         _test(
             f"History has {len(history_rows)} entries (expected >= 3)",
