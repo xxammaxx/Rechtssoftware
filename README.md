@@ -114,8 +114,18 @@ Konfiguration über Umgebungsvariablen:
 ## Tests
 
 ```bash
-.venv/Scripts/python.exe -m pytest --cov=src/private_legal_navigator --cov-fail-under=90
+# Full test suite with coverage measurement
+.venv/Scripts/python.exe -m pytest --cov=src/private_legal_navigator
+
+# Note: Overall project coverage is 75 % (802/802 tests passing).
+# --cov-fail-under=90 is NOT currently usable as a gate; it fails.
+# For M7-B and onward: new production modules require >=90 % coverage.
+# Overall coverage must not decrease from the 75 % baseline.
+
+# Lint
 .venv/Scripts/python.exe -m ruff check src tests
+
+# Type check
 .venv/Scripts/python.exe -m mypy src
 ```
 

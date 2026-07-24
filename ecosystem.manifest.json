@@ -1,0 +1,487 @@
+{
+  "$schema": "./.opencode/validation/schema-validators/ecosystem-manifest-schema.json",
+  "version": "1.0.0",
+  "schema_version": "1.0.0",
+  "name": "universal-open-code-hermes-bootstrap",
+  "description": "Manifest for safe, project-local OpenCode and Hermes Agent bootstrap across heterogeneous repositories.",
+  "bootstrap": {
+    "default_mode": "dry-run",
+    "apply_flag": "--apply",
+    "rollback_flag": "--rollback",
+    "include_remote_ci_flag": "--include-remote-ci",
+    "classification_states": [
+      "GREEN_SAFE",
+      "AMBER_REVIEW",
+      "RED_BLOCK",
+      "TOOL_GAP"
+    ]
+  },
+  "supported_runtimes": {
+    "opencode": {
+      "min": "1.15.0",
+      "tested": "1.15.13"
+    },
+    "hermes": {
+      "min": "0.18.0",
+      "tested": "0.18.2"
+    }
+  },
+  "supported_os": [
+    "linux",
+    "macos",
+    "windows-powershell",
+    "windows-git-bash",
+    "wsl"
+  ],
+  "os_constraints": {
+    "path_mode": "native-separator-aware",
+    "absolute_user_paths_forbidden": true,
+    "fixed_shell_forbidden": true,
+    "symlink_escape_blocked": true
+  },
+  "environment_variables": [
+    "ANTHROPIC_API_KEY",
+    "BRAVE_API_KEY",
+    "GITHUB_TOKEN",
+    "OPENAI_API_KEY",
+    "OPENCODE_CONFIG",
+    "OPENCODE_CONFIG_DIR",
+    "OPENCODE_DISABLE_MODELS_FETCH",
+    "HERMES_ACCEPT_HOOKS",
+    "HERMES_INFERENCE_MODEL"
+  ],
+  "trust_tiers": {
+    "0_readonly": {
+      "description": "Read-only sources and documentation lookups.",
+      "allowed": [
+        "github read/search",
+        "context7",
+        "brave-search",
+        "web documentation"
+      ],
+      "default_enabled": false
+    },
+    "1_sandboxed": {
+      "description": "Project-local tools that may write only inside the target workspace or isolated containers.",
+      "allowed": [
+        "playwright",
+        "docker",
+        "sqlite"
+      ],
+      "default_enabled": false
+    },
+    "2_trusted": {
+      "description": "Human-gated external filesystem or production-adjacent systems.",
+      "allowed": [
+        "external filesystem",
+        "postgresql"
+      ],
+      "default_enabled": false
+    }
+  },
+  "tool_filter": {
+    "default": "deny",
+    "allow": [
+      "git status",
+      "git diff",
+      "git log",
+      "git fetch",
+      "node --check",
+      "node --test",
+      "node scripts/validate-ecosystem.mjs"
+    ],
+    "deny": [
+      "rm -rf",
+      "git push --force",
+      "DROP TABLE",
+      "DELETE FROM.*WHERE.*true",
+      "format C:"
+    ]
+  },
+  "activation_rules": {
+    "default": [
+      "project-local only",
+      "dry-run first",
+      "no secrets in reports",
+      "preserve existing providers and models",
+      "MCP servers remain disabled unless explicitly enabled"
+    ],
+    "remote_ci": [
+      "include only when --include-remote-ci is present",
+      "list concrete workflow files before copying",
+      "never enable GitHub Actions by default"
+    ]
+  },
+  "detectors": [
+    {
+      "id": "node-package-json",
+      "signals": ["package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lock"],
+      "domain": "generic",
+      "recommend": ["project-reality-refresh", "context-engineering", "run-card", "risk-tier-routing", "verification-contract", "anti-fake-execution", "worktree-safety", "checkpoint-and-rollback", "owner-approval-gate", "privacy-data-minimization", "living-truth-mirror", "provider-neutral-config", "project-bootstrap", "mcp-selection", "hermes-handoff"]
+    },
+    {
+      "id": "python-project",
+      "signals": ["pyproject.toml", "requirements.txt", "uv.lock", "poetry.lock", "pipfile"],
+      "domain": "generic",
+      "recommend": ["project-reality-refresh", "context-engineering", "run-card", "risk-tier-routing", "verification-contract", "anti-fake-execution", "worktree-safety", "checkpoint-and-rollback", "owner-approval-gate", "privacy-data-minimization", "living-truth-mirror", "provider-neutral-config", "project-bootstrap", "mcp-selection", "hermes-handoff"]
+    },
+    {
+      "id": "frontend-playwright",
+      "signals": ["playwright.config.*", "playwright.*", "vite.config.*", "next.config.*", "src/**/*.tsx", "src/**/*.vue", "src/**/*.svelte"],
+      "domain": "generic",
+      "recommend": ["mcp-selection", "living-truth-mirror", "remote-ci-approval-gate"]
+    },
+    {
+      "id": "sqlite-project",
+      "signals": ["*.sqlite", "*.sqlite3", "*.db", "*.db-wal", "*.db-shm"],
+      "domain": "generic",
+      "recommend": ["checkpoint-and-rollback", "mcp-selection"]
+    },
+    {
+      "id": "docker-project",
+      "signals": ["Dockerfile", "docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"],
+      "domain": "generic",
+      "recommend": ["mcp-selection", "worktree-safety"]
+    },
+    {
+      "id": "existing-opencode",
+      "signals": ["opencode.json", "opencode.jsonc", ".opencode/"],
+      "domain": "generic",
+      "recommend": ["provider-neutral-config", "project-bootstrap", "living-truth-mirror"]
+    },
+    {
+      "id": "existing-hermes",
+      "signals": [".hermes.md", ".hermes/"],
+      "domain": "generic",
+      "recommend": ["hermes-handoff", "project-bootstrap", "checkpoint-and-rollback"]
+    },
+    {
+      "id": "monorepo",
+      "signals": ["pnpm-workspace.yaml", "turbo.json", "nx.json", "lerna.json", "packages/*", "apps/*"],
+      "domain": "generic",
+      "recommend": ["run-card", "worktree-safety", "living-truth-mirror"]
+    },
+    {
+      "id": "frontend-ui-framework",
+      "signals": [
+        "*.tsx",
+        "*.jsx",
+        "*.vue",
+        "*.svelte",
+        "*.astro",
+        "next.config.*",
+        "tailwind.config.*",
+        "astro.config.*",
+        ".storybook/",
+        "*.stories.*"
+      ],
+      "domain": "conditional",
+      "recommend": ["ux-flow-review", "ui-design-system-review", "mcp-selection", "living-truth-mirror"]
+    },
+    {
+      "id": "civic-tech-pii",
+      "signals": ["consent", "adopter", "donor", "volunteer", "medical", "privacy", "retention"],
+      "domain": "conditional",
+      "recommend": ["privacy-data-minimization", "living-truth-mirror", "checkpoint-and-rollback"]
+    },
+    {
+      "id": "tierheim-civipet",
+      "signals": ["tierheim", "civipet", "animal", "adoption", "foster", "vet"],
+      "domain": "domain_specific",
+      "recommend": ["tierheim-compliance", "mcp-selection", "remote-ci-approval-gate"]
+    },
+    {
+      "id": "github-remote",
+      "signals": [".git/config remote github.com", "origin github.com", "gh repo view"],
+      "domain": "conditional",
+      "recommend": ["remote-ci-approval-gate", "project-bootstrap"]
+    },
+    {
+      "id": "offline-or-local-only",
+      "signals": ["offline", "local-only", "air-gapped", "no network"],
+      "domain": "conditional",
+      "recommend": ["provider-neutral-config", "checkpoint-and-rollback", "mcp-selection"]
+    }
+  ],
+  "catalogs": {
+    "agents": {
+      "generic": [
+        {
+          "name": "issue-orchestrator",
+          "description": "Coordinates work, enforces evidence gates, and delegates. Never implements directly."
+        },
+        {
+          "name": "plan",
+          "description": "Produces the implementation plan without mutating files."
+        },
+        {
+          "name": "build",
+          "description": "Performs implementation after plan and validation gates are complete."
+        },
+        {
+          "name": "review-agent",
+          "description": "Reviews code, security, and regression risk without edits."
+        },
+        {
+          "name": "security-agent",
+          "description": "Validates vulnerabilities only with reproducing evidence."
+        },
+        {
+          "name": "compliance-agent",
+          "description": "Audits DSGVO and data-minimization boundaries."
+        }
+      ],
+      "conditional": [
+        {
+          "name": "research-agent",
+          "description": "Verifies external documentation and dependency facts."
+        },
+        {
+          "name": "architecture-agent",
+          "description": "Documents architecture decisions and ADRs."
+        },
+        {
+          "name": "documentation-agent",
+          "description": "Maintains docs and release notes."
+        },
+        {
+          "name": "migration-agent",
+          "description": "Validates safe and reversible database changes."
+        },
+        {
+          "name": "playwright-agent",
+          "description": "Performs visual QA and accessibility checks."
+        },
+        {
+          "name": "ux-review-agent",
+          "description": "Analyzes UX flows, UI consistency, and user journeys. Read-only — produces structured, evidence-based findings. Never modifies product files."
+        }
+      ],
+      "domain_specific": [],
+      "experimental": [
+        {
+          "name": "hermes-gateway-preview",
+          "description": "Optional OpenCode-to-Hermes gateway handoff pattern."
+        }
+      ],
+      "deprecated": [
+        {
+          "name": "legacy-global-only-bootstrap",
+          "description": "Old copy-everything installer behavior. Replaced by project-local bootstrap with backups."
+        },
+        {
+          "name": "fixed-shell-assumption",
+          "description": "Hardcoded shell settings such as pwsh. Replaced by environment-neutral detection."
+        }
+      ]
+    },
+    "skills": {
+      "generic": [
+        "project-reality-refresh",
+        "run-card",
+        "project-bootstrap",
+        "checkpoint-and-rollback",
+        "living-truth-mirror",
+        "provider-neutral-config",
+        "worktree-safety",
+        "context-engineering",
+        "risk-tier-routing",
+        "verification-contract",
+        "owner-approval-gate",
+        "anti-fake-execution",
+        "privacy-data-minimization"
+      ],
+      "conditional": [
+        "mcp-selection",
+        "hermes-handoff",
+        "remote-ci-approval-gate",
+        "ux-flow-review",
+        "ui-design-system-review"
+      ],
+      "domain_specific": [
+        "tierheim-compliance",
+        "funding-document-generator",
+        "playwright-visual-review",
+        "migration-review",
+        "security-evidence-gate"
+      ],
+      "experimental": [
+        "opencode-hermes-gateway"
+      ],
+      "deprecated": [
+        "legacy-global-copy",
+        "legacy-shell-pwsh"
+      ]
+    },
+    "policies": {
+      "generic": [
+        "evidence-gates",
+        "write-protection",
+        "mcp-trust-tiers"
+      ],
+      "conditional": [
+        "model-routing"
+      ],
+      "domain_specific": [
+        "tierheim-retention",
+        "data-retention"
+      ],
+      "experimental": [
+        "remote-ci-proposal"
+      ],
+      "deprecated": [
+        "allow-all-tools",
+        "copy-workflows-by-default"
+      ]
+    },
+    "working_method": {
+      "description": "Defines the canonical step-by-step working method for agents across all risk tiers.",
+      "steps": [
+        "read-before-sketch",
+        "spec-driven-development",
+        "evidence-gated-progression",
+        "run-card-first",
+        "context-level-assessment",
+        "risk-tier-routing",
+        "verification-contract",
+        "owner-approval-gate",
+        "anti-fake-execution",
+        "living-truth-mirror"
+      ]
+    },
+    "context_levels": {
+      "description": "Context scoping levels for agent work.",
+      "levels": ["project", "module", "file", "function"]
+    },
+    "risk_tiers": {
+      "description": "Risk tiers for routing decisions, defined in WORKING-METHOD.md.",
+      "tiers": [
+        { "id": "LOW_LOCAL", "description": "Local-only change, no external dependencies", "auto_approve": true },
+        { "id": "MEDIUM_REVIEW", "description": "Review-level change, requires peer validation", "require_review": true },
+        { "id": "HIGH_HUMAN_GATE", "description": "Architecture or policy change, requires human approval", "require_human_gate": true },
+        { "id": "CRITICAL_BLOCK", "description": "Blocker that prevents implementation until resolved", "block_with_audit": true }
+      ]
+    },
+    "truth_layers": {
+      "description": "Truth layers for verification contracts, from spec through to evidence.",
+      "layers": ["spec", "implementation", "test", "evidence"]
+    },
+    "approval_gates": {
+      "description": "Approval gate types for owner approval before implementation or deployment.",
+      "gates": [
+        { "id": "owner", "mechanism": "human-approval", "required": true },
+        { "id": "review", "mechanism": "peer-review", "required": true, "when": ["MEDIUM_REVIEW", "HIGH_HUMAN_GATE"] },
+        { "id": "audit", "mechanism": "log-review", "required": true, "when": ["HIGH_HUMAN_GATE", "CRITICAL_BLOCK"] }
+      ]
+    },
+    "mandatory_run_card_fields": {
+      "description": "Required fields in every run card for traceability and audit.",
+      "fields": [
+        "task_id",
+        "objective",
+        "context_level",
+        "risk_tier",
+        "verification_contract",
+        "approval_status",
+        "evidence_log",
+        "changed_files",
+        "risks_and_uncertainties"
+      ]
+    },
+    "mcp_servers": {
+      "generic": [
+        {
+          "name": "github",
+          "tier": "0_readonly",
+          "enabled_by_default": false
+        },
+        {
+          "name": "context7",
+          "tier": "0_readonly",
+          "enabled_by_default": false
+        },
+        {
+          "name": "brave-search",
+          "tier": "0_readonly",
+          "enabled_by_default": false
+        }
+      ],
+      "conditional": [
+        {
+          "name": "playwright",
+          "tier": "1_sandboxed",
+          "enabled_by_default": false
+        },
+        {
+          "name": "docker",
+          "tier": "1_sandboxed",
+          "enabled_by_default": false
+        },
+        {
+          "name": "sqlite",
+          "tier": "1_sandboxed",
+          "enabled_by_default": false
+        }
+      ],
+      "domain_specific": [
+        {
+          "name": "postgresql",
+          "tier": "2_trusted",
+          "enabled_by_default": false
+        },
+        {
+          "name": "filesystem",
+          "tier": "2_trusted",
+          "enabled_by_default": false
+        }
+      ],
+      "experimental": [
+        {
+          "name": "hermes-mcp-gateway",
+          "tier": "0_readonly",
+          "enabled_by_default": false
+        }
+      ],
+      "deprecated": [
+        {
+          "name": "npx-unnamed-local-install",
+          "reason": "Uncontrolled npx -y execution is not allowed in the universal bootstrap."
+        }
+      ]
+    }
+  },
+  "conflict_strategy": {
+    "json": "structural_deep_merge",
+    "text": "managed_section_overlay",
+    "backup_required": true,
+    "classification_on_conflict": "AMBER_REVIEW",
+    "classification_on_unsafe_change": "RED_BLOCK",
+    "managed_section_marker": "<!-- BEGIN OPENCODE-AGENT-ECOSYSTEM -->"
+  },
+  "install_targets": {
+    "opencode": [
+      "opencode.jsonc",
+      ".opencode/",
+      "AGENTS.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      "BOOTSTRAP.md"
+    ],
+    "hermes": [
+      ".hermes.md",
+      ".hermes/",
+      "hermes/README.md"
+    ]
+  },
+  "remote_ci": {
+    "default_enabled": false,
+    "opt_in_flag": "--include-remote-ci",
+    "workflow_files": [
+      ".github/workflows/opencode-security-review.yml",
+      ".github/workflows/opencode-spec-driven.yml",
+      ".github/workflows/opencode-visual-qa.yml",
+      ".github/workflows/opencode-weekly-audit.yml"
+    ],
+    "policy": "proposal_only_until_explicitly_enabled"
+  }
+}
