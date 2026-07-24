@@ -1,0 +1,147 @@
+{
+  "target_root": "C:\\Rechtssoftware",
+  "classification": "AMBER_REVIEW",
+  "language": "javascript/typescript",
+  "package_manager": "npm",
+  "frameworks": [
+    "pytest",
+    "fastapi",
+    "ruff",
+    "playwright"
+  ],
+  "test_frameworks": [
+    "playwright",
+    "pytest",
+    "javascript-tests"
+  ],
+  "databases": [
+    "sqlite"
+  ],
+  "monorepo": false,
+  "notes": [
+    "Existing OpenCode configuration detected.",
+    "Existing Hermes artifacts detected.",
+    "Playwright-style project detected.",
+    "Database signals detected: sqlite.",
+    "Bootstrap-managed artifacts detected; generated scaffolding is ignored for re-runs.",
+    "GitHub remote detected via origin (https://github.com/xxammaxx/Rechtssoftware.git)."
+  ],
+  "signals": [
+    {
+      "id": "hermes-config",
+      "paths": [
+        ".hermes.md"
+      ],
+      "notes": []
+    },
+    {
+      "id": "sqlite-file",
+      "paths": [
+        ".mypy_cache/3.11/cache.0.db",
+        ".mypy_cache/3.11/cache.1.db",
+        ".mypy_cache/3.11/cache.10.db",
+        ".mypy_cache/3.11/cache.11.db",
+        ".mypy_cache/3.11/cache.12.db",
+        ".mypy_cache/3.11/cache.13.db",
+        ".mypy_cache/3.11/cache.14.db",
+        ".mypy_cache/3.11/cache.15.db",
+        ".mypy_cache/3.11/cache.2.db",
+        ".mypy_cache/3.11/cache.3.db",
+        ".mypy_cache/3.11/cache.4.db",
+        ".mypy_cache/3.11/cache.5.db",
+        ".mypy_cache/3.11/cache.6.db",
+        ".mypy_cache/3.11/cache.7.db",
+        ".mypy_cache/3.11/cache.8.db",
+        ".mypy_cache/3.11/cache.9.db"
+      ],
+      "notes": []
+    },
+    {
+      "id": "playwright-config",
+      "paths": [
+        "e2e-screenshots/playwright.config.js",
+        "playwright.config.js"
+      ],
+      "notes": []
+    },
+    {
+      "id": "opencode-config",
+      "paths": [
+        "opencode.jsonc"
+      ],
+      "notes": []
+    },
+    {
+      "id": "package-json",
+      "paths": [
+        "package.json"
+      ],
+      "notes": []
+    },
+    {
+      "id": "pyproject",
+      "paths": [
+        "pyproject.toml"
+      ],
+      "notes": []
+    }
+  ],
+  "existing": {
+    "agents": false,
+    "opencode": true,
+    "hermes": true,
+    "ci_files": [],
+    "github_remote": true,
+    "github_remote_url": "https://github.com/xxammaxx/Rechtssoftware.git"
+  },
+  "selected_skills": [
+    "project-reality-refresh",
+    "context-engineering",
+    "run-card",
+    "risk-tier-routing",
+    "verification-contract",
+    "anti-fake-execution",
+    "worktree-safety",
+    "checkpoint-and-rollback",
+    "owner-approval-gate",
+    "privacy-data-minimization",
+    "living-truth-mirror",
+    "provider-neutral-config",
+    "project-bootstrap",
+    "mcp-selection",
+    "hermes-handoff",
+    "playwright-visual-review",
+    "migration-review"
+  ],
+  "selected_agents": [
+    "playwright-agent",
+    "migration-agent"
+  ],
+  "selected_mcps": [
+    {
+      "name": "github",
+      "tier": "0_readonly",
+      "enabled": false,
+      "reason": "Optional read-only GitHub integration."
+    },
+    {
+      "name": "context7",
+      "tier": "0_readonly",
+      "enabled": false,
+      "reason": "Documentation lookup is useful for non-trivial framework bootstrap."
+    },
+    {
+      "name": "playwright",
+      "tier": "1_sandboxed",
+      "enabled": false,
+      "reason": "Frontend or Playwright signals were detected, but local package installation must remain explicit."
+    },
+    {
+      "name": "sqlite",
+      "tier": "1_sandboxed",
+      "enabled": false,
+      "reason": "SQLite signals were detected, but local MCP installation remains manual."
+    }
+  ],
+  "backup_root": "C:\\Rechtssoftware\\.opencode\\backups\\bootstrap-2026-07-24T09-26-23-762Z"
+}

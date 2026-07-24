@@ -1,0 +1,441 @@
+{
+  "target_root": "C:\\Rechtssoftware",
+  "classification": "AMBER_REVIEW",
+  "apply_requested": true,
+  "include_remote_ci": false,
+  "files": [
+    {
+      "path": "opencode.jsonc",
+      "action": "merge-config"
+    },
+    {
+      "path": "AGENTS.md",
+      "action": "merge-doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "action": "merge-doc"
+    },
+    {
+      "path": "SECURITY.md",
+      "action": "merge-doc"
+    },
+    {
+      "path": ".hermes.md",
+      "action": "create-doc"
+    },
+    {
+      "path": ".hermes\\README.md",
+      "action": "create-doc"
+    },
+    {
+      "path": ".hermes\\skills\\README.md",
+      "action": "merge-doc"
+    },
+    {
+      "path": ".hermes\\bundles\\project-bootstrap.json",
+      "action": "write-json"
+    },
+    {
+      "path": ".hermes\\mcp\\opencode-gateway.md",
+      "action": "create-doc"
+    },
+    {
+      "path": ".opencode\\agents\\architecture-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\compliance-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\documentation-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\issue-orchestrator.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\migration-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\playwright-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\research-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\review-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\security-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\agents\\ux-review-agent.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\anti-fake-execution\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\architecture-review\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\audit-trail-enforcer\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\checkpoint-and-rollback\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\context-engineering\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\funding-document-generator\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\github-source-of-truth\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\hermes-handoff\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\living-truth-mirror\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\mcp-selection\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\migration-review\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\owner-approval-gate\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\playwright-visual-review\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\privacy-data-minimization\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\project-bootstrap\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\project-reality-refresh\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\provider-neutral-config\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\read-before-sketch\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\remote-ci-approval-gate\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\risk-tier-routing\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\run-card\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\security-evidence-gate\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\spec-driven-development\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\test-enforcement\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\tierheim-compliance\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\ui-design-system-review\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\ux-flow-review\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\verification-contract\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\skills\\worktree-safety\\SKILL.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\policies\\data-retention.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\policies\\evidence-gates.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\policies\\mcp-trust-tiers.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\policies\\model-routing.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\policies\\working-method.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\policies\\write-protection.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\templates\\adr-template.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\templates\\funding-proposal-template.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\templates\\issue-task-template.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\templates\\migration-template.sql",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\templates\\release-notes-template.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\templates\\security-report-template.md",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\validation\\schema-validators\\ecosystem-manifest-schema.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\validation\\schema-validators\\migration-schema.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\validation\\schema-validators\\security-report-schema.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\validation\\schema-validators\\speckit-spec-schema.json",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\compliance-check.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\funding-generator.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\migration-review.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\security-review.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\spec-constitution.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\spec-implement.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\spec-plan.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\spec-specify.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\spec-tasks.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\prompts\\visual-review.txt",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\hooks\\audit-log.sh",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\hooks\\post-commit.sh",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\hooks\\post-edit.sh",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\hooks\\pre-commit.sh",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\hooks\\pre-edit.sh",
+      "action": "sync-tree"
+    },
+    {
+      "path": ".opencode\\hooks\\pre-task.sh",
+      "action": "sync-tree"
+    }
+  ],
+  "skills": [
+    "project-reality-refresh",
+    "context-engineering",
+    "run-card",
+    "risk-tier-routing",
+    "verification-contract",
+    "anti-fake-execution",
+    "worktree-safety",
+    "checkpoint-and-rollback",
+    "owner-approval-gate",
+    "privacy-data-minimization",
+    "living-truth-mirror",
+    "provider-neutral-config",
+    "project-bootstrap",
+    "mcp-selection",
+    "hermes-handoff",
+    "playwright-visual-review",
+    "migration-review"
+  ],
+  "mcps": [
+    {
+      "name": "github",
+      "tier": "0_readonly",
+      "type": "remote",
+      "enabled": false,
+      "reason": "Optional read-only GitHub integration.",
+      "requires": [],
+      "config": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "headers": {
+          "Authorization": "[REDACTED]"
+        },
+        "enabled": false
+      }
+    },
+    {
+      "name": "context7",
+      "tier": "0_readonly",
+      "type": "remote",
+      "enabled": false,
+      "reason": "Documentation lookup is useful for non-trivial framework bootstrap.",
+      "requires": [],
+      "config": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "enabled": false
+      }
+    },
+    {
+      "name": "playwright",
+      "tier": "1_sandboxed",
+      "type": "local",
+      "enabled": false,
+      "reason": "Frontend or Playwright signals were detected, but local package installation must remain explicit.",
+      "install_method": "manual"
+    },
+    {
+      "name": "sqlite",
+      "tier": "1_sandboxed",
+      "type": "local",
+      "enabled": false,
+      "reason": "SQLite signals were detected, but local MCP installation remains manual.",
+      "install_method": "manual"
+    }
+  ],
+  "conflicts": [
+    "existing file will be merged: opencode.jsonc (OpenCode config)",
+    "existing file preserved: AGENTS.md (AGENTS.md managed section)",
+    "existing file preserved: CONTRIBUTING.md (CONTRIBUTING.md managed section)",
+    "existing file preserved: SECURITY.md (SECURITY.md managed section)",
+    "existing file preserved: .hermes.md (Hermes handoff)",
+    "existing file preserved: .hermes\\README.md (Hermes README)",
+    "existing file preserved: .hermes\\skills\\README.md (Hermes skills README)",
+    "existing file preserved: .hermes\\bundles\\project-bootstrap.json (Hermes bundle)",
+    "existing file preserved: .hermes\\mcp\\opencode-gateway.md (Hermes MCP gateway note)",
+    "existing file preserved: .opencode\\agents\\issue-orchestrator.md",
+    "existing file preserved: .opencode\\skills\\anti-fake-execution\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\architecture-review\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\audit-trail-enforcer\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\context-engineering\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\funding-document-generator\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\github-source-of-truth\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\migration-review\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\owner-approval-gate\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\playwright-visual-review\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\privacy-data-minimization\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\risk-tier-routing\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\security-evidence-gate\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\spec-driven-development\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\test-enforcement\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\tierheim-compliance\\SKILL.md",
+    "existing file preserved: .opencode\\skills\\verification-contract\\SKILL.md"
+  ],
+  "backup_root": "C:\\Rechtssoftware\\.opencode\\backups\\bootstrap-2026-07-24T09-26-23-762Z",
+  "rollback_command": "node scripts/bootstrap-project.mjs --target \"C:\\\\Rechtssoftware\" --rollback \"C:\\\\Rechtssoftware\\\\.opencode\\\\backups\\\\bootstrap-2026-07-24T09-26-23-762Z\"",
+  "discovery_findings": [
+    "26 overlay conflict(s) detected"
+  ],
+  "gate_evaluation": {
+    "classification": "AMBER_REVIEW",
+    "verification_level": "NOT_CHECKED",
+    "kernel_blocked_by": [],
+    "required_approvals": [
+      "structural_validation",
+      "apply_approval",
+      "backup_confirmation"
+    ],
+    "tool_gaps": [],
+    "warnings": [
+      "Verification level is NOT_CHECKED — no structural or runtime checks were performed."
+    ]
+  }
+}
