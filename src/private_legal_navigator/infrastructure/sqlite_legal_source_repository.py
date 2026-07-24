@@ -23,6 +23,7 @@ from private_legal_navigator.domain.legal_source import (
     TemporalConfidence,
     TemporalStatus,
 )
+from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncRun, SyncRunStatus
 from private_legal_navigator.infrastructure.database import get_connection, initialize_schema
 
 
@@ -842,4 +843,218 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
                 datetime.fromisoformat(row["reviewed_at"]) if row["reviewed_at"] else None
             ),
             resolution_detail=row["resolution_detail"],
+        )
+
+    # ── Sync (M7-B) ──────────────────────────────
+
+    def save_sync_run(self, sync_run: SyncRun) -> None:
+        """Persist a new sync run."""
+        conn = get_connection(self._db_path)
+        try:
+            conn.execute(
+                """
+                INSERT INTO sync_runs
+                    (sync_run_id, source_key, started_at, completed_at,
+                     catalog_stand_date, catalog_url, catalog_sha256,
+                     total_in_catalog, new_count, changed_count, unchanged_count,
+                     remote_not_modified_count, remote_missing_count, skipped_count,
+                     failed_count, status, dry_run, error_summary)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    sync_run.sync_run_id,
+                    sync_run.source_key,
+                    sync_run.started_at,
+                    sync_run.completed_at,
+                    sync_run.catalog_stand_date,
+                    sync_run.catalog_url,
+                    sync_run.catalog_sha256,
+                    sync_run.total_in_catalog,
+                    sync_run.new_count,
+                    sync_run.changed_count,
+                    sync_run.unchanged_count,
+                    sync_run.remote_not_modified_count,
+                    sync_run.remote_missing_count,
+                    sync_run.skipped_count,
+                    sync_run.failed_count,
+                    sync_run.status.value,
+                    1 if sync_run.dry_run else 0,
+                    sync_run.error_summary,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def update_sync_run(self, sync_run: SyncRun) -> None:
+        """Update an existing sync run (counters, status, completed_at)."""
+        conn = get_connection(self._db_path)
+        try:
+            conn.execute(
+                """
+                UPDATE sync_runs SET
+                    completed_at = ?,
+                    catalog_stand_date = ?,
+                    catalog_url = ?,
+                    catalog_sha256 = ?,
+                    total_in_catalog = ?,
+                    new_count = ?,
+                    changed_count = ?,
+                    unchanged_count = ?,
+                    remote_not_modified_count = ?,
+                    remote_missing_count = ?,
+                    skipped_count = ?,
+                    failed_count = ?,
+                    status = ?,
+                    dry_run = ?,
+                    error_summary = ?
+                WHERE sync_run_id = ?
+                """,
+                (
+                    sync_run.completed_at,
+                    sync_run.catalog_stand_date,
+                    sync_run.catalog_url,
+                    sync_run.catalog_sha256,
+                    sync_run.total_in_catalog,
+                    sync_run.new_count,
+                    sync_run.changed_count,
+                    sync_run.unchanged_count,
+                    sync_run.remote_not_modified_count,
+                    sync_run.remote_missing_count,
+                    sync_run.skipped_count,
+                    sync_run.failed_count,
+                    sync_run.status.value,
+                    1 if sync_run.dry_run else 0,
+                    sync_run.error_summary,
+                    sync_run.sync_run_id,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def get_latest_sync_run(
+        self, source_key: str, *, successful_only: bool = True
+    ) -> SyncRun | None:
+        """Retrieve the most recent sync run for a given source."""
+        conn = get_connection(self._db_path)
+        try:
+            if successful_only:
+                row = conn.execute(
+                    "SELECT * FROM sync_runs "
+                    "WHERE source_key = ? AND status = 'COMPLETED' "
+                    "ORDER BY started_at DESC LIMIT 1",
+                    (source_key,),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT * FROM sync_runs WHERE source_key = ? ORDER BY started_at DESC LIMIT 1",
+                    (source_key,),
+                ).fetchone()
+            if row is None:
+                return None
+            return self._row_to_sync_run(row)
+        finally:
+            conn.close()
+
+    def save_sync_item(self, item: SyncItem) -> None:
+        """Persist a single sync item."""
+        conn = get_connection(self._db_path)
+        try:
+            conn.execute(
+                """
+                INSERT INTO sync_items
+                    (sync_item_id, sync_run_id, source_identifier, abbreviation,
+                     title, item_status, previous_sha256, new_sha256,
+                     snapshot_id, instrument_id, expression_id,
+                     http_status, http_etag, http_last_modified,
+                     byte_size, error_summary, checked_at, retry_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item.sync_item_id,
+                    item.sync_run_id,
+                    item.source_identifier,
+                    item.abbreviation,
+                    item.title,
+                    item.item_status.value,
+                    item.previous_sha256,
+                    item.new_sha256,
+                    item.snapshot_id,
+                    item.instrument_id,
+                    item.expression_id,
+                    item.http_status,
+                    item.http_etag,
+                    item.http_last_modified,
+                    item.byte_size,
+                    item.error_summary,
+                    item.checked_at,
+                    item.retry_count,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def save_sync_items_batch(self, items: list[SyncItem], conn: Any) -> None:
+        """Persist multiple sync items within an existing transaction."""
+        data = [
+            (
+                item.sync_item_id,
+                item.sync_run_id,
+                item.source_identifier,
+                item.abbreviation,
+                item.title,
+                item.item_status.value,
+                item.previous_sha256,
+                item.new_sha256,
+                item.snapshot_id,
+                item.instrument_id,
+                item.expression_id,
+                item.http_status,
+                item.http_etag,
+                item.http_last_modified,
+                item.byte_size,
+                item.error_summary,
+                item.checked_at,
+                item.retry_count,
+            )
+            for item in items
+        ]
+        conn.executemany(
+            """
+            INSERT INTO sync_items
+                (sync_item_id, sync_run_id, source_identifier, abbreviation,
+                 title, item_status, previous_sha256, new_sha256,
+                 snapshot_id, instrument_id, expression_id,
+                 http_status, http_etag, http_last_modified,
+                 byte_size, error_summary, checked_at, retry_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            data,
+        )
+
+    # ── Sync Row Mappers ──────────────────────────
+
+    @staticmethod
+    def _row_to_sync_run(row: sqlite3.Row) -> SyncRun:
+        return SyncRun(
+            sync_run_id=row["sync_run_id"],
+            source_key=row["source_key"],
+            started_at=row["started_at"],
+            completed_at=row["completed_at"],
+            catalog_stand_date=row["catalog_stand_date"],
+            catalog_url=row["catalog_url"],
+            catalog_sha256=row["catalog_sha256"],
+            total_in_catalog=row["total_in_catalog"],
+            new_count=row["new_count"],
+            changed_count=row["changed_count"],
+            unchanged_count=row["unchanged_count"],
+            remote_not_modified_count=row["remote_not_modified_count"],
+            remote_missing_count=row["remote_missing_count"],
+            skipped_count=row["skipped_count"],
+            failed_count=row["failed_count"],
+            status=SyncRunStatus(row["status"]),
+            dry_run=bool(row["dry_run"]),
+            error_summary=row["error_summary"],
         )

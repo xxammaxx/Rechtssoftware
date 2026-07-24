@@ -14,6 +14,7 @@ import logging
 import os
 import tempfile
 import uuid
+from dataclasses import dataclass
 from enum import Enum, auto
 from importlib.metadata import version as _pkg_version
 from pathlib import Path
@@ -119,6 +120,22 @@ class TransportPolicy:
             raise HostNotAllowedError(
                 f"Host '{parsed.hostname}' not in allowlist. Allowed: {self.allowed_hosts}"
             )
+
+
+# ──────────────────────────────────────────────
+# Download Result
+# ──────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class DownloadResult:
+    """Result of a source download including HTTP metadata."""
+
+    content: bytes
+    http_status: int
+    etag: str = ""
+    last_modified: str = ""
+    content_type: str = ""
 
 
 # ──────────────────────────────────────────────
@@ -236,6 +253,15 @@ class SourceClient:
 
     def _get_with_redirects(self, url: str, redirects_left: int) -> bytes:
         """Follow redirects with allowlist validation at each hop."""
+        return self._fetch_download_result(url, redirects_left).content
+
+    def _fetch_download_result(self, url: str, redirects_left: int) -> DownloadResult:
+        """Fetch content and HTTP metadata with all security guardrails.
+
+        Same enforcement as _get_with_redirects (allowlist validation,
+        redirect validation, TLS enforcement, size limits) but returns
+        a DownloadResult with HTTP response headers instead of raw bytes.
+        """
         if redirects_left <= 0:
             raise TooManyRedirectsError(f"Too many redirects for {url}")
 
@@ -262,7 +288,7 @@ class SourceClient:
                 next_url = urljoin(url, location)
                 # SEC-001-D: validate redirect target
                 self.policy.validate_redirect(url, next_url)
-                return self._get_with_redirects(next_url, redirects_left - 1)
+                return self._fetch_download_result(next_url, redirects_left - 1)
 
             if response.status_code != 200:
                 raise DownloadFailedError(
@@ -281,7 +307,27 @@ class SourceClient:
                 chunks.append(chunk)
 
             content = b"".join(chunks)
-            return content
+            return DownloadResult(
+                content=content,
+                http_status=response.status_code,
+                etag=response.headers.get("etag", ""),
+                last_modified=response.headers.get("last-modified", ""),
+                content_type=response.headers.get("content-type", ""),
+            )
+
+    def download_with_headers(self, url: str) -> DownloadResult:
+        """Download content from a legal source, returning DownloadResult with headers.
+
+        Same security guardrails as download() — host allowlist validation,
+        redirect validation, TLS enforcement, size limits — but returns
+        HTTP metadata (status code, ETag, Last-Modified, Content-Type)
+        alongside the content via DownloadResult.
+
+        Use this method when you need ETag/Last-Modified for incremental
+        sync change detection (M7-B).
+        """
+        self.policy.validate_url(url)
+        return self._fetch_download_result(url, self._config.max_redirects)
 
 
 # ──────────────────────────────────────────────
