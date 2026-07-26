@@ -15,7 +15,10 @@ from private_legal_navigator.application.citation_resolver import (
     CitationResolver,
     ResolvedCitation,
 )
-from private_legal_navigator.application.legal_source_status_dto import LegalSourceStatusDTO
+from private_legal_navigator.application.legal_source_status_dto import (
+    LegalSourceStatusDTO,
+    SyncRunSummary,
+)
 from private_legal_navigator.domain.legal_source import (
     ImportStatus,
     LegalSource,
@@ -306,3 +309,38 @@ class LegalSourceService:
     def verify_snapshot_detailed(self, snapshot_id: uuid.UUID) -> dict[str, Any]:
         """Public method — verify a single snapshot with detailed output."""
         return self._verify_snapshot_detailed(snapshot_id)
+
+    # ── Sync History (M7-B Phase 9) ──────────────
+
+    def get_sync_history_for_source(self, source_key: str, limit: int = 10) -> list[dict[str, Any]]:
+        """Return sync run history for a given source as template-ready dicts.
+
+        Returns most recent runs first, limited to `limit` entries.
+        """
+        runs = self._repo.list_runs(source_key=source_key, limit=limit)
+        return [SyncRunSummary.from_sync_run(run).to_dict() for run in runs]
+
+    def get_latest_sync_info(self, source_key: str) -> dict[str, Any] | None:
+        """Return the latest sync run summary for a source, or None if never synced.
+
+        Includes the most recent run regardless of status (for "last sync" display).
+        For catalog stand date, the most recent COMPLETED run's date is preferred.
+        """
+        latest = self._repo.get_latest_sync_run(source_key, successful_only=False)
+        if latest is None:
+            return None
+
+        result = SyncRunSummary.from_sync_run(latest).to_dict()
+
+        # For catalog stand date: prefer the most recent COMPLETED run
+        completed = self._repo.get_latest_sync_run(source_key, successful_only=True)
+        if completed is not None and completed.catalog_stand_date:
+            result["catalog_stand_date"] = completed.catalog_stand_date
+        elif latest.catalog_stand_date:
+            result["catalog_stand_date"] = latest.catalog_stand_date
+
+        # Add total run count
+        all_runs = self._repo.list_runs(source_key=source_key, limit=1000)
+        result["total_runs"] = len(all_runs)
+
+        return result

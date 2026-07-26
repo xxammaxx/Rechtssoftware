@@ -29,6 +29,9 @@
 │  - LegalSourceService (M7-A)       │
 │  - CaseTimelineService (M7-A)      │
 │  - CitationResolver (M7-A)         │
+│  ────────────────────────────      │
+│  - SyncPlanningService (M7-B)      │
+│  - SyncExecutionService (M7-B)     │
 │  - Repository Ports (ABCs)         │
 └──────────┬─────────────────────────┘
            │
@@ -46,6 +49,10 @@
 │  - CaseLegalLink, LegalIssue       │
 │  - EvidencePack, Claim (M7-A)      │
 │  - AuthorityTier (StrEnum)         │
+│  ────────────────────────────      │
+│  - SyncRun, SyncItem (M7-B)        │
+│  - SyncRunStatus, SyncItemStatus   │
+│  - SyncPlan (Value Object) (M7-B)  │
 └──────────┬─────────────────────────┘
            │
 ┌──────────▼─────────────────────────┐
@@ -59,7 +66,8 @@
 │  - GiiAdapter (GII sync)           │
 │  - SourceClient (Safe HTTP)        │
 │  - CitationResolver (det.)         │
-│  - database.py (Schema, 11 Tab.)   │
+│  - database.py (Schema, 13 Tab.)   │
+│    (M7-B: sync_runs, sync_items)   │
 └──────────┬─────────────────────────┘
            │
 ┌──────────▼─────────────────────────┐
@@ -79,6 +87,8 @@
 │  - case_legal_links (M7-A)         │
 │  - legal_issues (M7-A)             │
 │  - legal_provisions_fts (FTS5)     │
+│  - sync_runs (M7-B)                │
+│  - sync_items (M7-B)               │
 └────────────────────────────────────┘
 
 Filesystem (M7-A):
@@ -107,6 +117,8 @@ Filesystem (M7-A):
 - **`LegalSourceService` (M7-A)**: Orchestriert GII-Import, Source-Registry, Suche, Snapshot-Verifikation
 - **`CaseTimelineService` (M7-A)**: Orchestriert Rechtsereignisse, Normlinks, Evidence Pack
 - **`CitationResolver` (M7-A)**: Deterministische Auflösung von Zitaten ("§ 48 SGB X")
+- **`SyncPlanningService` (M7-B)**: Katalogabruf, Presence-Diff, Klassifikation → `SyncPlan` (read-only)
+- **`SyncExecutionService` (M7-B)**: Selektiver Download + Import neuer/geänderter Instrumente
 - `CaseRepository` (ABC): Port für Persistenz
 - Keine direkte SQL-Abhängigkeit
 
@@ -117,14 +129,17 @@ Filesystem (M7-A):
 - **`LegalSource`, `SourceSnapshot`, `LegalInstrument`, `LegalExpression`, `LegalProvision`, `LegalCitation` (M7-A)**: Domain-Entitäten des Rechtsquellen-Korpus
 - **`AuthorityTier` (M7-A)**: StrEnum mit 6 Stufen (OFFICIAL_PROMULGATION bis UNKNOWN)
 - **`CaseLegalEvent`, `EventRelation`, `CaseLegalLink`, `LegalIssue`, `LegalClaim`, `EvidencePack` (M7-A)**: Domain-Entitäten der Fall-Rechts-Timeline
+- **`SyncRun`, `SyncItem` (M7-B)**: Domain-Entitäten des inkrementellen Sync (append-only Audit-Trail)
+- **`SyncPlan` (M7-B)**: Frozen Value Object der Plan-Phase (Katalog-Klassifikation)
+- **`SyncRunStatus`, `SyncItemStatus` (M7-B)**: StrEnums mit Status-Maschinen (RUNNING→COMPLETED/FAILED, PENDING→NEW/CHANGED/UNCHANGEDetc.)
 
 ### Infrastructure
 - `database.py`: `get_connection()` mit PRAGMA foreign_keys, `initialize_schema()`
 - `SqliteCaseRepository`: Implementiert `CaseRepository` mit parametrisierten Queries
-- **`SqliteLegalSourceRepository` (M7-A)**: Persistenz für Rechtsquellen, Snapshot-Import (atomic batch)
+- **`SqliteLegalSourceRepository` (M7-A/M7-B)**: Persistenz für Rechtsquellen, Snapshot-Import (atomic batch) und Sync-Historie (sync_runs/sync_items CRUD)
 - **`SqliteCaseTimelineRepository` (M7-A)**: Persistenz für Timeline-Events und Normlinks
-- **`GiiAdapter` (M7-A)**: Adapter für Gesetze im Internet (GII) — Katalogabfrage, Download, XML-Parsing
-- **`SourceClient` (M7-A)**: Sicherer HTTP-Client mit Host-Allowlist, HTTPS-Only, Redirect-Validierung
+- **`GiiAdapter` (M7-A/M7-B)**: Adapter für Gesetze im Internet (GII) — Katalogabfrage, Download, XML-Parsing, Catalog-Diff-Helper
+- **`SourceClient` (M7-A/M7-B)**: Sicherer HTTP-Client mit Host-Allowlist, HTTPS-Only, Redirect-Validierung; erweitert um `download_with_headers()` für ETag/Last-Modified-Erfassung
 - SQLite-Verbindung pro Operation (kein globaler State)
 
 ## Datenfluss (M1-M6)
@@ -314,9 +329,21 @@ CANDIDATE → CONFIRMED → CORRECTED → REVOKED
 |---------|-----|-------------|
 | `legal_provisions_fts` | FTS5 | Volltextindex über `legal_provisions` |
 
-### Neu: 30 Indexes für M7-A-Operationen
+### M7-B: Sync Tracking (2 Tabellen)
+
+| Tabelle | Typ | Beschreibung |
+|---------|-----|-------------|
+| `sync_runs` | Real | Append-only Sync-Durchläufe (Status, Katalog-Metadaten, Item-Counts) |
+| `sync_items` | Real | Per-Instrument-Status innerhalb eines Sync-Durchlaufs (SHA-256 vor/nach, HTTP-Metadaten) |
+
+### M7-B: Migration (1 neue Spalte)
+
+`legal_sources.last_catalog_stand_date` — Katalog-Stand-Datum für Freshness-Gate
+
+### Neu: 30 Indexes für M7-A + 5 Indexes für M7-B
 
 Alle M7-A-Tabellen haben B-Tree-Indexes auf den wichtigsten Query-Pfaden (case_id, abbreviation, sha256, review_status, etc.).
+M7-B fügt 5 Indexes hinzu: `idx_sr_source`, `idx_sr_status`, `idx_si_run`, `idx_si_status`, `idx_si_source_identifier`.
 
 ## Teststrategie
 
@@ -329,6 +356,9 @@ Alle M7-A-Tabellen haben B-Tree-Indexes auf den wichtigsten Query-Pfaden (case_i
 | M7-A Citation | Unit/Integration | CitationResolver mit Test-Zitaten |
 | M7-A GII | Integration | Test-server (localhost) + Mock-Client |
 | M7-A SourceClient | Unit | Mocked httpx-Transport |
+| M7-B Sync Domain | Unit | Direkte Instanziierung von SyncRun/SyncItem/SyncPlan (22 Tests) |
+| M7-B Sync Repository | Integration | Temporäre SQLite-DB (15 Tests) |
+| M7-B Sync Services | Integration | Geplant für Phase 11 |
 
 ## Erweiterbarkeit
 
@@ -345,3 +375,4 @@ Alle M7-A-Tabellen haben B-Tree-Indexes auf den wichtigsten Query-Pfaden (case_i
 - [ADR-003 — Local Confirmation Workspace](../specs/006-local-confirmation-workspace/spec.md)
 - [ADR-007 — Legal Source Provenance and Corpus Foundation](ADR-007-legal-source-provenance.md)
 - [ADR-008 — Case Legal Timeline and Case-Legal Links](ADR-008-case-legal-timeline.md)
+- [ADR-009 — Incremental GII Sync & Corpus Change Management](ADR-009-incremental-gii-sync.md)

@@ -1,7 +1,23 @@
-"""Data Transfer Object for legal source status display (M7-A.1)."""
+"""Data Transfer Objects for legal source status and sync history display (M7-A.1, M7-B)."""
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
+
+
+def _format_iso_date(iso_str: str) -> str:
+    """Format an ISO datetime string to DD.MM.YYYY HH:MM for display.
+
+    Returns empty string if input is empty or unparseable.
+    """
+    if not iso_str:
+        return ""
+    try:
+        dt = datetime.fromisoformat(iso_str)
+        return dt.strftime("%d.%m.%Y %H:%M")
+    except (ValueError, TypeError):
+        # Fallback: truncate to readable prefix
+        return iso_str[:19] if len(iso_str) >= 19 else iso_str
 
 
 @dataclass
@@ -48,3 +64,62 @@ class LegalSourceStatusDTO:
             "integrity_failure_count": self.integrity_failure_count,
             "status_warnings": self.status_warnings,
         }
+
+
+@dataclass
+class SyncRunSummary:
+    """Summary of a single sync run for UI display (M7-B Phase 9).
+
+    Provides a simplified, template-ready view of a SyncRun entity.
+    All dates are pre-formatted to DD.MM.YYYY HH:MM.
+    """
+
+    run_id: str
+    source_key: str
+    status: str
+    started_at: str
+    finished_at: str
+    total_items: int
+    new_items: int
+    changed_items: int
+    unchanged_items: int
+    skipped_items: int
+    failed_items: int
+    dry_run: bool
+    catalog_stand_date: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "source_key": self.source_key,
+            "status": self.status,
+            "started_at": _format_iso_date(self.started_at),
+            "finished_at": _format_iso_date(self.finished_at),
+            "total_items": self.total_items,
+            "new_items": self.new_items,
+            "changed_items": self.changed_items,
+            "unchanged_items": self.unchanged_items,
+            "skipped_items": self.skipped_items,
+            "failed_items": self.failed_items,
+            "dry_run": self.dry_run,
+            "catalog_stand_date": self.catalog_stand_date,
+        }
+
+    @classmethod
+    def from_sync_run(cls, run: Any) -> "SyncRunSummary":
+        """Create a summary from a SyncRun domain entity."""
+        return cls(
+            run_id=run.sync_run_id,
+            source_key=run.source_key,
+            status=run.status.value if hasattr(run.status, "value") else str(run.status),
+            started_at=run.started_at,
+            finished_at=run.completed_at if run.completed_at else "",
+            total_items=run.total_in_catalog,
+            new_items=run.new_count,
+            changed_items=run.changed_count,
+            unchanged_items=run.unchanged_count,
+            skipped_items=run.skipped_count,
+            failed_items=run.failed_count,
+            dry_run=run.dry_run,
+            catalog_stand_date=run.catalog_stand_date if run.catalog_stand_date else "",
+        )

@@ -1,0 +1,124 @@
+{
+  "version": "1.0.0",
+  "description": "DSGVO-compliant data retention rules for CiviPet OS and other civic-tech projects. Defines retention periods, deletion mechanisms, and PII field classifications.",
+
+  "jurisdiction": "DE",
+  "regulation": "DSGVO",
+
+  "entities": {
+    "animal": {
+      "description": "Animal records including medical history",
+      "retention_years": 10,
+      "legal_basis": "Veterinary records requirement (§ 22 TierSchG)",
+      "pii_fields": ["microchip_id", "tattoo_id"],
+      "anonymization_required": false,
+      "deletion_mechanism": "archive_after_retention",
+      "notes": "Must retain veterinary treatment records for 10 years"
+    },
+    "adopter": {
+      "description": "Person adopting an animal",
+      "retention_years": 3,
+      "legal_basis": "Contract termination + limitation period (§ 195 BGB)",
+      "pii_fields": [
+        "first_name", "last_name",
+        "email", "phone",
+        "street", "city", "postal_code",
+        "birth_date"
+      ],
+      "anonymization_required": true,
+      "deletion_mechanism": "soft_delete_flag + 3_year_countdown",
+      "notes": "After adoption contract ends, retain 3 years for legal claims, then anonymize"
+    },
+    "donor": {
+      "description": "Financial donor / sponsor",
+      "retention_years": 10,
+      "legal_basis": "Tax law retention (§ 147 AO)",
+      "pii_fields": [
+        "first_name", "last_name",
+        "email", "address",
+        "donation_amount", "donation_date"
+      ],
+      "anonymization_required": false,
+      "deletion_mechanism": "archive_after_retention",
+      "notes": "Tax-relevant donation receipts must be kept 10 years"
+    },
+    "inquiry": {
+      "description": "General inquiry (not yet adopter/donor)",
+      "retention_years": 1,
+      "legal_basis": "Legitimate interest (Art. 6(1)(f) DSGVO)",
+      "pii_fields": ["email", "phone", "message_text"],
+      "anonymization_required": true,
+      "deletion_mechanism": "hard_delete_after_retention",
+      "notes": "Inquiries without follow-up should be deleted after 1 year"
+    },
+    "volunteer": {
+      "description": "Volunteer helper at the shelter",
+      "retention_years": 3,
+      "legal_basis": "Contract end + limitation period",
+      "pii_fields": [
+        "first_name", "last_name",
+        "email", "phone",
+        "emergency_contact"
+      ],
+      "anonymization_required": true,
+      "deletion_mechanism": "soft_delete_flag + 3_year_countdown"
+    },
+    "newsletter_subscriber": {
+      "description": "Newsletter subscription only",
+      "retention_years": 0,
+      "legal_basis": "Consent (Art. 6(1)(a) DSGVO)",
+      "pii_fields": ["email"],
+      "anonymization_required": false,
+      "deletion_mechanism": "immediate_on_unsubscribe",
+      "notes": "Must be deleted immediately when consent is withdrawn"
+    },
+    "sync_run": {
+      "description": "Sync pipeline audit trail (sync_runs + sync_items tables, M7-B)",
+      "retention_years": 0,
+      "retention_days": 90,
+      "legal_basis": "Operational audit trail and accountability (Art. 5(2) DSGVO)",
+      "pii_fields": [],
+      "anonymization_required": false,
+      "deletion_mechanism": "hard_delete_after_retention",
+      "notes": "INV-M7B-14: 90 days minimum retention for operational debugging. sync_items cascade-delete with sync_run. Tables contain NO personal data — only technical metadata (UUIDs, SHA-256 hashes, HTTP headers, status codes) and references to public legal text."
+    }
+  },
+
+  "automated_cleanup": {
+    "description": "Scheduled cleanup jobs",
+    "jobs": [
+      {
+        "entity": "inquiry",
+        "action": "hard_delete",
+        "condition": "created_at < NOW() - INTERVAL '1 year'",
+        "schedule": "monthly"
+      },
+      {
+        "entity": "adopter",
+        "action": "anonymize",
+        "condition": "adoption_ended_at < NOW() - INTERVAL '3 years'",
+        "schedule": "monthly"
+      },
+      {
+        "entity": "volunteer",
+        "action": "anonymize",
+        "condition": "ended_at < NOW() - INTERVAL '3 years'",
+        "schedule": "monthly"
+      },
+      {
+        "entity": "sync_run",
+        "action": "hard_delete",
+        "condition": "created_at < NOW() - INTERVAL '90 days'",
+        "schedule": "weekly",
+        "notes": "Cascade-deletes sync_items. Only deletes sync_run records; instrument data and snapshots unaffected."
+      }
+    ]
+  },
+
+  "agent_policy": {
+    "ai_write_prohibited": true,
+    "ai_can_recommend_deletion": false,
+    "ai_can_flag_retention_violations": true,
+    "all_deletions_require_human": true
+  }
+}

@@ -10,15 +10,15 @@
 <table class="data-table">
 <thead>
 <tr>
-    <th>Quelle</th>
-    <th>Aktiv</th>
-    <th>Autoritätsstufe</th>
-    <th>Letzter Import</th>
-    <th>Snapshots</th>
-    <th>Instrumente</th>
-    <th>Normen</th>
-    <th>Integrität</th>
-    <th>Fehler</th>
+    <th scope="col">Quelle</th>
+    <th scope="col">Aktiv</th>
+    <th scope="col">Autorit&auml;tsstufe</th>
+    <th scope="col">Letzter Import</th>
+    <th scope="col">Snapshots</th>
+    <th scope="col">Instrumente</th>
+    <th scope="col">Normen</th>
+    <th scope="col">Integrit&auml;t</th>
+    <th scope="col">Fehler</th>
 </tr>
 </thead>
 <tbody>
@@ -31,14 +31,14 @@
     </td>
     <td>{{ "Ja" if s.enabled else "Nein" }}</td>
     <td>{{ s.authority_tier }}</td>
-    <td>{% if s.last_successful_import_at %}{{ s.last_successful_import_at[:19] }}{% else %}–{% endif %}</td>
+    <td>{% if s.last_successful_import_at %}{{ s.last_successful_import_at[:19] }}{% else %}&ndash;{% endif %}</td>
     <td>{{ s.snapshot_count }}{% if s.indexed_snapshot_count and s.snapshot_count > 0 %} ({{ s.indexed_snapshot_count }} indiziert){% endif %}</td>
     <td>{{ s.instrument_count }}</td>
     <td>{{ s.provision_count }}</td>
     <td>{{ s.integrity_status }}</td>
     <td>{% if s.failed_snapshot_count > 0 %}
         <span class="text--warning">{{ s.failed_snapshot_count }} fehlgeschlagen</span>
-    {% else %}–{% endif %}</td>
+    {% else %}&ndash;{% endif %}</td>
 </tr>
 {% if s.status_warnings %}
 <tr class="warning-row">
@@ -58,4 +58,101 @@
 {% endif %}
 
 <p><a href="{{ url_for('legal_source_search_get') }}" class="btn btn--primary">Rechtsquellen durchsuchen</a></p>
+
+{# ══════════════════════════════════════════════════════════════ #}
+{# M7-B Phase 9: Sync History Section                            #}
+{# ══════════════════════════════════════════════════════════════ #}
+
+{% if sources %}
+<div class="sync-history-section">
+    <h2 class="section-title">Synchronisationsverlauf</h2>
+
+    {% for s in sources %}
+    {% set sync_runs = s.sync_runs %}
+    {% set latest = s.latest_sync %}
+    <div class="card card--sync-source">
+        <div class="card__header">
+            {{ s.display_name }}
+            {% if latest %}
+            <span class="sync-last-label">
+                &mdash; letzte Synchronisation: {{ latest.started_at }}
+                {% if latest.dry_run %}(Dry-Run){% else %}(Angewendet){% endif %}
+                {% if latest.status == "COMPLETED" %}&mdash; <span class="sync-status-label sync-status-label--completed">abgeschlossen</span>
+                {% elif latest.status == "FAILED" %}&mdash; <span class="sync-status-label sync-status-label--failed">fehlgeschlagen</span>
+                {% elif latest.status == "ABORTED" %}&mdash; <span class="sync-status-label sync-status-label--aborted">abgebrochen</span>
+                {% elif latest.status == "RUNNING" %}&mdash; <span class="sync-status-label sync-status-label--running">l&auml;uft</span>
+                {% endif %}
+            </span>
+            {% endif %}
+        </div>
+        <div class="card__body">
+
+        {# Catalog stand date (T903) #}
+        <div class="sync-catalog-stand">
+            {% if latest and latest.catalog_stand_date %}
+            <strong>Letzter erfolgreich importierter Quellenstand:</strong>
+            {{ latest.catalog_stand_date }}
+            {% else %}
+            <em>Noch kein Rechtsquellenstand importiert.</em>
+            {% endif %}
+        </div>
+
+        {# Sync runs table (T901) #}
+        {% if sync_runs %}
+        <div class="table-container">
+        <table class="sync-history-table" aria-label="Sync-Verlauf f&uuml;r {{ s.display_name }}">
+            <caption>Sync-L&auml;ufe: {{ s.sync_run_count }}</caption>
+            <thead>
+            <tr>
+                <th scope="col">Datum</th>
+                <th scope="col">Status</th>
+                <th scope="col">Typ</th>
+                <th scope="col">Katalogstand</th>
+                <th scope="col">Neu</th>
+                <th scope="col">Ge&auml;ndert</th>
+                <th scope="col">Fehler</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for run in sync_runs %}
+            <tr>
+                <td>{{ run.started_at }}</td>
+                <td>
+                    {% if run.status == "COMPLETED" %}
+                    <span class="sync-status-label sync-status-label--completed">abgeschlossen</span>
+                    {% elif run.status == "FAILED" %}
+                    <span class="sync-status-label sync-status-label--failed">fehlgeschlagen</span>
+                    {% elif run.status == "ABORTED" %}
+                    <span class="sync-status-label sync-status-label--aborted">abgebrochen</span>
+                    {% elif run.status == "RUNNING" %}
+                    <span class="sync-status-label sync-status-label--running">l&auml;uft</span>
+                    {% else %}
+                    {{ run.status }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if run.dry_run %}
+                    <span class="sync-type-label sync-type-label--dry-run">Dry-Run</span>
+                    {% else %}
+                    <span class="sync-type-label sync-type-label--apply">Angewendet</span>
+                    {% endif %}
+                </td>
+                <td>{{ run.catalog_stand_date if run.catalog_stand_date else "&ndash;" }}</td>
+                <td>{{ run.new_items }}</td>
+                <td>{{ run.changed_items }}</td>
+                <td>{{ run.failed_items if run.failed_items > 0 else "&ndash;" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="sync-empty-state"><em>Noch keine Synchronisation durchgef&uuml;hrt.</em></p>
+        {% endif %}
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 {% endblock %}

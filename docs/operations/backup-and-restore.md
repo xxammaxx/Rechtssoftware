@@ -14,8 +14,25 @@ C:\Users\{Benutzername}\.private-legal-navigator\
 ```
 
 Enthält:
-- `private_legal_navigator.db` — SQLite-Datenbank (Fälle, Dokumente, Bestätigungen)
+- `private_legal_navigator.db` — SQLite-Datenbank (Fälle, Dokumente, Bestätigungen, Rechtsquellen, Sync-Historie)
 - `documents/` — Hochgeladene Dokumente
+- `snapshots/` — SHA-256-adressierte Roh-Snapshots der Rechtsquellen (M7-A), shardiert nach ersten 2 Hex-Zeichen
+
+### Sync-Historie (M7-B)
+
+Seit M7-B (v0.2.1) enthält die Datenbank zwei zusätzliche Tabellen:
+- **`sync_runs`** — Append-only Sync-Durchläufe (Plan/Apply, Status, Katalog-Metadaten)
+- **`sync_items`** — Per-Instrument-Status jedes Sync-Durchlaufs (SHA-256 vor/nach, HTTP-Metadaten)
+
+Diese Tabellen sind vollständig in der SQLite-Datenbank enthalten und werden
+bei einem Backup der `private_legal_navigator.db` automatisch mitgesichert.
+
+### Snapshots-Datenbankrelation
+
+Die Snapshots im `snapshots/`-Verzeichnis werden über `sha256`-Hash mit
+der Tabelle `legal_source_snapshots` in der Datenbank verknüpft.
+Ein Backup muss daher **immer beide Komponenten** umfassen:
+Datenbank + `snapshots/`-Verzeichnis.
 
 Der Pfad kann über die Umgebungsvariable `PLN_DATA_DIR` geändert werden.
 

@@ -23,7 +23,7 @@ from private_legal_navigator.domain.legal_source import (
     TemporalConfidence,
     TemporalStatus,
 )
-from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncRun, SyncRunStatus
+from private_legal_navigator.domain.sync import SyncItem, SyncRun, SyncRunStatus
 from private_legal_navigator.infrastructure.database import get_connection, initialize_schema
 
 
@@ -957,6 +957,40 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
         finally:
             conn.close()
 
+    def list_runs(
+        self, source_key: str | None = None, *, limit: int = 20, successful_only: bool = False
+    ) -> list[SyncRun]:
+        """List sync runs, ordered by most recent first (M7-B T303)."""
+        conn = get_connection(self._db_path)
+        try:
+            conditions: list[str] = []
+            params: list[str] = []
+            if source_key is not None:
+                conditions.append("source_key = ?")
+                params.append(source_key)
+            if successful_only:
+                conditions.append("status = 'COMPLETED'")
+            where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+            rows = conn.execute(
+                f"SELECT * FROM sync_runs {where_clause} ORDER BY started_at DESC LIMIT ?",
+                (*params, limit),
+            ).fetchall()
+            return [self._row_to_sync_run(r) for r in rows]
+        finally:
+            conn.close()
+
+    def get_items_for_run(self, sync_run_id: str) -> list[dict[str, object]]:
+        """Return all sync items for a given run as raw dicts (M7-B T304)."""
+        conn = get_connection(self._db_path)
+        try:
+            rows = conn.execute(
+                "SELECT * FROM sync_items WHERE sync_run_id = ? ORDER BY source_identifier",
+                (sync_run_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
     def save_sync_item(self, item: SyncItem) -> None:
         """Persist a single sync item."""
         conn = get_connection(self._db_path)
@@ -1033,6 +1067,20 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
             """,
             data,
         )
+
+    # ── Legal Source Catalog Stand Date Update (M7-B) ──
+
+    def update_legal_source_catalog_stand_date(self, source_key: str, stand_date: str) -> None:
+        """Update the last_catalog_stand_date on a legal source record."""
+        conn = get_connection()
+        try:
+            conn.execute(
+                "UPDATE legal_sources SET last_catalog_stand_date = ? WHERE source_key = ?",
+                (stand_date, source_key),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     # ── Sync Row Mappers ──────────────────────────
 

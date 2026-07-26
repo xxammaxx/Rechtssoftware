@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
+<nav aria-label="Brotkrümel">
+  <ol class="breadcrumbs">
+    <li><span aria-current="page">Fälle</span></li>
+  </ol>
+</nav>
+
 <h1 class="page-title">Fälle</h1>
 
 {% if not view.has_cases %}

@@ -6,15 +6,14 @@ sync run or item is modified after creation except counter/status updates.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
-
+from enum import StrEnum
 
 # ──────────────────────────────────────────────
 # Enums
 # ──────────────────────────────────────────────
 
 
-class SyncRunStatus(str, Enum):
+class SyncRunStatus(StrEnum):
     """Status of a sync run execution.
 
     RUNNING: Currently executing (planning or applying).
@@ -29,7 +28,7 @@ class SyncRunStatus(str, Enum):
     FAILED = "FAILED"
 
 
-class SyncItemStatus(str, Enum):
+class SyncItemStatus(StrEnum):
     """Status of a single instrument within a sync run.
 
     PENDING: Initial state before classification.

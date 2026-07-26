@@ -1,5 +1,7 @@
 # Tasks — M7-B Incremental GII Sync & Corpus Change Management
 
+**Status (2026-07-26):** Spec-Phase (T001-T027) vollständig. Build-Phasen 1-10: Code existiert mit Abweichungen. Tests: 37 neue Tests (Domain + Integration). Phase 9: implementiert. Phase 10: Red Tests (teilweise) — siehe Phasen-Details. Phasen 11-13: noch offen (geplant).
+
 ## Spec Tasks (this run — COMPLETED)
 
 - [x] T001 — Read GitHub Issue #9 (M7-B Specification)
@@ -37,30 +39,30 @@
 ### Phase 0: Governance (DONE — no code)
 
 ### Phase 1: Domain Layer
-- [ ] T101 — Create SyncRunStatus enum (PLANNED, IN_PROGRESS, COMPLETED, FAILED, ABORTED)
-- [ ] T102 — Create SyncItemStatus enum (PENDING, NEW, CHANGED, UNCHANGED, REMOTE_NOT_MODIFIED, REMOTE_MISSING, SKIPPED, FAILED)
-- [ ] T103 — Create SyncRun dataclass with all attributes + invariants
-- [ ] T104 — Create SyncItem dataclass with all attributes + invariants
-- [ ] T105 — Create SyncPlan value object (frozen dataclass)
-- [ ] T106 — Domain unit tests for SyncRun (validation, counters, invariants)
-- [ ] T107 — Domain unit tests for SyncItem (state transitions, invariants)
-- [ ] T108 — Domain unit tests for SyncPlan (summary, validation)
+- [x] T101 — Create SyncRunStatus enum (RUNNING, COMPLETED, ABORTED, FAILED) — existiert (abweichend von Spec PLANNED/IN_PROGRESS)
+- [x] T102 — Create SyncItemStatus enum (PENDING, NEW, KNOWN, CHANGED, UNCHANGED, ...) — existiert (+KNOWN)
+- [x] T103 — Create SyncRun dataclass — existiert (domain/sync.py)
+- [x] T104 — Create SyncItem dataclass — existiert (domain/sync.py)
+- [x] T105 — Create SyncPlan value object — existiert (domain/sync.py)
+- [x] T106 — Domain unit tests for SyncRun (fields, validation) — existiert (tests/unit/test_sync_domain.py, 22 Tests)
+- [x] T107 — Domain unit tests for SyncItem (state transitions) — existiert (tests/unit/test_sync_domain.py)
+- [x] T108 — Domain unit tests for SyncPlan (summary, validation) — existiert (tests/unit/test_sync_domain.py)
 
 ### Phase 2: Database Migration
-- [ ] T201 — Add sync_runs table creation SQL to database.py
-- [ ] T202 — Add sync_items table creation SQL to database.py
-- [ ] T203 — Add last_catalog_stand_date column migration to legal_sources
-- [ ] T204 — Add indexes for sync_runs and sync_items
-- [ ] T205 — Integration test: tables created with correct schema
-- [ ] T206 — Integration test: FK constraints enforced (CASCADE DELETE)
+- [x] T201 — Add sync_runs table creation SQL to database.py — existiert
+- [x] T202 — Add sync_items table creation SQL to database.py — existiert
+- [x] T203 — Add last_catalog_stand_date column migration — existiert
+- [x] T204 — Add indexes for sync_runs and sync_items — existiert (M7B_INDEXES)
+- [x] T205 — Integration test: tables created by initialize_schema() — existiert (test_sync_repository.py)
+- [x] T206 — Integration test: FK constraints enforced (CASCADE DELETE) — existiert (test_sync_repository.py)
 
 ### Phase 3: Repository Implementation
-- [ ] T301 — Create SyncRunRepository ABC (port)
-- [ ] T302 — Implement SqliteSyncRunRepository (create_run, update_run, get_run)
-- [ ] T303 — Implement SqliteSyncRunRepository (get_last_run, list_runs)
-- [ ] T304 — Implement SqliteSyncRunRepository (save_items, get_items_for_run)
-- [ ] T305 — Implement SqliteSyncRunRepository (bulk save for items)
-- [ ] T306 — Repository integration tests (CRUD, FK, bulk operations)
+- [x] T301 — Create SyncRunRepository ABC (port) — existiert (Teil von LegalSourceRepository ABC)
+- [x] T302 — Implement create_run, update_run, get_run — existiert (sqlite_legal_source_repository.py)
+- [x] T303 — Implement list_runs(limit=N) — hinzugefügt 2026-07-25
+- [x] T304 — Implement get_items_for_run() — hinzugefügt 2026-07-25
+- [x] T305 — Implement save_sync_items_batch() — existiert (executemany)
+- [x] T306 — Repository integration tests — existiert (test_sync_repository.py, 15 Tests)
 
 ### Phase 4: SourceClient Enhancement
 - [ ] T401 — Create DownloadResult dataclass (content, etag, last_modified, status_code, content_type)
@@ -103,20 +105,20 @@
 - [ ] T806 — CLI action tests (mocked services)
 
 ### Phase 9: UI Status Page Updates
-- [ ] T901 — Add sync history to legal sources status page
-- [ ] T902 — Show last sync run summary per source
-- [ ] T903 — Show last_catalog_stand_date in source detail
+- [x] T901 — Add sync history to legal sources status page
+- [x] T902 — Show last sync run summary per source
+- [x] T903 — Show last_catalog_stand_date in source detail
 
 ### Phase 10: Red Tests Before Implementation
-- [ ] R001 — Write failing test: SyncRun entity invariants
-- [ ] R002 — Write failing test: SyncItem state machine transitions
-- [ ] R003 — Write failing test: SyncPlanningService.catalog_diff()
-- [ ] R004 — Write failing test: SourceClient.download_with_headers()
-- [ ] R005 — Write failing test: SqliteSyncRunRepository CRUD
-- [ ] R006 — Write failing test: SyncExecutionService.selective_download()
-- [ ] R007 — Write failing test: CLI entry point parsing
+- [x] R001 — Write failing test: SyncRun entity invariants → existiert (test_sync_domain.py, 22 Tests)
+- [x] R002 — Write failing test: SyncItem state machine transitions → existiert (test_sync_domain.py)
+- [ ] R003 — Write failing test: SyncPlanningService.catalog_diff() — offen (Phase 11)
+- [ ] R004 — Write failing test: SourceClient.download_with_headers() — offen (Phase 11)
+- [x] R005 — Write failing test: SqliteSyncRunRepository CRUD → existiert (test_sync_repository.py, 15 Tests)
+- [ ] R006 — Write failing test: SyncExecutionService.selective_download() — offen (Phase 11)
+- [ ] R007 — Write failing test: CLI entry point parsing — offen (Phase 12)
 
-### Phase 11: Integration Tests
+### Phase 11: Integration Tests (geplant)
 - [ ] I001 — Integration test: full dry-run plan (no downloads, no DB changes)
 - [ ] I002 — Integration test: full apply run (with test catalog)
 - [ ] I003 — Integration test: idempotent re-run (second run = all UNCHANGED)
@@ -125,17 +127,17 @@
 - [ ] I006 — Integration test: catalog-only mode
 - [ ] I007 — Integration test: force mode
 
-### Phase 12: E2E Tests
+### Phase 12: E2E Tests (geplant)
 - [ ] E001 — E2E: dry-run against real GII (TEST mode, localhost redirect)
 - [ ] E002 — E2E: apply a single instrument
 - [ ] E003 — E2E: verify sync history
 - [ ] E004 — E2E: verify snapshot integrity after sync
 
 ### Phase 13: Documentation + Build
-- [ ] D001 — Update README.md with sync CLI documentation
-- [ ] D002 — Run full test suite (baseline + new tests)
-- [ ] D003 — Verify coverage ≥ 90% for new modules
-- [ ] D004 — Ruff check (0 errors)
-- [ ] D005 — Mypy check (0 errors)
-- [ ] D006 — pip check
-- [ ] D007 — Wheel build
+- [x] D001 — Update README.md with sync CLI documentation — DONE (docs-agent, 2026-07-26)
+- [ ] D002 — Run full test suite (baseline + new tests) — siehe COV-001-Trendreport (864 Tests, 71% Coverage)
+- [ ] D003 — Verify coverage ≥ 90% for new modules — domain/sync.py (91%) ✓, sync_service.py (0%) ✗
+- [x] D004 — Ruff check (0 errors) — DONE (linter clean)
+- [x] D005 — Mypy check (0 errors) — DONE (type-check clean)
+- [ ] D006 — pip check — offen
+- [ ] D007 — Wheel build — offen

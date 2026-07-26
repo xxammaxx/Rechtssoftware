@@ -44,6 +44,85 @@ Die Anwendung ist unter http://127.0.0.1:8000 erreichbar.
 | `PLN_CSRF_SECRET` | Geheimer Schlüssel für CSRF-Token (bei Neustart ohne diese Variable wird ein neuer generiert) | Automatisch generiert |
 | `PLN_ALLOWED_HOSTS` | Komma-getrennte Liste erlaubter Host-Header | Automatisch aus Host:Port |
 
+## M7-B — Incremental GII Sync (CLI)
+
+### Übersicht
+
+M7-B ermöglicht inkrementelle Synchronisation der Gesetzesdatenbank
+von `gesetze-im-internet.de`. Der Sync läuft in zwei Phasen:
+
+1. **Plan** (immer): Katalog abrufen, Änderungen erkennen, Plan anzeigen
+2. **Execute** (nur mit `--apply`): Neue/geänderte Gesetze herunterladen und importieren
+
+### CLI-Befehle
+
+```bash
+# Dry-Run: Zeigt nur, was passieren würde (keine Downloads, keine DB-Änderungen)
+python -m private_legal_navigator legal-source sync --source gii --dry-run
+
+# Apply: Neue/geänderte Gesetze herunterladen und importieren
+python -m private_legal_navigator legal-source sync --source gii --apply
+
+# Force: Katalog-Prüfung überspringen, alle Instrumente neu klassifizieren
+python -m private_legal_navigator legal-source sync --source gii --apply --force
+
+# Sync-Status: Letzten Sync-Durchlauf anzeigen
+python -m private_legal_navigator legal-source sync-status --source gesetze-im-internet --last 5
+```
+
+### Ausgabe-Beispiele
+
+**Dry-Run:**
+```
+DRY-RUN: Incremental GII Sync
+============================================================
+Planning...
+Catalog items: 6127
+  NEW:            6127
+  KNOWN:          0
+  REMOTE_MISSING: 0
+
+Estimated downloads: 6127
+Estimated download size: ~2385.3 MB
+
+Dry-run complete. No changes made.
+Run with --apply to execute this plan.
+```
+
+**Apply (nach erstem Sync):**
+```
+APPLY: Incremental GII Sync
+============================================================
+Planning...
+Catalog items: 6127
+  NEW:            0
+  KNOWN:          0
+  REMOTE_MISSING: 0
+
+Downloading and importing 0 instruments...
+Sync complete: COMPLETED
+  New:            0
+  Changed:        0
+  Unchanged:      0
+  Remote missing: 0
+  Failed:         0
+```
+
+**Sync-Status:**
+```
+Sync History: gesetze-im-internet
+============================================================
+  Last sync:        2026-07-26T10:30:00+00:00
+  Status:           COMPLETED
+  Catalog date:     2026-07-25
+  Total in catalog: 6127
+  New:              6127
+  Changed:          0
+  Unchanged:        0
+  Failed:           0
+  Completed:        2026-07-26T11:45:00+00:00
+```
+
 ## Beenden
 
 Die Anwendung wird mit `Strg+C` im Terminal beendet.

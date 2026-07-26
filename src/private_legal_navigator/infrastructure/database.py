@@ -349,7 +349,7 @@ CREATE TABLE IF NOT EXISTS sync_runs (
     skipped_count INTEGER NOT NULL DEFAULT 0,
     failed_count INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'RUNNING',
-    dry_run INTEGER NOT NULL DEFAULT 0,
+    dry_run INTEGER NOT NULL DEFAULT 1,  -- INV-M7B-01: dry-run is the safe default
     error_summary TEXT NOT NULL DEFAULT ''
 )
 """

@@ -6,6 +6,7 @@ behördlichen Angelegenheiten.
 ## Status
 
 **M7-A — Legal Source Foundation + Case Legal Timeline (v0.2.0)** — implementiert.
+**M7-B — Incremental GII Sync (v0.2.1)** — implementiert (Inkrementeller GII-Sync mit Sync-Historie).
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)
@@ -32,8 +33,15 @@ Aktuell implementiert:
 - **M7-A — Sicheres XML-Parsing:** lxml mit resolve_entities=False, no_network=True, Size Limit (M7-A)
 - **M7-A — SHA-256 Snapshot Integrity:** Content-addressable raw snapshots mit 64-Char-Hash (M7-A)
 - Lokale FastAPI-Anwendung auf 127.0.0.1:8000
-- SQLite-Persistenz mit automatischer Schema-Initialisierung (inkl. 11 M7-A-Tabellen + FTS5)
+- SQLite-Persistenz mit automatischer Schema-Initialisierung (inkl. 11 M7-A-Tabellen + FTS5 + 2 M7-B-Tabellen)
 - Health-Check-Endpunkt
+- **M7-B — Inkrementeller GII-Sync:** SyncPlan/SyncRun/SyncItem-Domain mit Status-Machine (M7-B)
+- **M7-B — Sync Planning Service:** Katalog-basierte Änderungserkennung (catalog_stand_date-Gate, Presence-Diff, SHA-256-Vergleich)
+- **M7-B — Sync Execution Service:** Selektiver Download nur neuer/geänderter Instrumente mit HTTP-ETag/Last-Modified-Erfassung
+- **M7-B — Sync-Historie:** Append-only sync_runs/sync_items-Tabellen mit vollständigem Audit-Trail
+- **M7-B — CLI-Schnittstelle:** `legal-source sync` (dry-run/apply/force) und `legal-source sync-status`
+- **M7-B — Phase 9 UI:** Sync-Verlauf auf Rechtsquellen-Statusseite (letzte Synchronisation, Stand-Datum)
+- **M7-B — SourceClient.download_with_headers():** HTTP-Metadaten-Erfassung (ETag, Last-Modified) pro Download
 
 ## Explizite Grenzen
 
@@ -43,7 +51,6 @@ erfordert menschliche Prüfung.
 
 Noch **nicht** implementiert:
 - M6-B (Feiertags-, Wochenend-, Zustellungsregeln)
-- M7-B (Inkrementeller GII-Sync, Delta-Downloads)
 - M7-C (Bundesgesetzblatt-Adapter T0, EUR-Lex-Adapter T1)
 - OCR (optische Texterkennung für gescannte Dokumente)
 - Verbindliche Rechtsfristberechnung (alle Berechnungen sind unverbindliche Vorschauen)
@@ -70,6 +77,7 @@ Noch **nicht** implementiert:
 - ✅ Sicheres XML-Parsing (lxml, XXE-Schutz) — implementiert
 - ✅ Secure Source Client (Allowlist, HTTPS-only) — implementiert
 - ✅ UI-Seiten für Rechtsquellen, Timeline, Rechtslage — implementiert
+- ✅ M7-B Phase 9: Sync-Verlauf auf Rechtsquellen-Statusseite — implementiert
 
 ## Architektur
 
@@ -117,10 +125,10 @@ Konfiguration über Umgebungsvariablen:
 # Full test suite with coverage measurement
 .venv/Scripts/python.exe -m pytest --cov=src/private_legal_navigator
 
-# Note: Overall project coverage is 75 % (802/802 tests passing).
+# Note: Overall project coverage is 71 % (864/864 tests passing).
 # --cov-fail-under=90 is NOT currently usable as a gate; it fails.
 # For M7-B and onward: new production modules require >=90 % coverage.
-# Overall coverage must not decrease from the 75 % baseline.
+# Overall coverage must not decrease from the 71 % baseline.
 
 # Lint
 .venv/Scripts/python.exe -m ruff check src tests
@@ -162,6 +170,8 @@ Konfiguration über Umgebungsvariablen:
 | POST | `/ui/cases/{case_id}/legal-timeline/correct` | Ereignis korrigieren (M7-A) |
 | POST | `/ui/cases/{case_id}/legal-timeline/revoke` | Ereignis widerrufen (M7-A) |
 | GET | `/ui/cases/{case_id}/evidence-pack` | Evidence Pack Export (M7-A) |
+| CLI | `python -m private_legal_navigator legal-source sync --source gii [--dry-run|--apply] [--force]` | Inkrementeller GII-Sync (M7-B) |
+| CLI | `python -m private_legal_navigator legal-source sync-status [--source KEY] [--last N]` | Sync-Historie anzeigen (M7-B) |
 
 Vollständige API-Dokumentation: [contracts/api.md](specs/001-greenfield-case-core/contracts/api.md)
 

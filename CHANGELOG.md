@@ -1,5 +1,99 @@
 # Changelog — PrivateLegalNavigator
 
+## v0.2.1 (2026-07-26) — M7-B Incremental GII Sync & Sync-History
+
+### ⚠ BREAKING CHANGES
+- **New database tables:** 2 new tables (`sync_runs`, `sync_items`) added for sync run history — schema migration runs automatically on startup
+- **New column:** `legal_sources.last_catalog_stand_date` added for catalog freshness gating
+
+### New Features — Incremental GII Sync (M7-B)
+
+#### Sync Planning Service
+- `SyncPlanningService` fetches GII catalog (`gii-toc.xml`) and classifies every instrument
+- Three-tier change detection: `catalog_stand_date` gate → catalog presence diff → SHA-256 comparison
+- Produces `SyncPlan` value object (never persisted — read-only classification)
+- Detects NEW, KNOWN, SKIPPED, and REMOTE_MISSING instruments
+- `--force` flag bypasses catalog stand-date gate for full re-classification
+
+#### Sync Execution Service
+- `SyncExecutionService` executes a `SyncPlan`: selective download of NEW/CHANGED instruments
+- Per-item SHA-256 dedup: unchanged content is not re-imported
+- HTTP metadata capture (ETag, Last-Modified, status code) via `SourceClient.download_with_headers()`
+- Atomic SyncRun persistence with per-item status tracking
+- Dry-run mode: classify and count only — no downloads (safe default)
+- `error_summary` capped at 500 chars per failed item
+
+#### Domain Model (sync.py)
+- `SyncRunStatus`: RUNNING, COMPLETED, ABORTED, FAILED
+- `SyncItemStatus`: PENDING, NEW, KNOWN, CHANGED, UNCHANGED, REMOTE_NOT_MODIFIED, REMOTE_MISSING, SKIPPED, FAILED
+- `SyncRun`: Full audit trail (catalog metadata, per-status counts, timestamps)
+- `SyncItem`: Per-instrument tracking (SHA-256 before/after, HTTP metadata, error summary)
+- `SyncPlan`: Frozen value object for plan phase output
+
+#### Database Schema (2 new tables)
+- `sync_runs` — Append-only sync execution records with full status counters
+- `sync_items` — Per-instrument status within a run (FK to `sync_runs` with CASCADE DELETE)
+- `legal_sources.last_catalog_stand_date` — Column for catalog freshness gating
+- 5 new indexes (`idx_sr_source`, `idx_sr_status`, `idx_si_run`, `idx_si_status`, `idx_si_source_identifier`)
+
+#### CLI Commands
+- `python -m private_legal_navigator legal-source sync --source gii [--dry-run|--apply] [--force]` — Incremental GII sync with plan/apply split
+- `python -m private_legal_navigator legal-source sync-status [--source KEY] [--last N]` — Sync run history display
+
+#### Phase 9 UI
+- Sync history integrated into legal source status page (`/ui/legal-sources`)
+- Last sync run summary per source (status, date, item counts)
+- `catalog_stand_date` display in source detail
+
+#### SourceClient Enhancement
+- `DownloadResult` dataclass with `content`, `http_status`, `etag`, `last_modified`, `content_type`
+- `download_with_headers(url) -> DownloadResult` method — captures HTTP response metadata
+- Backward-compatible: existing `download()` method unchanged
+
+#### SyncRunSummary DTO
+- `legal_source_status_dto.py`: Template-ready DTO for sync history in UI
+- `from_sync_run()` factory method converts domain entity to display model
+
+### Architecture Decisions
+
+- **ADR-009** — [Incremental GII Sync & Corpus Change Management](docs/architecture/ADR-009-incremental-gii-sync.md)
+  - Evidence-based hybrid sync architecture (catalog + presence + SHA-256)
+  - Two-phase split: Plan (dry-run) → Human Review → Execute (apply)
+  - Append-only sync history pattern (consistent with ADR-002, ADR-008)
+
+### M6-UI Accessibility Fixes
+- Various accessibility improvements to M6-UI templates
+
+### Test Coverage
+
+- 864 total tests (up from 802 at M7-A.1)
+- Domain sync module: 22 unit tests (SyncRun, SyncItem, SyncPlan validation + state transitions)
+- Repository sync: 15 integration tests (CRUD, FK enforcement, batch operations)
+- Overall coverage: 71% (baseline maintained)
+- ruff lint clean, mypy strict mode clean
+
+### Full File List (new/modified)
+
+```
+NEW:  src/private_legal_navigator/domain/sync.py
+NEW:  src/private_legal_navigator/application/sync_service.py
+NEW:  src/private_legal_navigator/application/legal_source_status_dto.py
+NEW:  tests/unit/test_sync_domain.py
+NEW:  tests/integration/test_sync_repository.py
+MOD:  src/private_legal_navigator/__main__.py (sync/sync-status CLI handlers)
+MOD:  src/private_legal_navigator/api/m7a_ui_routes.py (Phase 9 sync history)
+MOD:  src/private_legal_navigator/application/legal_source_service.py (sync history queries)
+MOD:  src/private_legal_navigator/application/legal_source_repository.py (sync ports)
+MOD:  src/private_legal_navigator/infrastructure/database.py (2 new tables + indexes)
+MOD:  src/private_legal_navigator/infrastructure/sqlite_legal_source_repository.py (sync repository)
+MOD:  src/private_legal_navigator/infrastructure/safe_source_client.py (DownloadResult, download_with_headers)
+MOD:  src/private_legal_navigator/infrastructure/gii_adapter.py (catalog-diff helpers)
+NEW:  docs/architecture/ADR-009-incremental-gii-sync.md
+NEW:  docs/reports/COV-001-coverage-trend.md (this report)
+```
+
+---
+
 ## v0.2.0 (2026-07-23) — M7-A Trusted Legal Source Operations & Release Closure
 
 ### ⚠ BREAKING CHANGES

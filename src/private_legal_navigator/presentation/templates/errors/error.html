@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 
+<nav aria-label="Brotkrümel">
+  <ol class="breadcrumbs">
+    <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
+    <li><span aria-current="page">Fehler</span></li>
+  </ol>
+</nav>
+
 <div class="error-page">
     <p class="error-page__code" aria-hidden="true">{{ error.status_code }}</p>
     <h1 class="error-page__title">{{ error.title }}</h1>

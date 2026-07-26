@@ -4,8 +4,8 @@
 
 Tasks are small, testable, and ordered by dependency.
 
-**Status (2026-07-22):** Slice 1 (T1–T7), Slice 2 (T8–T10 + partial T14), and Slice 4 (T11) are **implemented and verified**.
-Slice 3+ (T12, T13, T15–T23) are **pending**.
+**Status (2026-07-25):** Slice 1 (T1–T7), Slice 2 (T8–T10), Slice 3 (T12–T14), and Slice 4 (T11) are **implemented and verified**.
+Slice 5 (T15–T23) are **pending** (Testing, Accessibility, E2E, Review).
 
 ## Task List
 
@@ -82,24 +82,27 @@ Slice 3+ (T12, T13, T15–T23) are **pending**.
 - **Verification:** coverage 90.31%, Axe 0 critical/0 serious, Security: LOW RISK (12/12 passed), Playwright: browser screenshots (6), Restart smoke: PASS, Query-banner fix (9d438b4): effective
 - **Dependencies:** T10 (implemented 2026-07-22)
 
-#### T12 — Confirmation History
+#### T12 — Confirmation History ✅ (2026-07-25)
 - **Goal:** Display confirmation history with supersession chain
-- **Files:** `api/ui_routes.py` (history route), `templates/confirmation_history.html`
-- **Tests:** History table renders; status badges correct; timestamps visible; supersession chain clear; current status marked
+- **Files:** `api/ui_routes.py` (history route), `templates/candidates/detail.html` (embedded history table L137-168)
+- **Tests:** 4 HistoryDisplay tests pass; 29 Slice-3 integration tests pass; status badges, timestamps, supersession chain verified
+- **Verification:** 802/802 full suite green, Axe 0 critical/serious
 - **Dependencies:** T10
 
-#### T13 — Revoke
+#### T13 — Revoke ✅ (2026-07-25)
 - **Goal:** Revoke with confirmation dialog; POST handler with CSRF + idempotency
-- **Files:** `api/ui_routes.py` (revoke route)
-- **Tests:** Revoke succeeds; after revoke status REVOKED; calculation blocked after revoke; requires CSRF + idempotency
+- **Files:** `api/ui_routes.py` (revoke route L862-968), `templates/candidates/detail.html` (revoke form L359-380)
+- **Tests:** 3 RevokeHappyPath + 4 ExpectedStateBinding + 1 RevokeIdempotency + 3 CSRF tests pass; CSRF+Idempotency+expected_active_confirmation_id verified
+- **Verification:** 802/802 full suite green, Security Review PASS
 - **Dependencies:** T12
 
 ### Phase 4 — Hardening
 
-#### T14 — Error State Handling
+#### T14 — Error State Handling ✅ (2026-07-25)
 - **Goal:** Graceful handling of all error responses
-- **Files:** `templates/error.html`, `api/ui_routes.py` error handlers
-- **Tests:** 400 shows user-friendly message; 403 shows generic CSRF error; 404 shows context; 409 shows conflict; 500 shows generic error (no stack trace); no sensitive IDs in error display; no PII in error responses
+- **Files:** `templates/errors/error.html`, `api/ui_routes.py` (_render_error L63-88, 60 Aufrufstellen)
+- **Tests:** 400/403/404/409/500 all render user-friendly German messages; no stack traces; no internal IDs; no PII; test_error_pages_do_not_leak_internal_data PASS
+- **Verification:** Generic error template handles all codes; _render_error never exposes exception details
 - **Dependencies:** T10-T13
 
 #### T15 — Accessibility Implementation

@@ -317,8 +317,8 @@ def _handle_incremental_sync(args: argparse.Namespace) -> None:
     if dry_run:
         print(f"\nEstimated downloads: {new + known}")
         print(f"Estimated download size: ~{plan.estimated_download_bytes / (1024 * 1024):.1f} MB")
-        print(f"\nDry-run complete. No changes made.")
-        print(f"Run with --apply to execute this plan.")
+        print("\nDry-run complete. No changes made.")
+        print("Run with --apply to execute this plan.")
         sys.exit(1)
     else:
         # Phase 2: Execute

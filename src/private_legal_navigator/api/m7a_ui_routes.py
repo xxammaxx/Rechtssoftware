@@ -44,10 +44,22 @@ def _get_case_or_404(request: Request, case_id: str) -> tuple[Any, dict[str, Any
 
 @router.get("/legal-sources", response_class=HTMLResponse)
 async def legal_source_status(request: Request) -> Any:
-    """Show legal source status overview."""
+    """Show legal source status overview with sync history (M7-B Phase 9)."""
     svc = _get_services(request)
     status_list = svc["legal_source"].get_source_status()
     csrf_token = svc["csrf"].create_token(str(uuid.uuid4()))
+
+    # Enrich each source with sync history data (M7-B Phase 9)
+    for source_status in status_list:
+        source_key = source_status["source_key"]
+        # Sync run history (last N runs)
+        source_status["sync_runs"] = svc["legal_source"].get_sync_history_for_source(
+            source_key, limit=10
+        )
+        # Latest sync info (single summary per source)
+        source_status["latest_sync"] = svc["legal_source"].get_latest_sync_info(source_key)
+        source_status["sync_run_count"] = len(source_status["sync_runs"])
+
     return svc["templates"].TemplateResponse(
         request,
         "m7a/legal_sources.html",

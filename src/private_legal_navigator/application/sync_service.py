@@ -408,7 +408,6 @@ class SyncExecutionService:
         self,
         plan: SyncPlan,
         dry_run: bool = True,
-        instrument_filter: list[str] | None = None,
     ) -> SyncRun:
         """Execute the sync plan.
 
@@ -420,12 +419,10 @@ class SyncExecutionService:
         Args:
             plan: The SyncPlan produced by SyncPlanningService.plan().
             dry_run: If True, only classify and count — no downloads.
-            instrument_filter: Reserved for future item-level filtering.
 
         Returns:
             SyncRun with final status and all per-item outcomes.
         """
-        _ = instrument_filter  # Reserved for future use
 
         now = datetime.now(UTC).isoformat()
         source_key = "gesetze-im-internet"
@@ -714,32 +711,30 @@ class SyncExecutionService:
     ) -> None:
         """Update the last_catalog_stand_date on the LegalSource record.
 
-        Uses the stand date from the first item's metadata or plan context.
-        In the current implementation, the stand date is captured during
-        the planning phase via the catalog fetch. If no stand date is
-        available (empty catalog, no items), this is a no-op.
-
-        NOTE: The LegalSource domain model does not yet expose
-        ``last_catalog_stand_date`` as a field. The underlying DB column
-        exists (added by M7-B migration). We update it via a direct SQL
-        statement until the domain model is extended.
+        Uses the catalog_stand_date captured during the planning phase.
+        Checks the SyncRun associated with this plan for the stand date.
         """
-        # Determine stand date — use catalog_stand_date from the
-        # first item context if available, otherwise leave empty.
+        # Retrieve the SyncRun to get the catalog_stand_date
+        sync_run = self._repo.get_latest_sync_run(source_key, successful_only=False)
         stand_date = ""
-        # The plan does not carry a catalog_stand_date directly;
-        # SyncRun does. Since we already saved the SyncRun with the
-        # catalog_stand_date (if available from planning), we delegate
-        # the stand-date tracking to the SyncRun. Future sync-run
-        # lookups can infer staleness from the last successful run.
-        _ = stand_date  # No-op until domain model is extended
+        if sync_run is not None and sync_run.catalog_stand_date:
+            stand_date = sync_run.catalog_stand_date
 
-        safe_log_event(
-            logger,
-            "sync.execute.catalog_stand_update",
-            source_key=source_key,
-            note="Skipped — LegalSource.last_catalog_stand_date not yet in domain model.",
-        )
+        if stand_date:
+            self._repo.update_legal_source_catalog_stand_date(source_key, stand_date)
+            safe_log_event(
+                logger,
+                "sync.execute.catalog_stand_updated",
+                source_key=source_key,
+                stand_date=stand_date,
+            )
+        else:
+            safe_log_event(
+                logger,
+                "sync.execute.catalog_stand_update",
+                source_key=source_key,
+                note="No catalog_stand_date available — not updating legal source.",
+            )
 
 
 # ──────────────────────────────────────────────

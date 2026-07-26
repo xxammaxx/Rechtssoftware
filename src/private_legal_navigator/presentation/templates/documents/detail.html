@@ -37,23 +37,28 @@
     <ul class="candidate-list">
     {% for c in view.candidates %}
         <li class="candidate-card-item">
-            <span class="candidate-card-item__kind">{{ c.kind }}</span>
-            <p class="candidate-card-item__text">{{ c.display_text }}</p>
+            <a href="{{ url_for('ui_candidate_detail', case_id=view.case_id, document_id=view.document_id, candidate_index=c.index) }}"
+               class="candidate-card-item__link">
+                <span class="candidate-card-item__kind">{{ c.kind }}</span>
+                <p class="candidate-card-item__text">{{ c.display_text }}</p>
 
-            {% if c.date_value %}
-            <p class="candidate-card-item__date">Datum: {{ c.date_value }}</p>
-            {% endif %}
-
-            {% if c.is_relative %}
-            <p class="candidate-card-item__duration">
-                {% if c.duration_amount and c.duration_unit %}
-                {{ c.duration_amount }} {{ c.duration_unit }}{% if c.duration_amount != 1 %}n{% endif %}
+                {% if c.date_value %}
+                <p class="candidate-card-item__date">Datum: {{ c.date_value }}</p>
                 {% endif %}
-            </p>
-            <p class="candidate-card-item__ref">
-                Bezugsereignis erforderlich.
-            </p>
-            {% endif %}
+
+                {% if c.is_relative %}
+                <p class="candidate-card-item__duration">
+                    {% if c.duration_amount and c.duration_unit %}
+                    {{ c.duration_amount }} {{ c.duration_unit }}{% if c.duration_amount != 1 %}n{% endif %}
+                    {% endif %}
+                </p>
+                <p class="candidate-card-item__ref">
+                    Bezugsereignis erforderlich.
+                </p>
+                {% endif %}
+
+                <span class="candidate-card-item__action">Bezugsdatum prüfen →</span>
+            </a>
         </li>
     {% endfor %}
     </ul>

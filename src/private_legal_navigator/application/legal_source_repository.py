@@ -160,3 +160,20 @@ class LegalSourceRepository(ABC):
     def save_sync_items_batch(self, items: list[SyncItem], conn: Any) -> None:
         """Persist multiple sync items within an existing transaction."""
         ...
+
+    @abstractmethod
+    def list_runs(
+        self, source_key: str | None = None, *, limit: int = 20, successful_only: bool = False
+    ) -> list[SyncRun]:
+        """List sync runs, ordered by most recent first (M7-B T303)."""
+        ...
+
+    @abstractmethod
+    def get_items_for_run(self, sync_run_id: str) -> list[dict[str, object]]:
+        """Return all sync items for a given run as raw dicts (M7-B T304)."""
+        ...
+
+    @abstractmethod
+    def update_legal_source_catalog_stand_date(self, source_key: str, stand_date: str) -> None:
+        """Update the last_catalog_stand_date on a legal source record."""
+        ...
