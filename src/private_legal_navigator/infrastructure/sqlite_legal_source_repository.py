@@ -1072,7 +1072,7 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
 
     def update_legal_source_catalog_stand_date(self, source_key: str, stand_date: str) -> None:
         """Update the last_catalog_stand_date on a legal source record."""
-        conn = get_connection()
+        conn = get_connection(self._db_path)
         try:
             conn.execute(
                 "UPDATE legal_sources SET last_catalog_stand_date = ? WHERE source_key = ?",

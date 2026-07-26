@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "private-legal-navigator"
-version = "0.2.0"
+version = "1.0.0rc1"
 description = "Lokale, datenschutzorientierte Unterstützung bei eigenen rechtlichen und behördlichen Angelegenheiten"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,7 +13,7 @@ authors = [
     {name = "Raik Müller"},
 ]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -44,6 +44,9 @@ dev = [
 
 [project.urls]
 Repository = "https://github.com/xxammaxx/Rechtssoftware"
+
+[project.scripts]
+private-legal-navigator = "private_legal_navigator.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

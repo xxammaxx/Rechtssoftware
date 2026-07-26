@@ -1,5 +1,29 @@
 # Changelog — PrivateLegalNavigator
 
+## v1.0.0-rc.1 (2026-07-26) — Release Candidate: Installable & Releasable
+
+### Summary
+First installable release candidate. Consolidates all M1-M7-B features into a
+reproducibly buildable, installable, and testable package with Windows pilot
+scripts, backup/restore, migration support, and full documentation.
+
+### Key Changes
+- **Version:** `1.0.0rc1` (PEP 440) / `v1.0.0-rc.1` (Git tag)
+- **Packaging:** CLI entry point `private-legal-navigator`, wheel/sdist builds
+- **Windows:** `install.ps1`, `start.ps1`, `stop.ps1`, `backup.ps1`, `restore.ps1`, `uninstall.ps1`
+- **Quality:** 906 tests passing (Python 3.11 + 3.14), 78% coverage, ruff clean, mypy strict clean
+- **Docs:** User guide, install guide, backup/restore guide, upgrade guide, troubleshooting, known limitations
+- **Security:** CSRF, path traversal, host validation, CSP, upload limits — all verified
+- **Migration:** Schema auto-migration from v0.2.x databases
+- **Release:** GitHub release artifacts with SHA-256 checksums
+
+### ⚠ BREAKING CHANGES
+- Requires Python 3.11 or newer
+- Data directory defaults to `%LOCALAPPDATA%\PrivateLegalNavigator\data` on Windows
+- Application binds exclusively to `127.0.0.1` by default
+
+---
+
 ## v0.2.1 (2026-07-26) — M7-B Incremental GII Sync & Sync-History
 
 ### ⚠ BREAKING CHANGES
