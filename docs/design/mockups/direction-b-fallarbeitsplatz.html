@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design-Richtung B: Professioneller Fallarbeitsplatz</title>
+<style>
+/* === Design Tokens: Fallarbeitsplatz (dicht, effizient, professionell) === */
+:root {
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --ink-muted: #94a3b8;
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-light: #eff6ff;
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #3b82f6;
+  --info-bg: #eff6ff;
+  --radius: 6px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  --font: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --max-w: 1200px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);line-height:1.5;font-size:14px}
+.container{max-width:var(--max-w);margin:0 auto;padding:0 20px}
+/* Header — schlank, geschäftlich */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center}
+.hdr-inner{display:flex;align-items:center;gap:24px;max-width:var(--max-w);margin:0 auto;padding:0 20px;width:100%}
+.hdr-home{font-size:15px;font-weight:700;color:var(--ink);text-decoration:none;white-space:nowrap}
+.hdr-nav{display:flex;gap:2px;flex:1}
+.hdr-nav a{padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink-soft);text-decoration:none;border-radius:var(--radius-sm);white-space:nowrap}
+.hdr-nav a:hover{background:var(--accent-light);color:var(--accent)}
+.hdr-nav a.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.hdr-right{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--ink-muted)}
+.hdr-badge{padding:2px 8px;border-radius:12px;background:var(--surface-alt);border:1px solid var(--border);font-size:11px;white-space:nowrap}
+/* 2-Spalten Layout */
+.layout{display:grid;grid-template-columns:260px 1fr;gap:20px;padding-top:20px}
+.sidebar{display:flex;flex-direction:column;gap:4px}
+.sidebar-section{margin-bottom:16px}
+.sidebar-label{font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding:0 8px}
+.sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:13px;color:var(--ink-soft);text-decoration:none;border-radius:var(--radius-sm);transition:all .12s}
+.sidebar-item:hover{background:var(--accent-light);color:var(--accent)}
+.sidebar-item.active{background:var(--accent);color:#fff;font-weight:600}
+.sidebar-item .count{font-size:11px;background:var(--border);color:var(--ink-muted);padding:1px 6px;border-radius:10px;margin-left:auto}
+.sidebar-item.active .count{background:rgba(255,255,255,0.25);color:#fff}
+/* Main content area */
+main{min-width:0}
+/* Top bar */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.topbar h1{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.topbar-actions{display:flex;gap:6px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;font-size:13px;font-weight:600;border-radius:var(--radius-sm);border:1px solid transparent;cursor:pointer;text-decoration:none;font-family:var(--font);transition:all .12s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--surface-alt);border-color:var(--border-strong)}
+.btn-ghost{background:transparent;color:var(--ink-soft);border-color:transparent}
+.btn-ghost:hover{background:var(--surface-alt)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{padding:6px;min-width:32px;justify-content:center}
+/* Tabs (inline, unter Topbar) */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--ink-soft);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab .badge-tab{font-size:11px;background:var(--border);color:var(--ink-muted);padding:1px 5px;border-radius:8px;margin-left:4px}
+/* Tabellenansatz */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--surface-alt);font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 12px;border-bottom:2px solid var(--border-strong);white-space:nowrap}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:hover{background:var(--accent-light)}
+tbody tr:last-child td{border-bottom:none}
+/* Cell styles */
+.cell-main{font-weight:600;color:var(--ink)}
+.cell-main a{color:var(--ink);text-decoration:none}
+.cell-main a:hover{color:var(--accent)}
+.cell-meta{font-size:12px;color:var(--ink-muted)}
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-offen{background:#dbeafe;color:#1e40af}
+.badge-offen::before{content:"";width:6px;height:6px;border-radius:50%;background:#3b82f6}
+.badge-erledigt{background:#d1fae5;color:#065f46}
+.badge-erledigt::before{content:"";width:6px;height:6px;border-radius:50%;background:#10b981}
+.badge-warnung{background:var(--warn-bg);color:var(--warn)}
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px}
+.card-header{padding:10px 14px;font-size:12px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--surface-alt)}
+.card-body{padding:14px}
+.card-body--flush{padding:0}
+/* Doc row */
+.doc-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px}
+.doc-row:last-child{border-bottom:none}
+.doc-row:hover{background:var(--accent-light)}
+.doc-type{font-size:11px;font-weight:600;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--border);color:var(--ink-soft);white-space:nowrap}
+.doc-name{font-weight:600;color:var(--ink);text-decoration:none;flex:1}
+.doc-name:hover{color:var(--accent)}
+.doc-size{font-size:11px;color:var(--ink-muted);white-space:nowrap}
+.doc-date{font-size:11px;color:var(--ink-muted);white-space:nowrap}
+/* Upload area (compact) */
+.upload-inline{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface-alt);border-top:1px solid var(--border)}
+.upload-inline p{font-size:12px;color:var(--ink-muted);flex:1}
+/* Warning inline */
+.warn-inline{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;background:var(--warn-bg);border-left:3px solid var(--warn);margin-bottom:12px;border-radius:0 var(--radius) var(--radius) 0;font-size:13px}
+.warn-inline strong{color:var(--warn);white-space:nowrap}
+/* Frist-Kandidaten Tabelle */
+.frist-table{width:100%;font-size:13px}
+.frist-table td{padding:8px 12px}
+.frist-table .frist-date{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);font-size:14px}
+.frist-table .frist-kind{font-size:11px;color:var(--ink-muted);text-transform:uppercase}
+/* Berechnung */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.calc-card{padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-align:center}
+.calc-card .calc-label{font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.calc-card .calc-value{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.calc-card .calc-value.highlight{color:var(--accent)}
+/* Timeline */
+.timeline-dense{position:relative;padding-left:20px;border-left:2px solid var(--border)}
+.tl-dense{margin-bottom:12px;position:relative}
+.tl-dense::before{content:"";position:absolute;left:-25px;top:3px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.tl-dense .tl-title{font-weight:600;font-size:13px}
+.tl-dense .tl-meta{font-size:11px;color:var(--ink-muted)}
+/* Search */
+.search-row{display:flex;gap:8px;margin-bottom:16px}
+.search-row input{flex:1;padding:8px 14px;font-size:13px;font-family:var(--font);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:36px}
+.search-row input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.search-results{font-size:13px}
+.sr-item{padding:10px 14px;border-bottom:1px solid var(--border)}
+.sr-item h4{font-weight:600;font-size:13px;margin-bottom:2px}
+.sr-item p{font-size:12px;color:var(--ink-soft)}
+.sr-item:last-child{border-bottom:none}
+/* Property grid */
+.props{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:13px}
+.prop-label{color:var(--ink-muted);font-size:11px}
+.prop-value{font-weight:600}
+/* Mobile adaptation */
+@media(max-width:860px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+}
+/* Mobile mock */
+.mobile-view{max-width:390px;margin:40px auto;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.1)}
+.mobile-view .container{padding:0 12px}
+.mobile-view .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mobile-view .tab{padding:6px 10px;font-size:12px;white-space:nowrap}
+.mobile-view h1{font-size:18px}
+.mobile-view .calc-grid{grid-template-columns:1fr}
+.mobile-view table{font-size:11px}
+.mobile-view thead th,.mobile-view tbody td{padding:6px 8px}
+footer{padding:12px 0;border-top:1px solid var(--border);font-size:11px;color:var(--ink-muted);text-align:center}
+</style>
+</head>
+<body>
+
+<div style="padding:6px;background:var(--accent);color:#fff;text-align:center;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">
+  Design-Richtung B: Professioneller Fallarbeitsplatz — dicht, effizient, tabellarisch
+</div>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <a href="#" class="hdr-home">PLN Arbeitsplatz</a>
+    <nav class="hdr-nav">
+      <a href="#" class="active">Fälle</a>
+      <a href="#">Rechtsquellen</a>
+      <a href="#">Suche</a>
+      <a href="#">Export</a>
+    </nav>
+    <div class="hdr-right">
+      <span>3 Fälle offen</span>
+      <span class="hdr-badge">🛡️ Lokal</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+<div class="layout">
+
+<!-- === SIDEBAR === -->
+<aside class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Navigation</div>
+    <a href="#" class="sidebar-item active">Alle Fälle <span class="count">3</span></a>
+    <a href="#" class="sidebar-item">Offen <span class="count">3</span></a>
+    <a href="#" class="sidebar-item">Fristen diese Woche <span class="count">1</span></a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Schnellzugriff</div>
+    <a href="#" class="sidebar-item">Rechtsquellensuche</a>
+    <a href="#" class="sidebar-item">Neues Dokument</a>
+    <a href="#" class="sidebar-item">Fristenkalender</a>
+  </div>
+</aside>
+
+<!-- === MAIN CONTENT === -->
+<main>
+
+<!-- Fallliste -->
+<div class="topbar">
+  <h1>Fälle</h1>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm">Filter</button>
+    <button class="btn btn-primary btn-sm">+ Neuer Fall</button>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body card-body--flush">
+    <table>
+      <thead><tr>
+        <th>Fall</th><th>Status</th><th>Dok.</th><th>Nächste Frist</th><th>Erstellt</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="cell-main"><a href="#">Widerspruch Einkommensteuerbescheid 2025</a></div></td>
+          <td><span class="badge badge-offen">Offen</span></td>
+          <td>3</td>
+          <td><strong style="font-variant-numeric:tabular-nums">31.08.2026</strong></td>
+          <td class="cell-meta">15.07.2026</td>
+        </tr>
+        <tr>
+          <td><div class="cell-main"><a href="#">Mietminderung Schimmelbefall</a></div></td>
+          <td><span class="badge badge-offen">Offen</span></td>
+          <td>5</td>
+          <td><strong style="font-variant-numeric:tabular-nums">15.09.2026</strong></td>
+          <td class="cell-meta">02.06.2026</td>
+        </tr>
+        <tr>
+          <td><div class="cell-main"><a href="#">Wohngeld - Nachforderung</a></div></td>
+          <td><span class="badge badge-offen">Offen</span></td>
+          <td>1</td>
+          <td><span class="badge badge-warnung">Keine Frist</span></td>
+          <td class="cell-meta">28.07.2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Falldetail mit Tabs -->
+<div class="topbar">
+  <h1>Widerspruch Einkommensteuerbescheid</h1>
+  <div class="topbar-actions">
+    <button class="btn btn-secondary btn-sm">Export</button>
+    <button class="btn btn-primary btn-sm">Dokument hochladen</button>
+  </div>
+</div>
+<div class="tabs">
+  <a href="#" class="tab active">Übersicht</a>
+  <a href="#" class="tab">Dokumente <span class="badge-tab">3</span></a>
+  <a href="#" class="tab">Fristen <span class="badge-tab">2</span></a>
+  <a href="#" class="tab">Rechtslage</a>
+  <a href="#" class="tab">Verlauf <span class="badge-tab">4</span></a>
+  <a href="#" class="tab">Timeline</a>
+</div>
+
+<!-- Status + Metadaten -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+  <div class="card">
+    <div class="card-body" style="text-align:center">
+      <div style="font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Status</div>
+      <span class="badge badge-offen">Offen</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="text-align:center">
+      <div style="font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Nächste Frist</div>
+      <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">31.08.2026</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="text-align:center">
+      <div style="font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Dokumente</div>
+      <div style="font-size:18px;font-weight:700">3</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dokumentenliste -->
+<div class="card">
+  <div class="card-header">Dokumente</div>
+  <div class="card-body card-body--flush">
+    <div class="doc-row">
+      <span class="doc-type">Bescheid</span>
+      <a href="#" class="doc-name">Einkommensteuerbescheid 2025</a>
+      <span class="doc-size">1,5 KB</span>
+      <span class="doc-date">31.07.2026</span>
+    </div>
+    <div class="doc-row">
+      <span class="doc-type">Nachweis</span>
+      <a href="#" class="doc-name">Fahrtenbuch Jan–Jun 2025</a>
+      <span class="doc-size">2,3 KB</span>
+      <span class="doc-date">28.07.2026</span>
+    </div>
+    <div class="doc-row">
+      <span class="doc-type">Schreiben</span>
+      <a href="#" class="doc-name">Widerspruchsschreiben (Entwurf)</a>
+      <span class="doc-size">0,8 KB</span>
+      <span class="doc-date">30.07.2026</span>
+    </div>
+    <div class="upload-inline">
+      <p>PDF-Dokument hinzufügen (max. 20 MB)</p>
+      <button class="btn btn-secondary btn-sm">Datei wählen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fristkandidaten + Berechnung -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div class="card">
+    <div class="card-header">Fristkandidaten</div>
+    <div class="card-body card-body--flush">
+      <table class="frist-table">
+        <thead><tr><th>Datum</th><th>Art</th><th>Quelle</th><th></th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="frist-date">31.08.2025</td>
+            <td class="frist-kind">Explizit</td>
+            <td class="cell-meta">„Einspruchsfrist"</td>
+            <td><button class="btn btn-primary btn-sm">Bestätigen</button></td>
+          </tr>
+          <tr>
+            <td class="frist-date">15.07.2025</td>
+            <td class="frist-kind">Dokument</td>
+            <td class="cell-meta">Bescheiddatum</td>
+            <td><button class="btn btn-secondary btn-sm">Prüfen</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">Berechnungsvorschau</div>
+    <div class="card-body">
+      <div class="calc-grid" style="grid-template-columns:1fr;gap:8px">
+        <div class="calc-card">
+          <div class="calc-label">Ereignis</div>
+          <div class="calc-value">15.07.2025</div>
+        </div>
+        <div class="calc-card">
+          <div class="calc-label">Fristdauer</div>
+          <div class="calc-value">1 Monat</div>
+        </div>
+        <div class="calc-card" style="border-color:var(--accent)">
+          <div class="calc-label">Fristende</div>
+          <div class="calc-value highlight">15.08.2025</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rechtsquellensuche (kompakt) -->
+<div class="card">
+  <div class="card-header">Rechtsquellensuche</div>
+  <div class="card-body">
+    <div class="search-row">
+      <input type="search" placeholder="Norm, Paragraph oder Stichwort…">
+      <button class="btn btn-primary">Suchen</button>
+    </div>
+    <div class="search-results">
+      <div class="sr-item">
+        <h4>§ 355 AO — Einspruchsfrist</h4>
+        <p>Die Einspruchsfrist beträgt einen Monat nach Bekanntgabe.</p>
+      </div>
+      <div class="sr-item">
+        <h4>§ 356 AO — Rücknahme des Einspruchs</h4>
+        <p>Der Einspruch kann bis zur Entscheidung zurückgenommen werden.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="card" style="margin-top:16px">
+  <div class="card-header">Verlauf</div>
+  <div class="card-body">
+    <div class="timeline-dense">
+      <div class="tl-dense">
+        <div class="tl-title">Widerspruch eingereicht</div>
+        <div class="tl-meta">31.07.2026 · Bestätigt</div>
+      </div>
+      <div class="tl-dense">
+        <div class="tl-title">Einkommensteuerbescheid erhalten</div>
+        <div class="tl-meta">15.07.2025 · Aus Dokument</div>
+      </div>
+      <div class="tl-dense">
+        <div class="tl-title">Fall eröffnet</div>
+        <div class="tl-meta">15.07.2026</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+</div>
+
+<!-- Mobile -->
+<div class="mobile-view">
+  <div class="hdr"><div class="hdr-inner"><a class="hdr-home" style="font-size:14px">PLN</a><span class="hdr-badge">Lokal</span></div></div>
+  <div style="padding:12px">
+    <h1 style="font-size:18px;margin-bottom:12px">Fälle</h1>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-body card-body--flush">
+        <table style="font-size:11px">
+          <tbody>
+            <tr><td class="cell-main" style="font-size:12px">Widerspruch ESt 2025</td><td><span class="badge badge-offen">Offen</span></td><td class="cell-meta">31.08.</td></tr>
+            <tr><td class="cell-main" style="font-size:12px">Mietminderung</td><td><span class="badge badge-offen">Offen</span></td><td class="cell-meta">15.09.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tabs" style="overflow-x:auto">
+      <a href="#" class="tab active">Übersicht</a>
+      <a href="#" class="tab">Dokumente</a>
+      <a href="#" class="tab">Fristen</a>
+    </div>
+    <div class="warn-inline" style="margin-top:12px;font-size:12px">
+      <strong>⚠️</strong> 2 Fristkandidaten zur Prüfung
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px">Frist bestätigen</button>
+  </div>
+</div>
+
+<footer><div class="container">Lokale Anwendung — keine Cloud, keine Telemetrie. Keine rechtliche Bewertung — menschliche Prüfung erforderlich.</div></footer>
+
+<!-- Bewertung -->
+<div class="container" style="padding-top:40px;padding-bottom:40px">
+  <h2 style="font-size:18px;font-weight:700;border-top:2px solid var(--accent);padding-top:20px;margin-bottom:16px">Bewertung: Richtung B — Professioneller Fallarbeitsplatz</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card"><div class="card-body">
+      <h3 style="font-size:14px;color:var(--success);margin-bottom:8px">✅ Vorteile</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Hohe Informationsdichte — mehrere Fälle auf einen Blick</li>
+        <li>Tabellarische Ansichten für schnellen Vergleich</li>
+        <li>Sidebar-Navigation für häufige Wechsel</li>
+        <li>Für Anwälte, Berater und Power-User optimiert</li>
+        <li>Effiziente Workflows (z.B. Batch-Operationen möglich)</li>
+      </ul>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <h3 style="font-size:14px;color:var(--danger);margin-bottom:8px">❌ Nachteile</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Überfordernd für nicht-technische Bürger</li>
+        <li>„Excel-Feeling" — wenig emotional, wenig Vertrauen</li>
+        <li>Höhere Lernkurve</li>
+        <li>Mobile Darstellung schwieriger (Tabelle)</li>
+      </ul>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <h3 style="font-size:14px;color:var(--warn);margin-bottom:8px">⚠️ Risiken</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Könnte als „zu technisch" abgelehnt werden</li>
+        <li>Bürger fühlen sich nicht angesprochen</li>
+        <li>Dichte kann Fehler verschleiern (Übersehen von Fristen)</li>
+      </ul>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <h3 style="font-size:14px;color:var(--ink);margin-bottom:8px">🔧 Umsetzungsaufwand</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Mittel-Hoch — erfordert Sidebar-Layout und Tabellen-Komponenten</li>
+        <li>CSS umfassend umbauen (Grid-Layout statt linear)</li>
+        <li>Templates: Tabellen statt Karten-Listen</li>
+        <li>Ca. 5-7 Tage Entwicklungsaufwand</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+</body>
+</html>

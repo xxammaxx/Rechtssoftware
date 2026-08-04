@@ -53,6 +53,24 @@ class CaseDetailView:
     status: str
     documents: list[DocumentSummary]
     has_documents: bool
+    created_at: str = ""
+    created_at_display: str = ""
+    timeline_events: list["TimelineEventItem"] = field(default_factory=list)
+    has_timeline_events: bool = False
+
+
+@dataclass
+class TimelineEventItem:
+    """A single entry in the case detail chronology sidebar.
+
+    Rendered only when the case has timeline entries. Pure display
+    data — no domain logic, no legal assessment.
+    """
+
+    date_display: str
+    title: str
+    source_hint: str = ""
+    is_latest: bool = False
 
 
 @dataclass

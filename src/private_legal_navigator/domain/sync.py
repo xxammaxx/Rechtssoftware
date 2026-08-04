@@ -33,7 +33,8 @@ class SyncItemStatus(StrEnum):
 
     PENDING: Initial state before classification.
     NEW: In catalog, not in local corpus.
-    KNOWN: In both catalog and local.
+    KNOWN_UNVERIFIED: In both catalog and local, remote not yet checked.
+    KNOWN: In both catalog and local, remote verified as unchanged.
     CHANGED: In both catalog and local, SHA-256 differs.
     UNCHANGED: In both catalog and local, SHA-256 matches.
     REMOTE_NOT_MODIFIED: HTTP 304 response (Phase 2).
@@ -44,6 +45,7 @@ class SyncItemStatus(StrEnum):
 
     PENDING = "PENDING"
     NEW = "NEW"
+    KNOWN_UNVERIFIED = "KNOWN_UNVERIFIED"
     KNOWN = "KNOWN"
     CHANGED = "CHANGED"
     UNCHANGED = "UNCHANGED"
@@ -182,13 +184,31 @@ class SyncPlan:
     Used to drive the execution (apply) phase.
 
     Attributes:
+        schema_version: Schema version for forward compatibility.
+        plan_id: Unique identifier for this plan instance.
         sync_run_id: The sync run this plan belongs to.
+        source_key: Which source this plan covers.
+        catalog_url: The exact catalog URL that was fetched.
+        catalog_sha256: SHA-256 of the catalog XML content.
+        catalog_stand_date: The GII <stand> date at time of planning.
+        generated_at: ISO datetime when plan was created.
+        base_corpus_fingerprint: Hash of local corpus state at planning time.
         items: Classified sync items.
         warnings: Warning messages from the planning phase.
         estimated_download_bytes: Total estimated download size in bytes.
+        plan_digest: SHA-256 of canonical serialization for integrity verification.
     """
 
-    sync_run_id: str
+    schema_version: str = "1.0"
+    plan_id: str = ""
+    sync_run_id: str = ""
+    source_key: str = ""
+    catalog_url: str = ""
+    catalog_sha256: str = ""
+    catalog_stand_date: str = ""
+    generated_at: str = ""
+    base_corpus_fingerprint: str = ""
     items: list[SyncItem] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     estimated_download_bytes: int = 0
+    plan_digest: str = ""

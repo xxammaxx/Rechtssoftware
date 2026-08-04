@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design-Richtung A: Vertrauenswürdiges Bürgerwerkzeug</title>
+<style>
+/* === Design Tokens: Bürgerwerkzeug (warm, zugänglich, minimal) === */
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-muted: #78716c;
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --surface-warm: #fef9f0;
+  --border: #e7e0d8;
+  --border-focus: #b8854a;
+  --accent: #a47148;
+  --accent-hover: #8b5e3a;
+  --accent-light: #fef6ee;
+  --success: #3b7a4b;
+  --success-bg: #ecf7ee;
+  --warn: #b45309;
+  --warn-bg: #fff8f0;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --info: #3b5e7a;
+  --info-bg: #edf4fa;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --font: "Inter", system-ui, -apple-system, sans-serif;
+  --max-w: 960px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);line-height:1.55;font-size:15px}
+.container{max-width:var(--max-w);margin:0 auto;padding:0 16px}
+/* Header */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 0}
+.hdr-inner{display:flex;justify-content:space-between;align-items:center;max-width:var(--max-w);margin:0 auto;padding:0 16px}
+.hdr-home{font-size:18px;font-weight:700;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.hdr-badge{font-size:12px;color:var(--ink-muted);background:var(--surface-warm);border:1px solid var(--border);border-radius:20px;padding:4px 12px}
+.hdr-nav{display:flex;gap:4px}
+.hdr-nav a{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;color:var(--ink-soft);text-decoration:none;transition:background .15s}
+.hdr-nav a:hover,.hdr-nav a.active{background:var(--accent-light);color:var(--accent)}
+/* Main */
+main{padding:28px 0 48px}
+/* Breadcrumb */
+.bc{display:flex;gap:6px;font-size:13px;color:var(--ink-muted);margin-bottom:16px;align-items:center}
+.bc a{color:var(--ink-muted);text-decoration:none}
+.bc a:hover{color:var(--ink)}
+.bc span{color:var(--ink);font-weight:500}
+/* Page heading */
+h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;line-height:1.2}
+.sub{font-size:14px;color:var(--ink-soft);margin-bottom:24px}
+/* Case list */
+.case-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.case-card{display:block;padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);text-decoration:none;transition:box-shadow .15s,border-color .15s}
+.case-card:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.case-card h3{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.case-meta{display:flex;gap:16px;font-size:13px;color:var(--ink-muted)}
+.case-meta .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500}
+.badge-offen{background:#e8f0e8;color:var(--success)}
+.badge-offen::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--success)}
+/* Empty state */
+.empty{padding:48px 24px;text-align:center;background:var(--surface);border:2px dashed var(--border);border-radius:var(--radius-lg)}
+.empty h2{font-size:18px;font-weight:600;margin-bottom:8px}
+.empty p{color:var(--ink-soft);font-size:14px;margin-bottom:20px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;font-size:14px;font-weight:600;border-radius:var(--radius);border:2px solid transparent;cursor:pointer;text-decoration:none;font-family:var(--font);transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg);border-color:var(--ink-muted)}
+.btn-sm{padding:6px 14px;font-size:13px}
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px}
+.tab{padding:10px 20px;font-size:14px;font-weight:500;color:var(--ink-soft);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+.card-hdr{font-size:13px;font-weight:600;color:var(--ink-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
+/* Doc list */
+.doc-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.doc-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);border-radius:var(--radius);text-decoration:none;color:var(--ink);font-size:14px;transition:background .15s}
+.doc-item:hover{background:var(--accent-light)}
+.doc-item strong{font-weight:600}
+.doc-meta{font-size:12px;color:var(--ink-muted)}
+/* Upload area */
+.upload{background:var(--surface-warm);border:2px dashed var(--border);border-radius:var(--radius-lg);padding:24px;text-align:center;margin-top:16px}
+.upload p{font-size:13px;color:var(--ink-soft);margin-bottom:12px}
+/* Warning box */
+.warnbox{background:var(--warn-bg);border:1px solid var(--warn);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px}
+.warnbox h3{font-size:14px;font-weight:600;color:var(--warn);margin-bottom:4px}
+.warnbox p{font-size:13px;color:var(--ink-soft)}
+/* Frist candidate */
+.frist-card{display:block;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);text-decoration:none;margin-bottom:8px;transition:box-shadow .15s}
+.frist-card:hover{box-shadow:var(--shadow)}
+.frist-card .date{font-size:20px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.frist-card .kind{font-size:12px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.frist-card .act{font-size:13px;color:var(--accent);font-weight:500;margin-top:4px}
+/* Berechnung preview */
+.calc-box{background:var(--info-bg);border:1px solid var(--info);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+.calc-box h3{font-size:14px;font-weight:600;color:var(--info);margin-bottom:8px}
+.calc-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px dotted rgba(0,0,0,0.08)}
+.calc-row:last-child{border-bottom:none}
+.calc-label{color:var(--ink-soft)}
+.calc-val{font-weight:600;font-variant-numeric:tabular-nums}
+/* Search */
+.search-box{display:flex;gap:8px;margin-bottom:24px}
+.search-box input{flex:1;padding:10px 16px;font-size:14px;font-family:var(--font);border:1px solid var(--border);border-radius:var(--radius);min-height:44px}
+.search-box input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+/* Timeline */
+.timeline{position:relative;padding-left:24px;border-left:2px solid var(--border)}
+.tl-item{position:relative;padding-bottom:24px}
+.tl-item::before{content:"";position:absolute;left:-29px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.tl-item h4{font-size:15px;font-weight:600;margin-bottom:2px}
+.tl-item .tl-meta{font-size:13px;color:var(--ink-muted)}
+/* Legal source card */
+.src-card{padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:8px}
+.src-card h4{font-size:15px;font-weight:600;margin-bottom:4px}
+.src-card p{font-size:13px;color:var(--ink-soft)}
+.src-card .src-link{font-size:13px;color:var(--accent);font-weight:500;margin-top:6px;display:inline-block}
+/* Section layout */
+section{margin-bottom:32px}
+h2{font-size:18px;font-weight:600;margin-bottom:12px}
+/* Responsive */
+.density-toggle{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:16px;font-size:12px;color:var(--ink-muted)}
+.density-toggle button{padding:4px 12px;font-size:12px;border:1px solid var(--border);background:var(--surface);border-radius:4px;cursor:pointer;font-family:var(--font)}
+.density-toggle button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Mobile */
+.mobile-view{max-width:390px;margin:32px auto;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+.mobile-view .container{padding:0 12px}
+.mobile-view h1{font-size:22px}
+.mobile-view .hdr-inner{padding:0 12px}
+.mobile-view .tabs{overflow-x:auto}
+.mobile-view .tab{padding:8px 12px;font-size:13px;white-space:nowrap}
+.mobile-view .case-card{padding:12px 14px}
+.mobile-view .case-meta{flex-wrap:wrap;gap:6px}
+footer{padding:16px 0;border-top:1px solid var(--border);font-size:12px;color:var(--ink-muted);text-align:center}
+footer .container{font-size:12px}
+</style>
+</head>
+<body>
+
+<div style="padding:16px;background:var(--accent);color:#fff;text-align:center;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">
+  Design-Richtung A: Vertrauenswürdiges Bürgerwerkzeug — warm, klar, assistierend
+</div>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <a href="#" class="hdr-home">Meine Rechtshilfe</a>
+    <nav class="hdr-nav">
+      <a href="#" class="active">Meine Fälle</a>
+      <a href="#">Gesetze</a>
+      <a href="#">Hilfe</a>
+    </nav>
+    <span class="hdr-badge">🛡️ Nur lokal</span>
+  </div>
+</div>
+
+<div class="container" style="display:flex;justify-content:flex-end;gap:8px;padding-top:16px;font-size:12px;color:var(--ink-muted)">
+  <span>Ansicht:</span>
+  <a href="#desktop" style="color:var(--accent);font-weight:600">Desktop</a>
+  <a href="#mobile" style="color:var(--ink-muted)">Mobil</a>
+</div>
+
+<main id="desktop">
+<div class="container">
+
+<!-- === FALLLISTE === -->
+<section>
+<h2 style="display:flex;justify-content:space-between;align-items:center">
+  Ihre Fälle
+  <a href="#" class="btn btn-primary btn-sm">+ Neuen Fall anlegen</a>
+</h2>
+<ul class="case-list">
+  <li><a href="#" class="case-card">
+    <h3>Widerspruch gegen Einkommensteuerbescheid 2025</h3>
+    <div class="case-meta">
+      <span class="badge badge-offen">Offen</span>
+      <span>3 Dokumente</span>
+      <span>Erstellt am 15.07.2026</span>
+      <span>Nächste Frist: <strong>31.08.2026</strong></span>
+    </div>
+  </a></li>
+  <li><a href="#" class="case-card">
+    <h3>Mietminderung wegen Schimmelbefall</h3>
+    <div class="case-meta">
+      <span class="badge badge-offen">Offen</span>
+      <span>5 Dokumente</span>
+      <span>Erstellt am 02.06.2026</span>
+      <span>Nächste Frist: <strong>15.09.2026</strong></span>
+    </div>
+  </a></li>
+  <li><a href="#" class="case-card">
+    <h3>Wohngeldantrag — Nachforderung Unterlagen</h3>
+    <div class="case-meta">
+      <span class="badge badge-offen">Offen</span>
+      <span>1 Dokument</span>
+      <span>Erstellt am 28.07.2026</span>
+    </div>
+  </a></li>
+</ul>
+</section>
+
+<!-- === FALLDETAIL === -->
+<section>
+<h2>Falldetail: Widerspruch gegen Einkommensteuerbescheid 2025</h2>
+<div class="tabs">
+  <a href="#" class="tab active">Übersicht</a>
+  <a href="#" class="tab">Dokumente</a>
+  <a href="#" class="tab">Fristen</a>
+  <a href="#" class="tab">Rechtslage</a>
+  <a href="#" class="tab">Verlauf</a>
+</div>
+
+<div class="card">
+  <div class="card-hdr">Status</div>
+  <span class="badge badge-offen" style="font-size:14px;padding:6px 16px">Offen — in Bearbeitung</span>
+  <p style="margin-top:8px;font-size:13px;color:var(--ink-soft)">Letzte Änderung: 31.07.2026</p>
+</div>
+
+<div class="card">
+  <div class="card-hdr">Dokumente (3)</div>
+  <ul class="doc-list">
+    <li><a href="#" class="doc-item">
+      <span>📄</span>
+      <div><strong>Einkommensteuerbescheid 2025</strong><br><span class="doc-meta">Bescheid · 1,5 KB · 31.07.2026</span></div>
+    </a></li>
+    <li><a href="#" class="doc-item">
+      <span>📄</span>
+      <div><strong>Fahrtenbuch Januar–Juni 2025</strong><br><span class="doc-meta">Nachweis · 2,3 KB · 28.07.2026</span></div>
+    </a></li>
+    <li><a href="#" class="doc-item">
+      <span>📄</span>
+      <div><strong>Widerspruchsschreiben (Entwurf)</strong><br><span class="doc-meta">Schreiben · 0,8 KB · 30.07.2026</span></div>
+    </a></li>
+  </ul>
+  <div class="upload">
+    <p>📎 Dokument hinzufügen (PDF, max. 20 MB)</p>
+    <button class="btn btn-secondary btn-sm">Datei auswählen</button>
+  </div>
+</div>
+</section>
+
+<!-- === DOKUMENTANSICHT MIT FRISTKANDIDATEN === -->
+<section>
+<h2>Dokument: Einkommensteuerbescheid 2025</h2>
+
+<div class="warnbox">
+  <h3>⚠️ Bitte prüfen: Automatisch erkannte Daten</h3>
+  <p>Die folgenden Zeitangaben wurden im Dokument gefunden. Bitte bestätigen Sie, ob diese als verbindliche Fristen gelten.</p>
+</div>
+
+<ul class="frist-card" style="list-style:none">
+  <li><a href="#" class="frist-card" style="display:block">
+    <div class="kind">Explizite Frist</div>
+    <div class="date">31. August 2025</div>
+    <p style="font-size:13px;color:var(--ink-soft);margin-top:2px">„Einspruchsfrist: 31.08.2025"</p>
+    <div class="act">Als Frist bestätigen →</div>
+  </a></li>
+  <li><a href="#" class="frist-card" style="display:block">
+    <div class="kind">Dokumentdatum</div>
+    <div class="date">15. Juli 2025</div>
+    <p style="font-size:13px;color:var(--ink-soft);margin-top:2px">„Dieser Bescheid wurde am 15.07.2025 erlassen."</p>
+    <div class="act">Als Bezugsdatum festlegen →</div>
+  </a></li>
+</ul>
+
+<div class="calc-box">
+  <h3>📐 Fristberechnung (Vorschau)</h3>
+  <div class="calc-row"><span class="calc-label">Ereignisdatum</span><span class="calc-val">15.07.2025</span></div>
+  <div class="calc-row"><span class="calc-label">Fristdauer</span><span class="calc-val">1 Monat (Einspruchsfrist)</span></div>
+  <div class="calc-row"><span class="calc-label">Fristende</span><span class="calc-val" style="color:var(--accent);font-size:18px">15.08.2025</span></div>
+</div>
+</section>
+
+<!-- === RECHTSQUELLENSUCHE === -->
+<section>
+<h2>Rechtsquellensuche</h2>
+<div class="search-box">
+  <input type="search" placeholder="z.B. „Einspruchsfrist Steuerbescheid" oder „§ 355 AO"…">
+  <button class="btn btn-primary">Suchen</button>
+</div>
+<div class="src-card">
+  <h4>§ 355 Abgabenordnung — Einspruchsfrist</h4>
+  <p>Die Einspruchsfrist beträgt einen Monat nach Bekanntgabe des Verwaltungsakts.</p>
+  <a href="#" class="src-link">Zur Norm →</a>
+</div>
+<div class="src-card">
+  <h4>§ 356 AO — Rücknahme des Einspruchs</h4>
+  <p>Der Einspruch kann bis zur Entscheidung zurückgenommen werden.</p>
+  <a href="#" class="src-link">Zur Norm →</a>
+</div>
+</section>
+
+<!-- === TIMELINE === -->
+<section>
+<h2>Verlauf</h2>
+<div class="timeline">
+  <div class="tl-item">
+    <h4>Widerspruch eingereicht</h4>
+    <div class="tl-meta">31. Juli 2026 · durch Nutzer bestätigt</div>
+  </div>
+  <div class="tl-item">
+    <h4>Einkommensteuerbescheid erhalten</h4>
+    <div class="tl-meta">15. Juli 2025 · aus Dokument abgeleitet</div>
+  </div>
+  <div class="tl-item">
+    <h4>Fall eröffnet</h4>
+    <div class="tl-meta">15. Juli 2026</div>
+  </div>
+</div>
+</section>
+
+</div>
+</main>
+
+<!-- === MOBILE VIEW === -->
+<div class="mobile-view" id="mobile">
+  <div class="hdr">
+    <div class="hdr-inner">
+      <a href="#" class="hdr-home" style="font-size:16px">Meine Rechtshilfe</a>
+      <span class="hdr-badge" style="font-size:10px">🛡️ Lokal</span>
+    </div>
+  </div>
+  <main style="padding:16px 0 24px">
+  <div class="container">
+    <h1 style="font-size:22px">Ihre Fälle</h1>
+    <ul class="case-list">
+      <li><a href="#" class="case-card" style="padding:12px 14px">
+        <h3 style="font-size:15px">Widerspruch Einkommensteuer 2025</h3>
+        <div class="case-meta" style="flex-wrap:wrap;gap:6px">
+          <span class="badge badge-offen">Offen</span>
+          <span>3 Dok.</span>
+          <span>Frist: <strong>31.08.2026</strong></span>
+        </div>
+      </a></li>
+    </ul>
+    <div class="tabs" style="overflow-x:auto;margin-top:24px">
+      <a href="#" class="tab active" style="white-space:nowrap">Übersicht</a>
+      <a href="#" class="tab" style="white-space:nowrap">Dokumente</a>
+      <a href="#" class="tab" style="white-space:nowrap">Fristen</a>
+    </div>
+    <div class="warnbox" style="margin-top:16px">
+      <h3>⚠️ Fristen prüfen</h3>
+      <p>2 Zeitangaben erkannt. Bitte bestätigen.</p>
+    </div>
+    <div class="frist-card" style="display:block;margin-bottom:8px">
+      <div class="date" style="font-size:18px">31. August 2025</div>
+      <div style="font-size:13px;margin-top:4px">Einspruchsfrist</div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:12px">Frist bestätigen</button>
+  </div>
+  </main>
+</div>
+
+<footer>
+  <div class="container">Lokale Anwendung — keine Cloud, keine Telemetrie. Keine rechtliche Bewertung — menschliche Prüfung erforderlich.</div>
+</footer>
+
+<!-- === Bewertung === -->
+<div class="container" style="padding-top:40px;padding-bottom:40px">
+  <h2 style="font-size:20px;font-weight:700;border-top:2px solid var(--accent);padding-top:24px">Bewertung: Richtung A — Vertrauenswürdiges Bürgerwerkzeug</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:16px">
+    <div class="card">
+      <h3 style="font-size:15px;color:var(--success);margin-bottom:8px">✅ Vorteile</h3>
+      <ul style="font-size:13px;padding-left:16px;line-height:1.8">
+        <li>Niedrigschwellig: Keine juristischen Fachbegriffe im UI</li>
+        <li>Fokus auf Bürger-Assistenz: „Hilfe", „Prüfen", „Bestätigen"</li>
+        <li>Warme Farbgebung signalisiert Vertrauen und Ruhe</li>
+        <li>Klare nächste Schritte (CTA-basiert)</li>
+        <li>Fristen und Deadlines prominent</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;color:var(--danger);margin-bottom:8px">❌ Nachteile</h3>
+      <ul style="font-size:13px;padding-left:16px;line-height:1.8">
+        <li>Zu wenig Informationsdichte für Power-User</li>
+        <li>Keine Massenoperationen (mehrere Fälle gleichzeitig)</li>
+        <li>Upload-Fläche könnte zu versteckt sein</li>
+        <li>Rechtliche Präzision könnte hinter Freundlichkeit zurücktreten</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;color:var(--warn);margin-bottom:8px">⚠️ Risiken</h3>
+      <ul style="font-size:13px;padding-left:16px;line-height:1.8">
+        <li>„Zu einfach" — Nutzer könnten Fristen ungeprüft übernehmen</li>
+        <li>Bürger könnten Anwendung als Rechtsberatung missverstehen</li>
+        <li>Warme Tonalität könnte Seriosität untergraben</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;color:var(--ink);margin-bottom:8px">🔧 Umsetzungsaufwand</h3>
+      <ul style="font-size:13px;padding-left:16px;line-height:1.8">
+        <li>Mittel — kein Frameworkwechsel nötig</li>
+        <li>CSS-Tokens neu definieren (Farbpalette warm statisch)</li>
+        <li>Templates umschreiben: Status-Strings, Warnhinweise, Navigation</li>
+        <li>Ca. 3-5 Tage Entwicklungsaufwand</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

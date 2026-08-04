@@ -185,7 +185,7 @@ Before changing a target project, read:
 - [SECURITY.md](SECURITY.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [`ecosystem.manifest.json`](ecosystem.manifest.json)
-- [`WORKING-METHOD.md`](WORKING-METHOD.md) — the canonical 22-step execution order
+- [`WORKING-METHOD.md`](WORKING-METHOD.md) — the canonical 24-step execution order
 
 ## Notes
 

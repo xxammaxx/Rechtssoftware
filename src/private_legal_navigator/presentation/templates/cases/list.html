@@ -7,28 +7,49 @@
   </ol>
 </nav>
 
-<h1 class="page-title">Fälle</h1>
+<div class="topbar">
+  <h1>Fälle</h1>
+  <a href="{{ url_for('ui_case_create_get') }}" class="btn btn--primary">Neuen Fall anlegen</a>
+</div>
+
+{% if request.query_params.get('created') %}
+<div role="status" class="flash-banner flash-banner--success">
+  <strong>Fall wurde angelegt.</strong>
+  Der neue Fall ist jetzt in der Übersicht verfügbar.
+</div>
+{% endif %}
 
 {% if not view.has_cases %}
-    <p class="empty-state">Keine Fälle vorhanden.</p>
+  <div class="empty-state">
+    <strong>Keine Fälle vorhanden.</strong>
+    <p class="u-mt-2">Legen Sie einen neuen Fall an, um Dokumente zu verwalten und Fristen zu verfolgen.</p>
+  </div>
+  <ol class="onboarding-steps" aria-label="Erste Schritte">
+    <li data-step="1">Neuen Fall anlegen</li>
+    <li data-step="2">PDF-Dokument hochladen (max. 20 MB)</li>
+    <li data-step="3">Fristhinweise prüfen und bestätigen</li>
+  </ol>
 {% else %}
-    <p class="count-badge">{{ view.case_count }} Fall{% if view.case_count != 1 %}e{% endif %}</p>
+  <p class="count-badge">{{ view.case_count }} {% if view.case_count != 1 %}Fälle{% else %}Fall{% endif %}</p>
 
-    <ul class="item-list">
-    {% for case in view.cases %}
-        <li>
-            <a href="{{ url_for('ui_case_detail', case_id=case.case_id) }}"
-               class="item-card">
-                <div class="item-card__title">{{ case.title }}</div>
-                <div class="item-card__meta">
-                    <span>{{ case.status }}</span>
-                    <span>{{ case.document_count }} Dokument{% if case.document_count != 1 %}e{% endif %}</span>
-                    <span>Erstellt: {{ case.created_at_display or case.created_at }}</span>
-                </div>
-            </a>
-        </li>
-    {% endfor %}
-    </ul>
+  <ul class="case-grid">
+  {% for case in view.cases %}
+    <li>
+      <a href="{{ url_for('ui_case_detail', case_id=case.case_id) }}" class="case-card">
+        <h3>{{ case.title }}</h3>
+        <div class="case-progress">
+          {# Dynamic data-driven width — computed server-side, see design-system-review-checklist.md #}
+          <div class="case-progress__fill" style="width: {{ case.document_count * 25 if case.document_count < 4 else 100 }}%"></div>
+        </div>
+        <div class="case-stats">
+          <span><strong>{{ case.document_count }}</strong> Dokument{% if case.document_count != 1 %}e{% endif %}</span>
+          <span>{% if case.status == 'open' %}Offen{% else %}{{ case.status }}{% endif %}</span>
+          <span>Erstellt: {{ case.created_at_display or case.created_at }}</span>
+        </div>
+      </a>
+    </li>
+  {% endfor %}
+  </ul>
 {% endif %}
 
 {% endblock %}

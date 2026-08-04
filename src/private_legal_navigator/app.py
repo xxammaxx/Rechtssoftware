@@ -8,7 +8,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
@@ -65,6 +66,17 @@ from private_legal_navigator.infrastructure.sqlite_reference_event_repository im
 from private_legal_navigator.middleware.csrf import CsrfConfig, CsrfTokenService
 from private_legal_navigator.middleware.host_validation import HostValidationMiddleware
 from private_legal_navigator.middleware.security_headers import SecurityHeadersMiddleware
+
+_jinja_autoescape = select_autoescape(
+    enabled_extensions=("html", "xml"),
+    default_for_string=True,
+    default=False,
+)
+
+
+def template_autoescape(template_name: str | None) -> bool:
+    """Enable Jinja escaping explicitly for HTML/XML templates and strings."""
+    return _jinja_autoescape(template_name)
 
 
 def _document_not_found_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -165,7 +177,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     # --- M6-UI: Templates and services ---
-    templates = Jinja2Templates(directory=str(settings.template_dir))
+    templates = Jinja2Templates(
+        env=Environment(
+            loader=FileSystemLoader(str(settings.template_dir)),
+            autoescape=template_autoescape,
+        )
+    )
     workspace_service = LocalConfirmationWorkspaceService(
         case_repository=case_repository,
         document_repository=document_repository,
@@ -183,6 +200,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         reference_event_service=reference_event_service,
         csrf_service=csrf_service,
         calendar_arithmetic=calendar_arithmetic,
+        case_timeline_repository=case_timeline_repository,
     )
 
     # --- M6-UI: Middleware ---
@@ -256,6 +274,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(reference_event_router)
     app.include_router(ui_router)
     app.include_router(m7a_ui_router)
+
+    # Root redirect: guide users to the case workspace
+    @app.get("/")
+    def root_redirect() -> RedirectResponse:
+        """Redirect root URL to the case list (fixed local path, no open redirect)."""
+        return RedirectResponse(url="/ui/cases", status_code=302)
 
     # Health check
     @app.get("/health")

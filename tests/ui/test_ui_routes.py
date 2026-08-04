@@ -6,6 +6,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from private_legal_navigator.config import Settings
+from tests.fixtures.synthetic_pdf import MINIMAL_PDF_BYTES
 
 
 @pytest.fixture
@@ -92,13 +93,73 @@ class TestUiCaseDetail:
         assert "no-store" in resp.headers.get("cache-control", "")
 
 
+class TestUiCaseDetailChronology:
+    """Tests for the chronology sidebar on the case detail page (RC-021)."""
+
+    @pytest.fixture
+    async def app_and_client(self, settings: Settings):
+        from private_legal_navigator.app import create_app
+
+        app = create_app(settings)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://localhost:8000") as ac:
+            yield app, ac
+
+    async def test_sidebar_hidden_without_events(self, app_and_client) -> None:
+        _, client = app_and_client
+        cid = await _create_case(client)
+        resp = await client.get(f"/ui/cases/{cid}")
+        assert resp.status_code == 200
+        assert "Chronologie" not in resp.text
+
+    async def test_sidebar_shows_confirmed_event(self, app_and_client) -> None:
+        from datetime import datetime
+
+        from private_legal_navigator.domain.case_timeline import (
+            CaseLegalEvent,
+            LegalEventType,
+            ReviewStatus,
+        )
+
+        app, client = app_and_client
+        cid = await _create_case(client)
+        timeline_repo = app.state.case_timeline_repository
+        timeline_repo.save_event(
+            CaseLegalEvent(
+                event_id=None,
+                case_id=uuid.UUID(cid),
+                event_type=LegalEventType.DOCUMENT_RECEIVED,
+                occurred_at=datetime(2026, 1, 15, 9, 30),
+                title="SYNTHETISCH – Bescheid eingegangen",
+                review_status=ReviewStatus.CONFIRMED,
+            )
+        )
+        resp = await client.get(f"/ui/cases/{cid}")
+        assert resp.status_code == 200
+        assert "Chronologie" in resp.text
+        assert "Bescheid eingegangen" in resp.text
+
+    async def test_sidebar_shows_document_upload(self, app_and_client) -> None:
+        _, client = app_and_client
+        cid = await _create_case(client)
+        resp = await client.post(
+            f"/api/v1/cases/{cid}/documents",
+            files={"file": ("vertrag.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert resp.status_code == 201
+        resp = await client.get(f"/ui/cases/{cid}")
+        assert resp.status_code == 200
+        assert "Chronologie" in resp.text
+        assert "Dokument hochgeladen" in resp.text
+
+
 class TestUiDocumentDetail:
     """Tests for GET /ui/cases/{case_id}/documents/{document_id}"""
 
     async def _upload_doc(self, client: AsyncClient, case_id: str) -> str:
         resp = await client.post(
             f"/api/v1/cases/{case_id}/documents",
-            files={"file": ("test.pdf", b"%PDF-1.4 content", "application/pdf")},
+            files={"file": ("test.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
         )
         assert resp.status_code == 201
         return resp.json()["document_id"]
@@ -218,5 +279,152 @@ class TestUiPrivacy:
         fake_id = str(uuid.uuid4())
         resp = await client.get(f"/ui/cases/{fake_id}/documents/{fake_id}")
         assert resp.status_code == 404
-        # Error message should be generic
         assert fake_id not in resp.text
+
+
+class TestUiCaseCreate:
+    """Tests for GET/POST /ui/cases/create — case creation via UI."""
+
+    async def _get_csrf_from_page(self, client: AsyncClient, url: str) -> tuple[str, str]:
+        """Extract CSRF token and nonce from a page response."""
+        resp = await client.get(url)
+        assert resp.status_code == 200
+        import re
+
+        match = re.search(r'name="csrf_token"\s+value="([^"]+)"', resp.text)
+        token = match.group(1) if match else ""
+        nonce = ""
+        for c in resp.headers.get_list("set-cookie"):
+            if "pln_csrf_nonce=" in c:
+                nonce = c.split("pln_csrf_nonce=")[1].split(";")[0].strip()
+        return token, nonce
+
+    async def test_create_form_renders(self, client: AsyncClient) -> None:
+        resp = await client.get("/ui/cases/create")
+        assert resp.status_code == 200
+        assert "Neuen Fall anlegen" in resp.text
+        assert "Fallname" in resp.text or 'name="title"' in resp.text
+
+    async def test_create_form_has_csrf(self, client: AsyncClient) -> None:
+        resp = await client.get("/ui/cases/create")
+        assert 'name="csrf_token"' in resp.text
+
+    async def test_create_case_success(self, client: AsyncClient) -> None:
+        csrf_token, nonce = await self._get_csrf_from_page(client, "/ui/cases/create")
+        client.cookies.set("pln_csrf_nonce", nonce, domain="localhost")
+        resp = await client.post(
+            "/ui/cases/create",
+            data={"csrf_token": csrf_token, "title": "SYNTHETISCH – UI-Form-Test"},
+            headers={"Origin": "http://localhost:8000"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        assert "/ui/cases?created=1" in resp.headers.get("location", "")
+
+        resp2 = await client.get("/ui/cases")
+        assert "SYNTHETISCH – UI-Form-Test" in resp2.text
+
+    async def test_create_case_empty_title_rejected(self, client: AsyncClient) -> None:
+        csrf_token, nonce = await self._get_csrf_from_page(client, "/ui/cases/create")
+        client.cookies.set("pln_csrf_nonce", nonce, domain="localhost")
+        resp = await client.post(
+            "/ui/cases/create",
+            data={"csrf_token": csrf_token, "title": ""},
+            headers={"Origin": "http://localhost:8000"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 400
+        assert "Bitte geben Sie einen Fallnamen ein" in resp.text
+
+    async def test_create_case_no_csrf_rejected(self, client: AsyncClient) -> None:
+        resp = await client.post(
+            "/ui/cases/create",
+            data={"title": "No CSRF"},
+            follow_redirects=False,
+        )
+        assert resp.status_code in (403, 400)
+
+    async def test_create_case_persists_on_reload(self, client: AsyncClient) -> None:
+        csrf_token, nonce = await self._get_csrf_from_page(client, "/ui/cases/create")
+        client.cookies.set("pln_csrf_nonce", nonce, domain="localhost")
+        resp = await client.post(
+            "/ui/cases/create",
+            data={"csrf_token": csrf_token, "title": "SYNTHETISCH – Persistenz-Test"},
+            headers={"Origin": "http://localhost:8000"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+
+        resp2 = await client.get("/ui/cases")
+        assert "SYNTHETISCH – Persistenz-Test" in resp2.text
+
+
+class TestUiDocumentUpload:
+    """Tests for POST /ui/cases/{case_id}/upload — document upload via UI."""
+
+    async def _get_csrf_from_page(self, client: AsyncClient, url: str) -> tuple[str, str]:
+        resp = await client.get(url)
+        assert resp.status_code == 200
+        import re
+
+        match = re.search(r'name="csrf_token"\s+value="([^"]+)"', resp.text)
+        token = match.group(1) if match else ""
+        nonce = ""
+        for c in resp.headers.get_list("set-cookie"):
+            if "pln_csrf_nonce=" in c:
+                nonce = c.split("pln_csrf_nonce=")[1].split(";")[0].strip()
+        return token, nonce
+
+    async def _setup_case(self, client: AsyncClient) -> tuple[str, str, str]:
+        resp = await client.post(
+            "/api/v1/cases",
+            json={"title": "SYNTHETISCH – Upload-Test"},
+        )
+        assert resp.status_code == 201
+        case_id = resp.json()["case_id"]
+        csrf_token, nonce = await self._get_csrf_from_page(client, f"/ui/cases/{case_id}")
+        client.cookies.set("pln_csrf_nonce", nonce, domain="localhost")
+        return case_id, csrf_token, nonce
+
+    async def test_upload_form_present(self, client: AsyncClient) -> None:
+        case_id, csrf_token, nonce = await self._setup_case(client)
+        resp = await client.get(f"/ui/cases/{case_id}")
+        assert resp.status_code == 200
+        assert "PDF-Dokument hochladen" in resp.text or 'type="file"' in resp.text
+
+    async def test_upload_valid_pdf(self, client: AsyncClient) -> None:
+        case_id, csrf_token, nonce = await self._setup_case(client)
+        resp = await client.post(
+            f"/ui/cases/{case_id}/upload",
+            data={"csrf_token": csrf_token},
+            files={"file": ("test.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+            headers={"Origin": "http://localhost:8000"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        assert "uploaded=1" in resp.headers.get("location", "")
+
+    async def test_upload_rejects_no_csrf(self, client: AsyncClient) -> None:
+        case_id, _, _ = await self._setup_case(client)
+        resp = await client.post(
+            f"/ui/cases/{case_id}/upload",
+            data={},
+            files={"file": ("test.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+            headers={"Origin": "http://localhost:8000"},
+            follow_redirects=False,
+        )
+        assert resp.status_code in (403, 400)
+
+    async def test_upload_persists_on_reload(self, client: AsyncClient) -> None:
+        case_id, csrf_token, nonce = await self._setup_case(client)
+        resp = await client.post(
+            f"/ui/cases/{case_id}/upload",
+            data={"csrf_token": csrf_token},
+            files={"file": ("persist-test.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+            headers={"Origin": "http://localhost:8000"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+
+        resp2 = await client.get(f"/ui/cases/{case_id}")
+        assert "persist-test.pdf" in resp2.text

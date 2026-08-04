@@ -9,11 +9,12 @@ Does NOT:
 """
 
 import uuid
+from datetime import UTC, datetime
 from datetime import date as date_type
-from datetime import datetime
 
 from private_legal_navigator.application.calendar_arithmetic import CalendarArithmetic
 from private_legal_navigator.application.case_repository import CaseRepository
+from private_legal_navigator.application.case_timeline_repository import CaseTimelineRepository
 from private_legal_navigator.application.deadline_service import DeadlineService
 from private_legal_navigator.application.document_repository import DocumentRepository
 from private_legal_navigator.application.document_service import DocumentService
@@ -34,6 +35,7 @@ from private_legal_navigator.application.ui_view_models import (
     DeadlineWorkspaceView,
     DocumentSummary,
     ReferenceEventCard,
+    TimelineEventItem,
     WarningDisplay,
 )
 from private_legal_navigator.domain.deadline import (
@@ -84,6 +86,29 @@ _SOURCE_LABELS: dict[str, str] = {
     "user_corrected": "Vom Nutzer korrigiert",
 }
 
+# Neutral German labels for case legal timeline event types (M7-A).
+# Descriptive only — no legal assessment, matching domain docstrings.
+_LEGAL_EVENT_TYPE_LABELS: dict[str, str] = {
+    "DOCUMENT_ISSUED": "Dokument erstellt",
+    "DOCUMENT_RECEIVED": "Dokument erhalten",
+    "DOCUMENT_OPENED": "Dokument geöffnet",
+    "ADMINISTRATIVE_ACT_EFFECTIVE": "Verwaltungsakt wirksam",
+    "HEARING_STARTED": "Anhörung begonnen",
+    "OBJECTION_FILED": "Widerspruch eingelegt",
+    "DECISION_AMENDED": "Entscheidung geändert",
+    "DECISION_REVOKED": "Entscheidung widerrufen",
+    "PAYMENT_REQUESTED": "Zahlung angefordert",
+    "EVIDENCE_SUBMITTED": "Beweis eingereicht",
+    "DEADLINE_STARTED": "Frist begonnen",
+    "DEADLINE_EXPIRED": "Frist abgelaufen",
+    "LEGAL_ACTION_FILED": "Klage eingereicht",
+    "OTHER": "Sonstiges Ereignis",
+}
+
+# Chronology sidebar shows at most this many entries; the full list
+# lives on the Rechtsverlauf tab.
+_TIMELINE_SIDEBAR_LIMIT = 8
+
 _STATUS_LABELS: dict[ConfirmationStatus, str] = {
     ConfirmationStatus.UNCONFIRMED: "Unbestätigt",
     ConfirmationStatus.CONFIRMED: "Vom Nutzer bestätigt",
@@ -131,6 +156,40 @@ def _format_datetime_display(iso_str: str | None) -> str:
         return iso_str
 
 
+def _parse_datetime_iso(iso_str: str | None) -> datetime | None:
+    """Parse an ISO datetime string into a datetime (None on failure)."""
+    if not iso_str:
+        return None
+    try:
+        return datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+
+
+def _format_datetime_date(value: datetime | None) -> str:
+    """Format a datetime as a German date (DD.MM.YYYY)."""
+    if value is None:
+        return "Datum unbekannt"
+    try:
+        return value.strftime("%d.%m.%Y")
+    except (ValueError, TypeError):
+        return "Datum unbekannt"
+
+
+def _sort_key(value: datetime | None) -> tuple[bool, datetime]:
+    """Sort key for chronology entries.
+
+    Normalises naive and timezone-aware datetimes to UTC so they can be
+    compared against each other (SQLite may return either, depending on
+    how the value was written).
+    """
+    if value is None:
+        return (True, datetime.min)
+    if value.tzinfo is None:
+        return (False, value.replace(tzinfo=UTC))
+    return (False, value.astimezone(UTC))
+
+
 _STATUS_CSS_MAP: dict[str, str] = {
     "unconfirmed": "unconfirmed",
     "confirmed": "confirmed",
@@ -156,6 +215,7 @@ class LocalConfirmationWorkspaceService:
         reference_event_service: ReferenceEventService,
         csrf_service: CsrfTokenService | None = None,
         calendar_arithmetic: CalendarArithmetic | None = None,
+        case_timeline_repository: CaseTimelineRepository | None = None,
     ) -> None:
         self._case_repo = case_repository
         self._document_repo = document_repository
@@ -164,6 +224,56 @@ class LocalConfirmationWorkspaceService:
         self._reference_event_service = reference_event_service
         self._csrf_service = csrf_service
         self._calendar_arithmetic = calendar_arithmetic
+        self._case_timeline_repo = case_timeline_repository
+
+    # ------------------------------------------------------------------ #
+    #  Case views
+    # ------------------------------------------------------------------ #
+
+    # ------------------------------------------------------------------ #
+    #  Case creation via UI
+    # ------------------------------------------------------------------ #
+
+    def create_case_via_ui(self, title: str, description: str = "") -> CaseSummary:
+        """Create a new case from browser form data.
+
+        Returns a CaseSummary for the redirect target.
+        Raises ValueError if title is invalid per domain rules.
+        """
+        from private_legal_navigator.domain.case import Case
+
+        case = Case(title=title)
+        self._case_repo.save(case)
+        return CaseSummary(
+            case_id=str(case.case_id),
+            title=case.title,
+            status=case.status.value,
+            document_count=0,
+            created_at=case.created_at.isoformat(),
+            created_at_display=_format_datetime_display(case.created_at.isoformat()),
+        )
+
+    def upload_document_via_ui(
+        self,
+        case_id: uuid.UUID,
+        filename: str,
+        content: bytes,
+        mime_type: str,
+        size_bytes: int,
+    ) -> None:
+        """Upload a PDF document from browser form data.
+
+        Delegates to DocumentService.upload_document which handles
+        validation, text extraction, and classification.
+        Raises ValueError on validation failure.
+        """
+        self._document_service.upload_document(
+            case_id=case_id,
+            filename=filename,
+            content=content,
+            mime_type=mime_type,
+            size_bytes=size_bytes,
+        )
 
     # ------------------------------------------------------------------ #
     #  Case views
@@ -218,7 +328,86 @@ class LocalConfirmationWorkspaceService:
             status=case.status,
             documents=doc_summaries,
             has_documents=len(doc_summaries) > 0,
+            created_at=case.created_at.isoformat(),
+            created_at_display=_format_datetime_display(case.created_at.isoformat()),
+            timeline_events=self._build_chronology(case_id, doc_summaries),
+            has_timeline_events=self._has_chronology_entries(case_id),
         )
+
+    # ------------------------------------------------------------------ #
+    #  Chronology sidebar (case detail page)
+    # ------------------------------------------------------------------ #
+
+    def _has_chronology_entries(self, case_id: uuid.UUID) -> bool:
+        """True when the case has anything to show in the chronology sidebar."""
+        if self._case_timeline_repo is not None:
+            try:
+                events = self._case_timeline_repo.list_active_events(case_id)
+            except Exception:
+                # The sidebar is a progressive enhancement; a repository
+                # failure must never break the case detail page.
+                events = []
+            if events:
+                return True
+        return len(self._document_service.list_case_documents(case_id)) > 0
+
+    def _build_chronology(
+        self,
+        case_id: uuid.UUID,
+        doc_summaries: list[DocumentSummary],
+    ) -> list[TimelineEventItem]:
+        """Build the chronology sidebar entries (newest first).
+
+        Combines active legal events (M7-A) with document uploads.
+        Pure projection — no business logic, no legal assessment.
+        """
+        entries: list[tuple[datetime | None, TimelineEventItem]] = []
+
+        if self._case_timeline_repo is not None:
+            try:
+                events = self._case_timeline_repo.list_active_events(case_id)
+            except Exception:
+                events = []
+            for e in events:
+                date_value = e.occurred_at or e.known_at or e.recorded_at
+                title = e.title.strip() if e.title and e.title.strip() else (
+                    _LEGAL_EVENT_TYPE_LABELS.get(
+                        e.event_type.value if e.event_type else "", "Ereignis"
+                    )
+                )
+                source_hint = ""
+                if e.source_document_id is not None:
+                    source_hint = f"Quelle: {str(e.source_document_id)[:8]}…"
+                entries.append(
+                    (
+                        date_value,
+                        TimelineEventItem(
+                            date_display=_format_datetime_date(date_value),
+                            title=title,
+                            source_hint=source_hint,
+                        ),
+                    )
+                )
+
+        for d in doc_summaries:
+            date_value = _parse_datetime_iso(d.uploaded_at)
+            entries.append(
+                (
+                    date_value,
+                    TimelineEventItem(
+                        date_display=_format_datetime_date(date_value),
+                        title="Dokument hochgeladen",
+                        source_hint=d.filename,
+                    ),
+                )
+            )
+
+        # Newest first; entries without a parseable date sink to the bottom.
+        entries.sort(key=lambda pair: _sort_key(pair[0]), reverse=True)
+        items = [item for _, item in entries[:_TIMELINE_SIDEBAR_LIMIT]]
+        if items:
+            items[0].is_latest = True
+        return items
 
     # ------------------------------------------------------------------ #
     #  Document / Workspace views

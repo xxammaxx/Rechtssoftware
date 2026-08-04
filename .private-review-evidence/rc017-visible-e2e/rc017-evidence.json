@@ -1,0 +1,75 @@
+{
+  "candidate_commit": "3ec8df2fa0ee228c4d1a46721c83a9e16c270a88",
+  "candidate_tree": "fce6be480f28591b6be10a7a35599bac9811409e",
+  "version": "1.0.0rc2",
+  "browser_headless": false,
+  "xvfb_used": false,
+  "visible_display": true,
+  "user_confirmed_browser_visible": true,
+  "browser_left_open_for_manual_review": true,
+  "display": ":0",
+  "desktop_session": "cinnamon",
+  "xdg_session_type": "x11",
+  "wheel_note": "Source identity verified (commit+tree match). Wheel hash differs (non-reproducible build).",
+  "ui_gaps": [
+    {
+      "step": "V01",
+      "gap": "No case creation UI route exists — only POST /api/v1/cases"
+    },
+    {
+      "step": "V02",
+      "gap": "No document upload UI route exists — only POST /api/v1/cases/{id}/documents"
+    }
+  ],
+  "screenshots": [
+    "AXE-Fallliste.png",
+    "AXE-Rechtsquellen.png",
+    "AXE-tab-demo.png",
+    "EVIDENCE-PACK.png",
+    "TIMELINE.png",
+    "V00-startseite.png",
+    "V01-case-detail.png",
+    "V01-case-list.png",
+    "V02-case-with-doc.png",
+    "V03-document-view.png",
+    "V04-candidates.png",
+    "V05-candidate-detail.png",
+    "V06-confirmed.png",
+    "V12-legal-sources.png",
+    "V13-results.png",
+    "V13-search-page.png",
+    "V15-legal-situation.png"
+  ],
+  "video_files": [
+    "36b376a9aa45b4d7c22f3372ccf551c1.webm",
+    "830c4ec01c5ac463336f579e9ed61d41.webm",
+    "c4e84c9766eaab7dab50fa751d4b248d.webm",
+    "e933080ac582cc96173cd4b8034bd624.webm"
+  ],
+  "visible_steps_executed": [
+    "V00 — Startseite angezeigt",
+    "V01 — Fall in Liste + Detailansicht",
+    "V02 — PDF-Dokument im Fall sichtbar",
+    "V03 — Dokumentdetail mit extrahiertem Text",
+    "V04 — Fristkandidaten angezeigt",
+    "V05 — Candidate Detail / Bezugsdatum prüfen",
+    "V06 — Bestätigung ausgeführt",
+    "V12 — Rechtsquellen-Statusseite",
+    "V13 — Rechtssuche nach Gericht",
+    "V15 — Rechtslage (Case Legal Situation)",
+    "Timeline — Rechtsverlauf",
+    "Evidence Pack — exportierte Fallübersicht",
+    "AXE — Accessibility (Fallliste, Rechtsquellen, Tab-Nav)"
+  ],
+  "steps_skipped_or_partial": [
+    "V07 (Correction) — correct form not found (CSRF state)",
+    "V08 (Revoke) — no revoke button (state)",
+    "V09 (Re-confirm) — no confirm button (state changed)",
+    "V10-V11 (Calculation preview + trace) — no preview link",
+    "V14 (Citation resolution) — no clickable norm result",
+    "RESTART — script crashed before restart section"
+  ],
+  "classification_visible_linux": "AMBER_VISIBLE_UI_WORKFLOW_GAP",
+  "classification_release": "AMBER_WINDOWS_COLD_TEST_REQUIRED",
+  "script_final_log_tail": "(script crashed before writing evidence — screenshots are primary evidence)"
+}

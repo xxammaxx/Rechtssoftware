@@ -1,0 +1,19 @@
+boundary_id,boundary_description,test_id,covered,injection_method,quality
+1,nach Download,D1.1,yes,no-op simulation,WEAK
+2,nach Payload-Hash,,no,,GAP
+3,während Snapshot-Tempfile-Schreiben,,no,,GAP
+4,nach Tempfile vor Rename,,no,,GAP
+5,nach Rename vor Rehash,,no,,GAP
+6,nach Snapshot-Rehash,,no,,GAP
+7,während Parse,D1.7,yes,monkey-patch RuntimeError,DIRECT
+8,während Normalisierung,,no,,GAP (misreported as D1.8)
+9,nach Expression-Insert,D2.9,yes,custom fail_after_expr,DIRECT
+10,nach Provision-Insert,D2.11,yes,implicit via FTS failure,IMPLICIT
+11,während FTS-Schreiben,D2.11,yes,custom fail_fts,DIRECT
+12,vor De-Current,D2.12,yes,unique constraint test,PARTIAL
+13,nach De-Current vor Aktivierung,D2.9,yes,implicit via transaction,IMPLICIT
+14,nach Aktivierung vor Commit,D2.9+D2.11,yes,implicit via transaction,IMPLICIT
+15,nach Commit vor Erfolgsrückgabe,,no,,GAP
+16,während SyncItem-Finalisierung,,no,,GAP
+17,während SyncRun-Finalisierung,,no,,GAP
+18,Prozessabbruch nach Commit,D3.15,yes,close/reopen simulation,DIRECT

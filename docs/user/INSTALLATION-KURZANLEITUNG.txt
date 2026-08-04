@@ -1,0 +1,59 @@
+============================================================
+  PrivateLegalNavigator v1.0.0-rc.1 — INSTALLATION
+============================================================
+
+1. PYTHON INSTALLIEREN (falls nicht vorhanden)
+   https://www.python.org/downloads/
+   → Python 3.11, 3.12, 3.13 oder 3.14
+   → "Add Python to PATH" aktivieren
+
+2. RELEASE-ZIP ENTZPACKEN
+   ZIP in ein beliebiges Verzeichnis entpacken
+
+3. POWERSHELL OEFFNEN
+   Im entpackten Verzeichnis das Unterverzeichnis windows\ oeffnen
+
+4. INSTALLIEREN
+   .\install.ps1
+
+5. STARTEN
+   .\start.ps1
+   → Browser oeffnet automatisch http://127.0.0.1:8000
+
+6. ERSTEN FALL ANLEGEN
+   Auf "Neuer Fall" klicken → Titel eingeben → Speichern
+
+7. PDF HOCHLADEN
+   Fall oeffnen → "Dokument hochladen" → PDF auswaehlen
+
+8. TEXT ANZEIGEN
+   Dokument oeffnen → extrahierten Text anzeigen
+
+----
+
+TAEGLICHE NUTZUNG:
+   Starten: .\start.ps1
+   Beenden: .\stop.ps1
+
+BACKUP:
+   .\backup.ps1
+
+WIEDERHERSTELLUNG:
+   .\restore.ps1 -BackupPath "PFAD\ZUM\BACKUP.zip"
+
+DEINSTALLATION (Daten behalten):
+   .\uninstall.ps1
+
+DEINSTALLATION (komplett):
+   .\uninstall.ps1 -Purge
+
+----
+
+WICHTIG:
+   - Keine Rechtsberatung!
+   - Alle Berechnungen sind unverbindliche Vorschauen
+   - Nur lokale Nutzung (127.0.0.1)
+   - Nur PDF-Dokumente, kein OCR fuer Scans
+
+Dokumentation: docs\user\
+GitHub: https://github.com/xxammaxx/Rechtssoftware

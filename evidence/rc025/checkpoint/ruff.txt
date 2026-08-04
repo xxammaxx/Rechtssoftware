@@ -1,0 +1,151 @@
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/rc025/test_m7b_contract_red.py:14:38
+   |
+12 | import uuid
+13 | from pathlib import Path
+14 | from unittest.mock import MagicMock, patch
+   |                                      ^^^^^
+15 |
+16 | import pytest
+   |
+help: Remove unused import: `unittest.mock.patch`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025/test_m7b_contract_red.py:56:5
+   |
+54 |       save_sync_item() which writes to the product database.
+55 |       """
+56 | /     from private_legal_navigator.application.sync_service import SyncPlanningService, SyncExecutionService
+57 | |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+   | |______________________________________________________________________________________^
+58 |
+59 |       # Setup: Create a plan with a single NEW item (synthetic data)
+   |
+help: Organize imports
+
+F401 [*] `private_legal_navigator.application.sync_service.SyncPlanningService` imported but unused
+  --> tests/rc025/test_m7b_contract_red.py:56:66
+   |
+54 |     save_sync_item() which writes to the product database.
+55 |     """
+56 |     from private_legal_navigator.application.sync_service import SyncPlanningService, SyncExecutionService
+   |                                                                  ^^^^^^^^^^^^^^^^^^^
+57 |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+   |
+help: Remove unused import: `private_legal_navigator.application.sync_service.SyncPlanningService`
+
+E501 Line too long (106 > 100)
+  --> tests/rc025/test_m7b_contract_red.py:56:101
+   |
+54 |     save_sync_item() which writes to the product database.
+55 |     """
+56 |     from private_legal_navigator.application.sync_service import SyncPlanningService, SyncExecutionService
+   |                                                                                                     ^^^^^^
+57 |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:180:5
+    |
+178 |       then calls sync_gii_instrument() which downloads again.
+179 |       """
+180 | /     from private_legal_navigator.application.sync_service import SyncExecutionService, _compute_plan_digest
+181 | |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+182 | |     from private_legal_navigator.infrastructure.safe_source_client import SourceClient
+    | |______________________________________________________________________________________^
+183 |
+184 |       plan = SyncPlan(
+    |
+help: Organize imports
+
+E501 Line too long (107 > 100)
+   --> tests/rc025/test_m7b_contract_red.py:180:101
+    |
+178 |     then calls sync_gii_instrument() which downloads again.
+179 |     """
+180 |     from private_legal_navigator.application.sync_service import SyncExecutionService, _compute_plan_digest
+    |                                                                                                     ^^^^^^^
+181 |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+182 |     from private_legal_navigator.infrastructure.safe_source_client import SourceClient
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:368:5
+    |
+366 |       must prevent parallel apply runs. Currently no lock exists.
+367 |       """
+368 | /     from private_legal_navigator.application.sync_service import SyncExecutionService
+369 | |
+370 | |     # Verify that the execute method has lock acquisition logic
+371 | |     import inspect
+    | |__________________^
+372 |
+373 |       source = inspect.getsource(SyncExecutionService.execute)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:396:5
+    |
+394 |       were hashed are not the bytes that get imported.
+395 |       """
+396 | /     from private_legal_navigator.application.sync_service import SyncExecutionService
+397 | |
+398 | |     import inspect
+    | |__________________^
+399 |
+400 |       source = inspect.getsource(SyncExecutionService._process_item)
+    |
+help: Organize imports
+
+F841 Local variable `content_flow_indicators` is assigned to but never used
+   --> tests/rc025/test_m7b_contract_red.py:404:5
+    |
+402 |     # Check that the downloaded content is passed through to import
+403 |     # The import must receive the SAME bytes object that was hashed
+404 |     content_flow_indicators = ["content", "download_result.content", "raw_bytes"]
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+405 |     hash_then_pass = False
+    |
+help: Remove assignment to unused variable `content_flow_indicators`
+
+F841 Local variable `hash_then_pass` is assigned to but never used
+   --> tests/rc025/test_m7b_contract_red.py:405:5
+    |
+403 |     # The import must receive the SAME bytes object that was hashed
+404 |     content_flow_indicators = ["content", "download_result.content", "raw_bytes"]
+405 |     hash_then_pass = False
+    |     ^^^^^^^^^^^^^^
+406 |
+407 |     # Simple heuristic: check if content is passed to import
+    |
+help: Remove assignment to unused variable `hash_then_pass`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:438:5
+    |
+436 |       the old valid state must remain. No partial FTS state allowed.
+437 |       """
+438 | /     from private_legal_navigator.application.legal_source_service import LegalSourceService
+439 | |
+440 | |     import inspect
+    | |__________________^
+441 |
+442 |       # Check that the save_instrument_batch is atomic
+    |
+help: Organize imports
+
+F841 Local variable `coverage_claims` is assigned to but never used
+   --> tests/rc025/test_m7b_contract_red.py:496:5
+    |
+494 |     # Look for patterns like "XX tests" or "XX% coverage"
+495 |     test_claims = re.findall(r"(\d+)\s+(?:tests|Tests)", content)
+496 |     coverage_claims = re.findall(r"(\d+)%\s*(?:coverage|Coverage|Abdeckung)", content)
+    |     ^^^^^^^^^^^^^^^
+497 |
+498 |     # These claims must be traceable to the most recent evidence
+    |
+help: Remove assignment to unused variable `coverage_claims`
+
+Found 12 errors.
+[*] 7 fixable with the `--fix` option (3 hidden fixes can be enabled with the `--unsafe-fixes` option).

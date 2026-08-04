@@ -172,6 +172,10 @@ async def get_document(
         raise DocumentNotFoundError()
 
     doc, content = result
+    # Cross-case isolation: verify document belongs to the requested case
+    if doc.case_id != case_id:
+        raise DocumentNotFoundError()
+
     return Response(
         content=content,
         media_type=doc.mime_type,
@@ -193,6 +197,9 @@ def get_document_text(
     """Get extracted text for a document."""
     doc = service.get_document_text(document_id)
     if doc is None:
+        raise DocumentNotFoundError()
+    # Cross-case isolation: verify document belongs to the requested case
+    if doc.case_id != case_id:
         raise DocumentNotFoundError()
     return DocumentTextResponse(
         document_id=doc.document_id,
@@ -246,12 +253,21 @@ def extract_deadline_candidates(
     case_id: uuid.UUID,
     document_id: uuid.UUID,
     service: DeadlineService = Depends(get_deadline_service),  # noqa: B008
+    doc_service: DocumentService = Depends(get_document_service),  # noqa: B008
 ) -> DeadlineExtractionResponse:
     """Extract deadline candidates from a document's text.
 
     Erkennt deterministisch mögliche Frist- und Terminangaben.
     Berechnet KEINE verbindliche Rechtsfrist.
     """
+    # Cross-case isolation: verify document belongs to the requested case
+    doc_result = doc_service.get_document(document_id)
+    if doc_result is None:
+        raise DocumentNotFoundError()
+    doc, _content = doc_result
+    if doc.case_id != case_id:
+        raise DocumentNotFoundError()
+
     from private_legal_navigator.infrastructure.deterministic_deadline_extractor import (
         ExtractionTimeoutError,
         TextTooLargeError,

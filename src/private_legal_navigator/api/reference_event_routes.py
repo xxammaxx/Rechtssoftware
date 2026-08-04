@@ -100,10 +100,12 @@ def _build_confirm_warnings(body: ConfirmRequest) -> list[WarningResponse]:
     return warnings
 
 
-def _resolve_document(document_id: uuid.UUID, repo: DocumentRepository) -> None:
-    """Verify document exists or raise 404."""
+def _resolve_document(document_id: uuid.UUID, case_id: uuid.UUID, repo: DocumentRepository) -> None:
+    """Verify document exists and belongs to case or raise 404."""
     doc = repo.get_by_id(document_id)
     if doc is None:
+        raise DocumentNotFoundError()
+    if doc.case_id != case_id:
         raise DocumentNotFoundError()
 
 
@@ -119,7 +121,7 @@ def list_reference_events(
 ) -> ListReferenceEventsResponse | Response:
     """List all reference event candidates for a deadline candidate."""
     _resolve_case(case_id, _get_case_repo(request))
-    _resolve_document(document_id, _get_document_repo(request))
+    _resolve_document(document_id, case_id, _get_document_repo(request))
 
     # Validate candidate_id index bounds
     if candidate_id < 0:
@@ -172,7 +174,7 @@ def confirm_reference_event(
 ) -> ConfirmationResponse | Response:
     """Confirm, reject, or revoke a reference event."""
     _resolve_case(case_id, _get_case_repo(request))
-    _resolve_document(document_id, _get_document_repo(request))
+    _resolve_document(document_id, case_id, _get_document_repo(request))
 
     service = _get_ref_event_service(request)
 
@@ -318,6 +320,17 @@ def confirm_reference_event(
                     }
                 },
             )
+        existing = service._repo.get_confirmation(body.confirmation_id)
+        if existing is None or existing.document_id != document_id:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "detail": {
+                        "code": "CONFIRMATION_NOT_FOUND",
+                        "message": "Confirmation not found",
+                    }
+                },
+            )
         revoked = service.revoke(confirmation_id=body.confirmation_id)
         if revoked is None:
             return JSONResponse(
@@ -370,7 +383,7 @@ def calculation_preview(
 ) -> CalendarCalculationResponse | Response:
     """Request a non-binding calculation preview."""
     _resolve_case(case_id, _get_case_repo(request))
-    _resolve_document(document_id, _get_document_repo(request))
+    _resolve_document(document_id, case_id, _get_document_repo(request))
 
     # Note: In production, the duration amount and unit would come from the M5 candidate.
     # For now, this is a stub that validates the confirmation exists.
@@ -383,7 +396,7 @@ def calculation_preview(
         repo = request.app.state.reference_event_repository
         event = repo.get_confirmation(body.confirmation_id)
 
-        if event is None:
+        if event is None or event.document_id != document_id:
             return JSONResponse(
                 status_code=404,
                 content={
@@ -472,7 +485,7 @@ def confirmation_history(
 ) -> ConfirmationHistoryResponse:
     """Get full confirmation history for a deadline candidate."""
     _resolve_case(case_id, _get_case_repo(request))
-    _resolve_document(document_id, _get_document_repo(request))
+    _resolve_document(document_id, case_id, _get_document_repo(request))
 
     service = _get_ref_event_service(request)
     history = service.get_history(document_id, candidate_id)

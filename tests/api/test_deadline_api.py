@@ -87,8 +87,8 @@ class TestDeadlineExtractionEndpoint:
         assert resp.status_code == 404
 
     def test_non_existent_document_in_wrong_case(self, client, case_id, document_id):
-        """The endpoint resolves by document_id only, consistent with existing routes.
-        A valid document_id returns 200 even in a different case context."""
+        """Cross-case isolation: a valid document from another case must return 404
+        when accessed through a different case's URL."""
         # Create a second case
         resp2 = client.post(
             "/api/v1/cases",
@@ -100,8 +100,8 @@ class TestDeadlineExtractionEndpoint:
         resp = client.post(
             f"/api/v1/cases/{second_case_id}/documents/{document_id}/deadline-candidates"
         )
-        # Document exists regardless of case — consistent with existing API pattern
-        assert resp.status_code == 200
+        # Cross-case access must be rejected — document belongs to case_id, not second_case_id
+        assert resp.status_code == 404
 
     def test_empty_candidates_list_valid(self, client, case_id, document_id):
         """Document without dates should return empty candidates list."""

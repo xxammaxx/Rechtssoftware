@@ -1,0 +1,23 @@
+{
+  "repository": "xxammaxx/Rechtssoftware",
+  "branch": "release/v1.0.0-rc.2-reconciled",
+  "commit": "6a62460aaa798ede5784f07ac39a51953db5a0dd",
+  "tree_sha": "15518e936c129566cb0159856bce62ed83b850cf",
+  "version": "1.0.0rc2",
+  "planned_tag": "v1.0.0-rc.2",
+  "source_date_epoch": 1785265672,
+  "pyproject_version": "1.0.0rc2",
+  "python_requires": ">=3.11",
+  "wheel_filename": "private_legal_navigator-1.0.0rc2-py3-none-any.whl",
+  "wheel_sha256": "c59e5a6380b053bef6fc4b2317785fc00f108027d8a69d1e8fcca5b920a682a0",
+  "sdist_filename": "private_legal_navigator-1.0.0rc2.tar.gz",
+  "sdist_sha256": "480f39ef631aad2df91b45b90d9775fbfb2d31c812bcd0f785b16a392f4e3cba",
+  "build_platform": "linux",
+  "build_python_version": "3.12.3",
+  "twine_check": "PASSED",
+  "pip_check": "PASSED",
+  "security_safety_branch": "safety/rc2-visible-accepted-6a62460",
+  "private_evidence_excluded": true,
+  "m6b2_excluded": true,
+  "rebuild_note": "Wheel replaced: ZIP originally built from b841ebae; wheel+sdist+manifest updated to match accepted candidate 6a62460 after RC-018 user acceptance."
+}

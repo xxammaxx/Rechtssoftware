@@ -103,8 +103,32 @@ def mock_client_factory():
                     )
             raise SourceClientError(f"Unmocked download_with_headers URL: {url}")
 
+        def _download_verified(
+            url: str, source_identifier: str = ""
+        ) -> "VerifiedSourcePayload":
+            from private_legal_navigator.infrastructure.safe_source_client import (
+                VerifiedSourcePayload,
+                compute_sha256,
+            )
+            from datetime import UTC, datetime
+
+            result = _download_with_headers(url)
+            sha256 = compute_sha256(result.content)
+            return VerifiedSourcePayload(
+                source_identifier=source_identifier or url,
+                effective_url=url,
+                content=result.content,
+                sha256=sha256,
+                http_status=result.http_status,
+                etag=result.etag,
+                last_modified=result.last_modified,
+                content_type=result.content_type,
+                fetched_at=datetime.now(UTC).isoformat(),
+            )
+
         client.download.side_effect = _download
         client.download_with_headers.side_effect = _download_with_headers
+        client.download_verified.side_effect = _download_verified
 
         return client
 

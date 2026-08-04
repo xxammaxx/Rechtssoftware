@@ -22,6 +22,7 @@ from private_legal_navigator.domain.sync import (
 from private_legal_navigator.infrastructure.database import (
     initialize_schema,
 )
+from private_legal_navigator.infrastructure.gii_adapter import make_gii_source
 from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
     SqliteLegalSourceRepository,
 )
@@ -59,6 +60,24 @@ def sample_run():
 
 
 class TestSyncRunPersistence:
+    def test_update_catalog_stand_date_persists_on_registered_source(self, repo):
+        """T306: a completed catalog stand is stored against its source."""
+        source = make_gii_source()
+        repo.save_source(source)
+
+        repo.update_legal_source_catalog_stand_date(source.source_key, "2026-07-26")
+
+        conn = sqlite3.connect(repo._db_path)
+        try:
+            row = conn.execute(
+                "SELECT last_catalog_stand_date FROM legal_sources WHERE source_key = ?",
+                (source.source_key,),
+            ).fetchone()
+        finally:
+            conn.close()
+
+        assert row == ("2026-07-26",)
+
     def test_save_and_retrieve_sync_run(self, repo, sample_run):
         """T302: create_run stores a sync run and get_latest retrieves it."""
         repo.save_sync_run(sample_run)

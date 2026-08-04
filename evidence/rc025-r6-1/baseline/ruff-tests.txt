@@ -1,0 +1,1362 @@
+F821 Undefined name `VerifiedSourcePayload`
+   --> tests/integration/test_sync_abort_restart.py:109:15
+    |
+107 |         def _download_verified(
+108 |             url: str, source_identifier: str = ""
+109 |         ) -> "VerifiedSourcePayload":
+    |               ^^^^^^^^^^^^^^^^^^^^^
+110 |             from private_legal_navigator.infrastructure.safe_source_client import (
+111 |                 VerifiedSourcePayload,
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/integration/test_sync_abort_restart.py:110:13
+    |
+108 |               url: str, source_identifier: str = ""
+109 |           ) -> "VerifiedSourcePayload":
+110 | /             from private_legal_navigator.infrastructure.safe_source_client import (
+111 | |                 VerifiedSourcePayload,
+112 | |                 compute_sha256,
+113 | |             )
+114 | |             from datetime import UTC, datetime
+    | |______________________________________________^
+115 |
+116 |               result = _download_with_headers(url)
+    |
+help: Organize imports
+
+F821 Undefined name `VerifiedSourcePayload`
+   --> tests/integration/test_sync_apply.py:123:15
+    |
+121 |         def _download_verified(
+122 |             url: str, source_identifier: str = ""
+123 |         ) -> "VerifiedSourcePayload":
+    |               ^^^^^^^^^^^^^^^^^^^^^
+124 |             from private_legal_navigator.infrastructure.safe_source_client import (
+125 |                 VerifiedSourcePayload,
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/integration/test_sync_apply.py:124:13
+    |
+122 |               url: str, source_identifier: str = ""
+123 |           ) -> "VerifiedSourcePayload":
+124 | /             from private_legal_navigator.infrastructure.safe_source_client import (
+125 | |                 VerifiedSourcePayload,
+126 | |                 compute_sha256,
+127 | |             )
+128 | |             from datetime import UTC, datetime
+    | |______________________________________________^
+129 |
+130 |               result = _download_with_headers(url)
+    |
+help: Organize imports
+
+F821 Undefined name `VerifiedSourcePayload`
+   --> tests/integration/test_sync_force.py:108:15
+    |
+106 |         def _download_verified(
+107 |             url: str, source_identifier: str = ""
+108 |         ) -> "VerifiedSourcePayload":
+    |               ^^^^^^^^^^^^^^^^^^^^^
+109 |             from private_legal_navigator.infrastructure.safe_source_client import (
+110 |                 VerifiedSourcePayload,
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/integration/test_sync_force.py:109:13
+    |
+107 |               url: str, source_identifier: str = ""
+108 |           ) -> "VerifiedSourcePayload":
+109 | /             from private_legal_navigator.infrastructure.safe_source_client import (
+110 | |                 VerifiedSourcePayload,
+111 | |                 compute_sha256,
+112 | |             )
+113 | |             from datetime import UTC, datetime
+    | |______________________________________________^
+114 |
+115 |               result = _download_with_headers(url)
+    |
+help: Organize imports
+
+F821 Undefined name `VerifiedSourcePayload`
+   --> tests/integration/test_sync_idempotency.py:105:15
+    |
+103 |         def _download_verified(
+104 |             url: str, source_identifier: str = ""
+105 |         ) -> "VerifiedSourcePayload":
+    |               ^^^^^^^^^^^^^^^^^^^^^
+106 |             from private_legal_navigator.infrastructure.safe_source_client import (
+107 |                 VerifiedSourcePayload,
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/integration/test_sync_idempotency.py:106:13
+    |
+104 |               url: str, source_identifier: str = ""
+105 |           ) -> "VerifiedSourcePayload":
+106 | /             from private_legal_navigator.infrastructure.safe_source_client import (
+107 | |                 VerifiedSourcePayload,
+108 | |                 compute_sha256,
+109 | |             )
+110 | |             from datetime import UTC, datetime
+    | |______________________________________________^
+111 |
+112 |               result = _download_with_headers(url)
+    |
+help: Organize imports
+
+F821 Undefined name `VerifiedSourcePayload`
+   --> tests/integration/test_sync_instrument_specific.py:105:15
+    |
+103 |         def _download_verified(
+104 |             url: str, source_identifier: str = ""
+105 |         ) -> "VerifiedSourcePayload":
+    |               ^^^^^^^^^^^^^^^^^^^^^
+106 |             from private_legal_navigator.infrastructure.safe_source_client import (
+107 |                 VerifiedSourcePayload,
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/integration/test_sync_instrument_specific.py:106:13
+    |
+104 |               url: str, source_identifier: str = ""
+105 |           ) -> "VerifiedSourcePayload":
+106 | /             from private_legal_navigator.infrastructure.safe_source_client import (
+107 | |                 VerifiedSourcePayload,
+108 | |                 compute_sha256,
+109 | |             )
+110 | |             from datetime import UTC, datetime
+    | |______________________________________________^
+111 |
+112 |               result = _download_with_headers(url)
+    |
+help: Organize imports
+
+F401 [*] `hashlib` imported but unused
+  --> tests/rc025-r1/test_verifier_red.py:10:8
+   |
+ 8 | """
+ 9 |
+10 | import hashlib
+   |        ^^^^^^^
+11 | import io
+12 | import os
+   |
+help: Remove unused import: `hashlib`
+
+F401 [*] `sqlite3` imported but unused
+  --> tests/rc025-r1/test_verifier_red.py:13:8
+   |
+11 | import io
+12 | import os
+13 | import sqlite3
+   |        ^^^^^^^
+14 | import tempfile
+15 | import uuid
+   |
+help: Remove unused import: `sqlite3`
+
+F401 [*] `uuid` imported but unused
+  --> tests/rc025-r1/test_verifier_red.py:15:8
+   |
+13 | import sqlite3
+14 | import tempfile
+15 | import uuid
+   |        ^^^^
+16 | import zipfile
+17 | from pathlib import Path
+   |
+help: Remove unused import: `uuid`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/rc025-r1/test_verifier_red.py:18:27
+   |
+16 | import zipfile
+17 | from pathlib import Path
+18 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+19 |
+20 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+W293 Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:103:1
+    |
+101 |     download_with_headers (used by _process_item): always returns V1.
+102 |     download (used by sync_instrument): always returns V2.
+103 |     
+    | ^^^^
+104 |     This simulates a race condition where the server changes between
+105 |     the two download calls — proving byte identity violation.
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:231:1
+    |
+229 | def test_red_r1_byte_identity_violation() -> None:
+230 |     """RED: Prove bytes hashed in _process_item differ from snapshot.
+231 |     
+    | ^^^^
+232 |     Patches SourceClient to serve V1 on download_with_headers and
+233 |     V2 on download. After execution, compares the hash from the
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:329:1
+    |
+327 |     """RED: Prove that _process_item has no mechanism to ensure
+328 |     download_count == 1 per instrument.
+329 |     
+    | ^^^^
+330 |     Inspects the source code of SyncExecutionService._process_item
+331 |     and the SyncItem domain model for any download counting.
+    |
+help: Remove whitespace from blank line
+
+W293 Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:367:1
+    |
+365 |     """RED: Prove that snapshot hash is never compared against
+366 |     the hash computed from download_with_headers content.
+367 |     
+    | ^^^^
+368 |     After a non-dry-run apply, verify that there is no code path
+369 |     that validates snapshot.sha256 == item.new_sha256.
+    |
+help: Remove whitespace from blank line
+
+W291 [*] Trailing whitespace
+   --> tests/rc025-r1/test_verifier_red.py:379:70
+    |
+377 |     # Check if there's any cross-validation between new_sha256 and snapshot hash
+378 |     # The new_sha256 is computed (line 690) and stored on item (line 691)
+379 |     # But the snapshot hash comes from sync_gii_instrument (line 719) 
+    |                                                                      ^
+380 |     # via save_instrument_batch — these two values are NEVER compared.
+    |
+help: Remove trailing whitespace
+
+W293 [*] Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:381:1
+    |
+379 |     # But the snapshot hash comes from sync_gii_instrument (line 719) 
+380 |     # via save_instrument_batch — these two values are NEVER compared.
+381 |     
+    | ^^^^
+382 |     # The RED condition: new_sha256 exists in source AND
+383 |     # there is NO comparison between new_sha256 and any snapshot property
+    |
+help: Remove whitespace from blank line
+
+F841 Local variable `has_new_sha256` is assigned to but never used
+   --> tests/rc025-r1/test_verifier_red.py:384:5
+    |
+382 |     # The RED condition: new_sha256 exists in source AND
+383 |     # there is NO comparison between new_sha256 and any snapshot property
+384 |     has_new_sha256 = "new_sha256" in source
+    |     ^^^^^^^^^^^^^^
+385 |     
+386 |     # Check for explicit cross-validation:
+    |
+help: Remove assignment to unused variable `has_new_sha256`
+
+W293 [*] Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:385:1
+    |
+383 |     # there is NO comparison between new_sha256 and any snapshot property
+384 |     has_new_sha256 = "new_sha256" in source
+385 |     
+    | ^^^^
+386 |     # Check for explicit cross-validation:
+387 |     # "new_sha256 == snapshot" or "new_sha256 != snapshot" or
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:398:1
+    |
+396 |         ]
+397 |     )
+398 |     
+    | ^^^^
+399 |     if not has_explicit_check:
+400 |         # RED: no cross-validation between download hash and snapshot hash
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests/rc025-r1/test_verifier_red.py:402:1
+    |
+400 |         # RED: no cross-validation between download hash and snapshot hash
+401 |         return
+402 |     
+    | ^^^^
+403 |     pytest.fail(
+404 |         "RED-R1-5: Cross-validation between new_sha256 and snapshot.sha256 "
+    |
+help: Remove whitespace from blank line
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/rc025/test_m7b_contract_red.py:14:38
+   |
+12 | import uuid
+13 | from pathlib import Path
+14 | from unittest.mock import MagicMock, patch
+   |                                      ^^^^^
+15 |
+16 | import pytest
+   |
+help: Remove unused import: `unittest.mock.patch`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025/test_m7b_contract_red.py:56:5
+   |
+54 |       save_sync_item() which writes to the product database.
+55 |       """
+56 | /     from private_legal_navigator.application.sync_service import SyncPlanningService, SyncExecutionService
+57 | |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+   | |______________________________________________________________________________________^
+58 |
+59 |       # Setup: Create a plan with a single NEW item (synthetic data)
+   |
+help: Organize imports
+
+F401 [*] `private_legal_navigator.application.sync_service.SyncPlanningService` imported but unused
+  --> tests/rc025/test_m7b_contract_red.py:56:66
+   |
+54 |     save_sync_item() which writes to the product database.
+55 |     """
+56 |     from private_legal_navigator.application.sync_service import SyncPlanningService, SyncExecutionService
+   |                                                                  ^^^^^^^^^^^^^^^^^^^
+57 |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+   |
+help: Remove unused import: `private_legal_navigator.application.sync_service.SyncPlanningService`
+
+E501 Line too long (106 > 100)
+  --> tests/rc025/test_m7b_contract_red.py:56:101
+   |
+54 |     save_sync_item() which writes to the product database.
+55 |     """
+56 |     from private_legal_navigator.application.sync_service import SyncPlanningService, SyncExecutionService
+   |                                                                                                     ^^^^^^
+57 |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:180:5
+    |
+178 |       then calls sync_gii_instrument() which downloads again.
+179 |       """
+180 | /     from private_legal_navigator.application.sync_service import SyncExecutionService, _compute_plan_digest
+181 | |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+182 | |     from private_legal_navigator.infrastructure.safe_source_client import SourceClient
+    | |______________________________________________________________________________________^
+183 |
+184 |       plan = SyncPlan(
+    |
+help: Organize imports
+
+E501 Line too long (107 > 100)
+   --> tests/rc025/test_m7b_contract_red.py:180:101
+    |
+178 |     then calls sync_gii_instrument() which downloads again.
+179 |     """
+180 |     from private_legal_navigator.application.sync_service import SyncExecutionService, _compute_plan_digest
+    |                                                                                                     ^^^^^^^
+181 |     from private_legal_navigator.domain.sync import SyncItem, SyncItemStatus, SyncPlan
+182 |     from private_legal_navigator.infrastructure.safe_source_client import SourceClient
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:368:5
+    |
+366 |       must prevent parallel apply runs. Currently no lock exists.
+367 |       """
+368 | /     from private_legal_navigator.application.sync_service import SyncExecutionService
+369 | |
+370 | |     # Verify that the execute method has lock acquisition logic
+371 | |     import inspect
+    | |__________________^
+372 |
+373 |       source = inspect.getsource(SyncExecutionService.execute)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:396:5
+    |
+394 |       were hashed are not the bytes that get imported.
+395 |       """
+396 | /     from private_legal_navigator.application.sync_service import SyncExecutionService
+397 | |
+398 | |     import inspect
+    | |__________________^
+399 |
+400 |       source = inspect.getsource(SyncExecutionService._process_item)
+    |
+help: Organize imports
+
+F841 Local variable `content_flow_indicators` is assigned to but never used
+   --> tests/rc025/test_m7b_contract_red.py:404:5
+    |
+402 |     # Check that the downloaded content is passed through to import
+403 |     # The import must receive the SAME bytes object that was hashed
+404 |     content_flow_indicators = ["content", "download_result.content", "raw_bytes"]
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+405 |     hash_then_pass = False
+    |
+help: Remove assignment to unused variable `content_flow_indicators`
+
+F841 Local variable `hash_then_pass` is assigned to but never used
+   --> tests/rc025/test_m7b_contract_red.py:405:5
+    |
+403 |     # The import must receive the SAME bytes object that was hashed
+404 |     content_flow_indicators = ["content", "download_result.content", "raw_bytes"]
+405 |     hash_then_pass = False
+    |     ^^^^^^^^^^^^^^
+406 |
+407 |     # Simple heuristic: check if content is passed to import
+    |
+help: Remove assignment to unused variable `hash_then_pass`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025/test_m7b_contract_red.py:438:5
+    |
+436 |       the old valid state must remain. No partial FTS state allowed.
+437 |       """
+438 | /     from private_legal_navigator.application.legal_source_service import LegalSourceService
+439 | |
+440 | |     import inspect
+    | |__________________^
+441 |
+442 |       # Check that the save_instrument_batch is atomic
+    |
+help: Organize imports
+
+F841 Local variable `coverage_claims` is assigned to but never used
+   --> tests/rc025/test_m7b_contract_red.py:496:5
+    |
+494 |     # Look for patterns like "XX tests" or "XX% coverage"
+495 |     test_claims = re.findall(r"(\d+)\s+(?:tests|Tests)", content)
+496 |     coverage_claims = re.findall(r"(\d+)%\s*(?:coverage|Coverage|Abdeckung)", content)
+    |     ^^^^^^^^^^^^^^^
+497 |
+498 |     # These claims must be traceable to the most recent evidence
+    |
+help: Remove assignment to unused variable `coverage_claims`
+
+F401 [*] `hashlib` imported but unused
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:17:8
+   |
+15 | """
+16 |
+17 | import hashlib
+   |        ^^^^^^^
+18 | import os
+19 | import shutil
+   |
+help: Remove unused import: `hashlib`
+
+F401 [*] `shutil` imported but unused
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:19:8
+   |
+17 | import hashlib
+18 | import os
+19 | import shutil
+   |        ^^^^^^
+20 | import sqlite3
+21 | import tempfile
+   |
+help: Remove unused import: `shutil`
+
+F401 [*] `uuid` imported but unused
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:22:8
+   |
+20 | import sqlite3
+21 | import tempfile
+22 | import uuid
+   |        ^^^^
+23 | from pathlib import Path
+24 | from unittest.mock import MagicMock, patch
+   |
+help: Remove unused import: `uuid`
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:24:27
+   |
+22 | import uuid
+23 | from pathlib import Path
+24 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+25 |
+26 | import pytest
+   |
+help: Remove unused import
+
+F401 [*] `unittest.mock.patch` imported but unused
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:24:38
+   |
+22 | import uuid
+23 | from pathlib import Path
+24 | from unittest.mock import MagicMock, patch
+   |                                      ^^^^^
+25 |
+26 | import pytest
+   |
+help: Remove unused import
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:85:9
+   |
+83 |       @property
+84 |       def policy(self):
+85 | /         from private_legal_navigator.infrastructure.safe_source_client import (
+86 | |             TransportMode, TransportPolicy,
+87 | |         )
+   | |_________^
+88 |           return TransportPolicy(mode=TransportMode.TEST,
+89 |                                 allowed_hosts=("gesetze-im-internet.de",),
+   |
+help: Organize imports
+
+E401 [*] Multiple imports on one line
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:96:9
+   |
+94 |         if "gii-toc" in url:
+95 |             return CATALOG_XML
+96 |         import zipfile, io
+   |         ^^^^^^^^^^^^^^^^^^
+97 |         buf = io.BytesIO()
+98 |         with zipfile.ZipFile(buf, "w") as zf:
+   |
+help: Split imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r2_verifier/test_post_fix_verifier.py:96:9
+   |
+94 |         if "gii-toc" in url:
+95 |             return CATALOG_XML
+96 |         import zipfile, io
+   |         ^^^^^^^^^^^^^^^^^^
+97 |         buf = io.BytesIO()
+98 |         with zipfile.ZipFile(buf, "w") as zf:
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:107:9
+    |
+106 |       def download_verified(self, url: str, source_identifier: str = ""):
+107 | /         from private_legal_navigator.infrastructure.safe_source_client import (
+108 | |             VerifiedSourcePayload, compute_sha256,
+109 | |         )
+110 | |         from datetime import UTC, datetime
+    | |__________________________________________^
+111 |           result = self.download_with_headers(url)
+112 |           sha = compute_sha256(result.content)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:123:5
+    |
+122 |   def _run_apply(client, repo, snap_dir) -> None:
+123 | /     from private_legal_navigator.application.legal_source_service import LegalSourceService
+124 | |     from private_legal_navigator.application.sync_service import (
+125 | |         SyncExecutionService, SyncPlanningService,
+126 | |     )
+127 | |     from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
+    | |_____________________________________________________________________________^
+128 |
+129 |       gii = GiiAdapter(client, snap_dir)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:167:17
+    |
+165 |                   gii = GiiAdapter(client, Path(sd))
+166 |                   plan2 = SyncPlanningService(repo, client, gii).plan(force=True)
+167 | /                 from private_legal_navigator.application.legal_source_service import LegalSourceService
+168 | |                 from private_legal_navigator.application.sync_service import SyncExecutionService
+    | |_________________________________________________________________________________________________^
+169 |                   lss = LegalSourceService(repo, client, Path(sd))
+170 |                   SyncExecutionService(repo, lss, client, gii).execute(plan2, dry_run=False)
+    |
+help: Organize imports
+
+E501 Line too long (103 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:167:101
+    |
+165 |                 gii = GiiAdapter(client, Path(sd))
+166 |                 plan2 = SyncPlanningService(repo, client, gii).plan(force=True)
+167 |                 from private_legal_navigator.application.legal_source_service import LegalSourceService
+    |                                                                                                     ^^^
+168 |                 from private_legal_navigator.application.sync_service import SyncExecutionService
+169 |                 lss = LegalSourceService(repo, client, Path(sd))
+    |
+
+F841 Local variable `orig_dlwh` is assigned to but never used
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:188:17
+    |
+186 |                 # while still incrementing the counter.
+187 |                 corrupt = b"NOT XML CONTENT"
+188 |                 orig_dlwh = client.download_with_headers
+    |                 ^^^^^^^^^
+189 |
+190 |                 def corrupt_dlwh(url):
+    |
+help: Remove assignment to unused variable `orig_dlwh`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:195:21
+    |
+194 |                   def corrupt_dlv(url, source_identifier=""):
+195 | /                     from private_legal_navigator.infrastructure.safe_source_client import (
+196 | |                         VerifiedSourcePayload, compute_sha256,
+197 | |                     )
+198 | |                     from datetime import UTC, datetime
+    | |______________________________________________________^
+199 |                       result = corrupt_dlwh(url)
+200 |                       return VerifiedSourcePayload(
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:212:17
+    |
+210 |                   client.download_with_headers = corrupt_dlwh
+211 |                   client.download_verified = corrupt_dlv
+212 | /                 from private_legal_navigator.application.legal_source_service import LegalSourceService
+213 | |                 from private_legal_navigator.application.sync_service import SyncExecutionService, SyncPlanningService
+214 | |                 from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
+    | |_________________________________________________________________________________________^
+215 |                   gii = GiiAdapter(client, Path(sd))
+216 |                   plan = SyncPlanningService(repo, client, gii).plan()
+    |
+help: Organize imports
+
+E501 Line too long (103 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:212:101
+    |
+210 |                 client.download_with_headers = corrupt_dlwh
+211 |                 client.download_verified = corrupt_dlv
+212 |                 from private_legal_navigator.application.legal_source_service import LegalSourceService
+    |                                                                                                     ^^^
+213 |                 from private_legal_navigator.application.sync_service import SyncExecutionService, SyncPlanningService
+214 |                 from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
+    |
+
+E501 Line too long (118 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:213:101
+    |
+211 |                 client.download_verified = corrupt_dlv
+212 |                 from private_legal_navigator.application.legal_source_service import LegalSourceService
+213 |                 from private_legal_navigator.application.sync_service import SyncExecutionService, SyncPlanningService
+    |                                                                                                     ^^^^^^^^^^^^^^^^^^
+214 |                 from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
+215 |                 gii = GiiAdapter(client, Path(sd))
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:259:21
+    |
+257 |                     assert sp.exists(), f"Snapshot file missing: {sp}"
+258 |                     file_content = sp.read_bytes()
+259 |                     from private_legal_navigator.infrastructure.safe_source_client import compute_sha256
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+260 |                     file_hash = compute_sha256(file_content)
+261 |                     assert file_hash == snap.sha256, (
+    |
+help: Organize imports
+
+E501 Line too long (104 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:259:101
+    |
+257 |                     assert sp.exists(), f"Snapshot file missing: {sp}"
+258 |                     file_content = sp.read_bytes()
+259 |                     from private_legal_navigator.infrastructure.safe_source_client import compute_sha256
+    |                                                                                                     ^^^^
+260 |                     file_hash = compute_sha256(file_content)
+261 |                     assert file_hash == snap.sha256, (
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:286:17
+    |
+284 |               @property
+285 |               def policy(self):
+286 | /                 from private_legal_navigator.infrastructure.safe_source_client import (
+287 | |                     TransportMode, TransportPolicy,
+288 | |                 )
+    | |_________________^
+289 |                   return TransportPolicy(mode=TransportMode.TEST,
+290 |                                         allowed_hosts=("gesetze-im-internet.de",),
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:306:17
+    |
+305 |               def download_verified(self, url: str, source_identifier: str = ""):
+306 | /                 from private_legal_navigator.infrastructure.safe_source_client import (
+307 | |                     VerifiedSourcePayload, compute_sha256,
+308 | |                 )
+309 | |                 from datetime import UTC, datetime
+    | |__________________________________________________^
+310 |                   result = self.download_with_headers(url)
+311 |                   sha = compute_sha256(result.content)
+    |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:383:21
+    |
+381 |                     sp.write_bytes(tampered)
+382 |                     # Verify snapshot now fails
+383 |                     from private_legal_navigator.infrastructure.safe_source_client import compute_sha256
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+384 |                     assert compute_sha256(tampered) != snap.sha256, (
+385 |                         "Tampered content should not match stored hash"
+    |
+help: Organize imports
+
+E501 Line too long (104 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:383:101
+    |
+381 |                     sp.write_bytes(tampered)
+382 |                     # Verify snapshot now fails
+383 |                     from private_legal_navigator.infrastructure.safe_source_client import compute_sha256
+    |                                                                                                     ^^^^
+384 |                     assert compute_sha256(tampered) != snap.sha256, (
+385 |                         "Tampered content should not match stored hash"
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:427:25
+    |
+425 |                           gii2 = GiiAdapter(client, Path(sd2))
+426 |                           plan = SyncPlanningService(repo, client, gii2).plan(force=True)
+427 | /                         from private_legal_navigator.application.legal_source_service import LegalSourceService
+428 | |                         from private_legal_navigator.application.sync_service import SyncExecutionService
+    | |_________________________________________________________________________________________________________^
+429 |                           lss2 = LegalSourceService(repo, client, Path(sd2))
+430 |                           try:
+    |
+help: Organize imports
+
+E501 Line too long (111 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:427:101
+    |
+425 |                         gii2 = GiiAdapter(client, Path(sd2))
+426 |                         plan = SyncPlanningService(repo, client, gii2).plan(force=True)
+427 |                         from private_legal_navigator.application.legal_source_service import LegalSourceService
+    |                                                                                                     ^^^^^^^^^^^
+428 |                         from private_legal_navigator.application.sync_service import SyncExecutionService
+429 |                         lss2 = LegalSourceService(repo, client, Path(sd2))
+    |
+
+E501 Line too long (105 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:428:101
+    |
+426 |                         plan = SyncPlanningService(repo, client, gii2).plan(force=True)
+427 |                         from private_legal_navigator.application.legal_source_service import LegalSourceService
+428 |                         from private_legal_navigator.application.sync_service import SyncExecutionService
+    |                                                                                                     ^^^^^
+429 |                         lss2 = LegalSourceService(repo, client, Path(sd2))
+430 |                         try:
+    |
+
+SIM105 Use `contextlib.suppress(RuntimeError)` instead of `try`-`except`-`pass`
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:430:25
+    |
+428 |                           from private_legal_navigator.application.sync_service import SyncExecutionService
+429 |                           lss2 = LegalSourceService(repo, client, Path(sd2))
+430 | /                         try:
+431 | |                             SyncExecutionService(repo, lss2, client, gii2).execute(plan, dry_run=False)
+432 | |                         except RuntimeError:
+433 | |                             pass  # Expected
+    | |________________________________^
+434 |                   finally:
+435 |                       repo.save_instrument_batch = original_save
+    |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(RuntimeError): ...`
+
+E501 Line too long (103 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:431:101
+    |
+429 |                         lss2 = LegalSourceService(repo, client, Path(sd2))
+430 |                         try:
+431 |                             SyncExecutionService(repo, lss2, client, gii2).execute(plan, dry_run=False)
+    |                                                                                                     ^^^
+432 |                         except RuntimeError:
+433 |                             pass  # Expected
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:494:17
+    |
+492 |                   gii = GiiAdapter(client, Path(sd))
+493 |                   plan2 = SyncPlanningService(repo, client, gii).plan(force=True)
+494 | /                 from private_legal_navigator.application.legal_source_service import LegalSourceService
+495 | |                 from private_legal_navigator.application.sync_service import SyncExecutionService
+    | |_________________________________________________________________________________________________^
+496 |                   lss = LegalSourceService(repo, client, Path(sd))
+497 |                   SyncExecutionService(repo, lss, client, gii).execute(plan2, dry_run=False)
+    |
+help: Organize imports
+
+E501 Line too long (103 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:494:101
+    |
+492 |                 gii = GiiAdapter(client, Path(sd))
+493 |                 plan2 = SyncPlanningService(repo, client, gii).plan(force=True)
+494 |                 from private_legal_navigator.application.legal_source_service import LegalSourceService
+    |                                                                                                     ^^^
+495 |                 from private_legal_navigator.application.sync_service import SyncExecutionService
+496 |                 lss = LegalSourceService(repo, client, Path(sd))
+    |
+
+E501 Line too long (101 > 100)
+   --> tests/rc025_r2_verifier/test_post_fix_verifier.py:502:101
+    |
+500 |                 # No duplicate instruments
+501 |                 assert len(instruments_after) == len(instruments_before), (
+502 |                     f"Instrument count changed: {len(instruments_before)} → {len(instruments_after)}"
+    |                                                                                                     ^
+503 |                 )
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:7:1
+   |
+ 5 |   """
+ 6 |
+ 7 | / import os
+ 8 | | import sqlite3
+ 9 | | import subprocess
+10 | | import sys
+11 | | import tempfile
+12 | | import uuid
+13 | | from pathlib import Path
+   | |________________________^
+   |
+help: Organize imports
+
+F401 [*] `os` imported but unused
+ --> tests/rc025_r6_verifier/test_crash_subprocess.py:7:8
+  |
+5 | """
+6 |
+7 | import os
+  |        ^^
+8 | import sqlite3
+9 | import subprocess
+  |
+help: Remove unused import: `os`
+
+F401 [*] `uuid` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:12:8
+   |
+10 | import sys
+11 | import tempfile
+12 | import uuid
+   |        ^^^^
+13 | from pathlib import Path
+   |
+help: Remove unused import: `uuid`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:28:5
+   |
+26 |       3. Parent process: attempts retry (same data), verifies no duplicates
+27 |       """
+28 | /     from private_legal_navigator.infrastructure.database import initialize_schema
+29 | |     from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+30 | |         SqliteLegalSourceRepository,
+31 | |     )
+32 | |     from private_legal_navigator.domain.legal_source import (
+33 | |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 | |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 | |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+36 | |     )
+37 | |     import hashlib
+   | |__________________^
+38 |
+39 |       db_dir = Path(tempfile.mkdtemp(prefix="rc025r6_e1_"))
+   |
+help: Organize imports
+
+F401 [*] `private_legal_navigator.infrastructure.database.initialize_schema` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:28:65
+   |
+26 |     3. Parent process: attempts retry (same data), verifies no duplicates
+27 |     """
+28 |     from private_legal_navigator.infrastructure.database import initialize_schema
+   |                                                                 ^^^^^^^^^^^^^^^^^
+29 |     from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+30 |         SqliteLegalSourceRepository,
+   |
+help: Remove unused import: `private_legal_navigator.infrastructure.database.initialize_schema`
+
+F401 [*] `private_legal_navigator.domain.legal_source.LegalInstrument` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:33:9
+   |
+31 |     )
+32 |     from private_legal_navigator.domain.legal_source import (
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+   |         ^^^^^^^^^^^^^^^
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.LegalExpression` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:33:26
+   |
+31 |     )
+32 |     from private_legal_navigator.domain.legal_source import (
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+   |                          ^^^^^^^^^^^^^^^
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.LegalProvision` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:33:43
+   |
+31 |     )
+32 |     from private_legal_navigator.domain.legal_source import (
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+   |                                           ^^^^^^^^^^^^^^
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.SourceSnapshot` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:33:59
+   |
+31 |     )
+32 |     from private_legal_navigator.domain.legal_source import (
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+   |                                                           ^^^^^^^^^^^^^^
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.TemporalStatus` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:34:9
+   |
+32 |     from private_legal_navigator.domain.legal_source import (
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+   |         ^^^^^^^^^^^^^^
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+36 |     )
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.TemporalCompleteness` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:34:25
+   |
+32 |     from private_legal_navigator.domain.legal_source import (
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+   |                         ^^^^^^^^^^^^^^^^^^^^
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+36 |     )
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.TemporalConfidence` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:34:47
+   |
+32 |     from private_legal_navigator.domain.legal_source import (
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+   |                                               ^^^^^^^^^^^^^^^^^^
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+36 |     )
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.InstrumentType` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:35:9
+   |
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |         ^^^^^^^^^^^^^^
+36 |     )
+37 |     import hashlib
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.AuthorityTier` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:35:25
+   |
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |                         ^^^^^^^^^^^^^
+36 |     )
+37 |     import hashlib
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.ImportStatus` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:35:40
+   |
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |                                        ^^^^^^^^^^^^
+36 |     )
+37 |     import hashlib
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.domain.legal_source.ProvisionType` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:35:54
+   |
+33 |         LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+34 |         TemporalStatus, TemporalCompleteness, TemporalConfidence,
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+   |                                                      ^^^^^^^^^^^^^
+36 |     )
+37 |     import hashlib
+   |
+help: Remove unused import
+
+F401 [*] `hashlib` imported but unused
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:37:12
+   |
+35 |         InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+36 |     )
+37 |     import hashlib
+   |            ^^^^^^^
+38 |
+39 |     db_dir = Path(tempfile.mkdtemp(prefix="rc025r6_e1_"))
+   |
+help: Remove unused import: `hashlib`
+
+E501 Line too long (109 > 100)
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:49:101
+   |
+47 | sys.path.insert(0, "{SRC}")
+48 | from private_legal_navigator.infrastructure.database import initialize_schema
+49 | from private_legal_navigator.infrastructure.sqlite_legal_source_repository import SqliteLegalSourceRepository
+   |                                                                                                     ^^^^^^^^^
+50 | from private_legal_navigator.domain.legal_source import (
+51 |     LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+   |
+
+E501 Line too long (121 > 100)
+  --> tests/rc025_r6_verifier/test_crash_subprocess.py:64:101
+   |
+62 | src_id = str(uuid.uuid4())
+63 | conn.execute(
+64 |     "INSERT INTO legal_sources (source_id, source_key, display_name, authority_tier, jurisdiction, enabled, created_at) "
+   |                                                                                                     ^^^^^^^^^^^^^^^^^^^^^
+65 |     "VALUES (?, 'gesetze-im-internet', 'GII', 'CONSOLIDATED_NON_OFFICIAL', 'DE', 1, ?)",
+66 |     (src_id, datetime.now(timezone.utc).isoformat()))
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r6_verifier/test_missing_boundaries.py:18:1
+   |
+16 |   """
+17 |
+18 | / import hashlib
+19 | | import shutil
+20 | | import sqlite3
+21 | | import sys
+22 | | import tempfile
+23 | | import uuid
+24 | | from pathlib import Path
+25 | | from datetime import datetime, timezone
+26 | | from unittest.mock import MagicMock, patch
+27 | |
+28 | | import pytest
+   | |_____________^
+29 |
+30 |   sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
+   |
+help: Organize imports
+
+F401 [*] `unittest.mock.MagicMock` imported but unused
+  --> tests/rc025_r6_verifier/test_missing_boundaries.py:26:27
+   |
+24 | from pathlib import Path
+25 | from datetime import datetime, timezone
+26 | from unittest.mock import MagicMock, patch
+   |                           ^^^^^^^^^
+27 |
+28 | import pytest
+   |
+help: Remove unused import: `unittest.mock.MagicMock`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r6_verifier/test_missing_boundaries.py:32:1
+   |
+30 |   sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
+31 |
+32 | / from private_legal_navigator.infrastructure.database import initialize_schema
+33 | | from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+34 | |     SqliteLegalSourceRepository,
+35 | | )
+36 | | from private_legal_navigator.infrastructure.safe_source_client import (
+37 | |     _write_content_addressed,
+38 | |     _atomic_write,
+39 | |     compute_sha256,
+40 | |     VerifiedSourcePayload,
+41 | | )
+42 | | from private_legal_navigator.domain.legal_source import (
+43 | |     LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+44 | |     TemporalStatus, TemporalCompleteness, TemporalConfidence,
+45 | |     InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+46 | | )
+   | |_^
+   |
+help: Organize imports
+
+F401 [*] `private_legal_navigator.infrastructure.safe_source_client._atomic_write` imported but unused
+  --> tests/rc025_r6_verifier/test_missing_boundaries.py:38:5
+   |
+36 | from private_legal_navigator.infrastructure.safe_source_client import (
+37 |     _write_content_addressed,
+38 |     _atomic_write,
+   |     ^^^^^^^^^^^^^
+39 |     compute_sha256,
+40 |     VerifiedSourcePayload,
+   |
+help: Remove unused import
+
+F401 [*] `private_legal_navigator.infrastructure.safe_source_client.VerifiedSourcePayload` imported but unused
+  --> tests/rc025_r6_verifier/test_missing_boundaries.py:40:5
+   |
+38 |     _atomic_write,
+39 |     compute_sha256,
+40 |     VerifiedSourcePayload,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+41 | )
+42 | from private_legal_navigator.domain.legal_source import (
+   |
+help: Remove unused import
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/rc025_r6_verifier/test_missing_boundaries.py:65:48
+   |
+63 |         source_identifier=f"test-{abbrev.lower()}",
+64 |         authority_tier=AuthorityTier.CONSOLIDATED_NON_OFFICIAL,
+65 |         created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+   |                                                ^^^^^^^^^^^^
+66 |         updated_at=datetime(2024, 6, 1, tzinfo=timezone.utc),
+67 |     )
+   |
+help: Convert to `datetime.UTC` alias
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/rc025_r6_verifier/test_missing_boundaries.py:66:48
+   |
+64 |         authority_tier=AuthorityTier.CONSOLIDATED_NON_OFFICIAL,
+65 |         created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+66 |         updated_at=datetime(2024, 6, 1, tzinfo=timezone.utc),
+   |                                                ^^^^^^^^^^^^
+67 |     )
+   |
+help: Convert to `datetime.UTC` alias
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/rc025_r6_verifier/test_missing_boundaries.py:102:35
+    |
+100 |         source_id=source_id or uuid.uuid4(),
+101 |         source_locator="test://locator",
+102 |         retrieved_at=datetime.now(timezone.utc),
+    |                                   ^^^^^^^^^^^^
+103 |         content_type="application/xml",
+104 |         byte_size=100,
+    |
+help: Convert to `datetime.UTC` alias
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/rc025_r6_verifier/test_missing_boundaries.py:127:31
+    |
+125 |            VALUES (?, 'gesetze-im-internet', 'GII',
+126 |             'CONSOLIDATED_NON_OFFICIAL', 'DE', 1, ?)""",
+127 |         (src_id, datetime.now(timezone.utc).isoformat()),
+    |                               ^^^^^^^^^^^^
+128 |     )
+129 |     conn.commit()
+    |
+help: Convert to `datetime.UTC` alias
+
+SIM105 Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
+   --> tests/rc025_r6_verifier/test_missing_boundaries.py:219:9
+    |
+217 |       # Simulate I/O error during write_bytes
+218 |       with patch("pathlib.Path.write_bytes", side_effect=OSError("Disk full")):
+219 | /         try:
+220 | |             _write_content_addressed(content, snap_dir)
+221 | |         except OSError:
+222 | |             pass
+    | |________________^
+223 |
+224 |       # After error: no completed .xml files should exist
+    |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(OSError): ...`
+
+F841 Local variable `xml_files` is assigned to but never used
+   --> tests/rc025_r6_verifier/test_missing_boundaries.py:227:5
+    |
+225 |     # (temp files may or may not be cleaned up; _write_content_addressed
+226 |     #  does unlink in its except block)
+227 |     xml_files = list(snap_dir.rglob("*.xml"))
+    |     ^^^^^^^^^
+228 |     tmp_files = list(snap_dir.rglob("*.tmp"))
+    |
+help: Remove assignment to unused variable `xml_files`
+
+F841 Local variable `tmp_files` is assigned to but never used
+   --> tests/rc025_r6_verifier/test_missing_boundaries.py:228:5
+    |
+226 |     #  does unlink in its except block)
+227 |     xml_files = list(snap_dir.rglob("*.xml"))
+228 |     tmp_files = list(snap_dir.rglob("*.tmp"))
+    |     ^^^^^^^^^
+229 |
+230 |     # The important thing: no data leaked into DB
+    |
+help: Remove assignment to unused variable `tmp_files`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r6_verifier/test_seeded_fault.py:12:1
+   |
+10 |   """
+11 |
+12 | / import hashlib
+13 | | import shutil
+14 | | import sqlite3
+15 | | import sys
+16 | | import tempfile
+17 | | import uuid
+18 | | from pathlib import Path
+19 | | from datetime import datetime, timezone
+20 | | from unittest.mock import patch
+21 | |
+22 | | import pytest
+   | |_____________^
+23 |
+24 |   sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> tests/rc025_r6_verifier/test_seeded_fault.py:26:1
+   |
+24 |   sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
+25 |
+26 | / from private_legal_navigator.infrastructure.database import initialize_schema
+27 | | from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+28 | |     SqliteLegalSourceRepository,
+29 | | )
+30 | | from private_legal_navigator.infrastructure.safe_source_client import (
+31 | |     _write_content_addressed,
+32 | |     compute_sha256,
+33 | | )
+34 | | from private_legal_navigator.infrastructure.gii_adapter import (
+35 | |     _normalize_abbreviation,
+36 | | )
+37 | | from private_legal_navigator.domain.legal_source import (
+38 | |     LegalInstrument, LegalExpression, LegalProvision, SourceSnapshot,
+39 | |     TemporalStatus, TemporalCompleteness, TemporalConfidence,
+40 | |     InstrumentType, AuthorityTier, ImportStatus, ProvisionType,
+41 | | )
+   | |_^
+   |
+help: Organize imports
+
+UP017 [*] Use `datetime.UTC` alias
+  --> tests/rc025_r6_verifier/test_seeded_fault.py:58:31
+   |
+56 |         "VALUES (?, 'gesetze-im-internet', 'GII', "
+57 |         "'CONSOLIDATED_NON_OFFICIAL', 'DE', 1, ?)",
+58 |         (src_id, datetime.now(timezone.utc).isoformat()))
+   |                               ^^^^^^^^^^^^
+59 |     conn.commit()
+60 |     conn.close()
+   |
+help: Convert to `datetime.UTC` alias
+
+SIM105 Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
+   --> tests/rc025_r6_verifier/test_seeded_fault.py:108:9
+    |
+106 |       # (The test verifies that the except block runs unlink)
+107 |       with patch("pathlib.Path.write_bytes", side_effect=OSError("Disk full")):
+108 | /         try:
+109 | |             _write_content_addressed(content, snap_dir)
+110 | |         except OSError:
+111 | |             pass
+    | |________________^
+112 |
+113 |       # After failure: no .xml files from the failed attempt
+    |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(OSError): ...`
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/rc025_r6_verifier/test_seeded_fault.py:266:48
+    |
+264 |         short_title="T", abbreviation="TST", source_identifier="tst",
+265 |         authority_tier=AuthorityTier.CONSOLIDATED_NON_OFFICIAL,
+266 |         created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+    |                                                ^^^^^^^^^^^^
+267 |         updated_at=datetime(2024, 6, 1, tzinfo=timezone.utc))
+268 |     snap = SourceSnapshot(
+    |
+help: Convert to `datetime.UTC` alias
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/rc025_r6_verifier/test_seeded_fault.py:267:48
+    |
+265 |         authority_tier=AuthorityTier.CONSOLIDATED_NON_OFFICIAL,
+266 |         created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+267 |         updated_at=datetime(2024, 6, 1, tzinfo=timezone.utc))
+    |                                                ^^^^^^^^^^^^
+268 |     snap = SourceSnapshot(
+269 |         snapshot_id=uuid.uuid4(), source_id=src_id,
+    |
+help: Convert to `datetime.UTC` alias
+
+UP017 [*] Use `datetime.UTC` alias
+   --> tests/rc025_r6_verifier/test_seeded_fault.py:270:61
+    |
+268 |     snap = SourceSnapshot(
+269 |         snapshot_id=uuid.uuid4(), source_id=src_id,
+270 |         source_locator="test://", retrieved_at=datetime.now(timezone.utc),
+    |                                                             ^^^^^^^^^^^^
+271 |         content_type="application/xml", byte_size=100, sha256="c" * 64,
+272 |         storage_path="/tmp/t", parser_version="1.0",
+    |
+help: Convert to `datetime.UTC` alias
+
+UP012 [*] Unnecessary call to `encode` as UTF-8
+   --> tests/rc025_r6_verifier/test_seeded_fault.py:286:36
+    |
+284 |         provision_type=ProvisionType.PARAGRAPH, provision_number="§1",
+285 |         heading="H", stable_key="k1", text_content="SF15_ZEBRA",
+286 |         text_sha256=hashlib.sha256("SF15_ZEBRA".encode()).hexdigest())
+    |                                    ^^^^^^^^^^^^^^^^^^^^^
+287 |
+288 |     # GREEN: first save
+    |
+help: Rewrite as bytes literal
+
+Found 106 errors.
+[*] 73 fixable with the `--fix` option (13 hidden fixes can be enabled with the `--unsafe-fixes` option).

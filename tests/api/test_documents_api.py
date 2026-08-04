@@ -96,11 +96,11 @@ class TestDocumentList:
         case_id = await _create_case(client)
         await client.post(
             f"/api/v1/cases/{case_id}/documents",
-            files={"file": ("a.pdf", b"%PDF-1.4 a", "application/pdf")},
+            files={"file": ("a.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
         )
         await client.post(
             f"/api/v1/cases/{case_id}/documents",
-            files={"file": ("b.pdf", b"%PDF-1.4 b", "application/pdf")},
+            files={"file": ("b.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
         )
 
         resp = await client.get(f"/api/v1/cases/{case_id}/documents")
@@ -114,7 +114,7 @@ class TestDocumentList:
         case_id = await _create_case(client)
         await client.post(
             f"/api/v1/cases/{case_id}/documents",
-            files={"file": ("doc.pdf", b"%PDF-1.4 content", "application/pdf")},
+            files={"file": ("doc.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
         )
         resp = await client.get(f"/api/v1/cases/{case_id}/documents")
         assert resp.status_code == 200
@@ -135,13 +135,13 @@ class TestDocumentDownload:
         case_id = await _create_case(client)
         upload_resp = await client.post(
             f"/api/v1/cases/{case_id}/documents",
-            files={"file": ("bescheid.pdf", b"%PDF-1.4 content", "application/pdf")},
+            files={"file": ("bescheid.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
         )
         doc_id = upload_resp.json()["document_id"]
 
         resp = await client.get(f"/api/v1/cases/{case_id}/documents/{doc_id}")
         assert resp.status_code == 200
-        assert resp.content == b"%PDF-1.4 content"
+        assert resp.content == MINIMAL_PDF_BYTES
         assert resp.headers["content-type"] == "application/pdf"
 
     async def test_download_nonexistent(self, client: AsyncClient) -> None:
@@ -173,27 +173,57 @@ class TestDocumentText:
         assert data["extraction_error"] is None
 
     async def test_get_text_extraction_error(self, client: AsyncClient) -> None:
-        """Get extracted text — extraction failure: extraction_error set."""
+        """Non-PDF content with PDF mime type is rejected at upload."""
         case_id = await _create_case(client)
         upload_resp = await client.post(
             f"/api/v1/cases/{case_id}/documents",
             files={"file": ("corrupt.pdf", b"not a pdf", "application/pdf")},
         )
-        doc_id = upload_resp.json()["document_id"]
+        assert upload_resp.status_code == 400
 
-        resp = await client.get(f"/api/v1/cases/{case_id}/documents/{doc_id}/text")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["text_content"] == ""
-        assert data["extraction_error"] is not None
-        assert "korrupt" in data["extraction_error"]
+    async def test_upload_text_file_with_pdf_mime(self, client: AsyncClient) -> None:
+        """Text file with application/pdf mime rejected at upload."""
+        case_id = await _create_case(client)
+        resp = await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("doc.pdf", b"Plain text content", "application/pdf")},
+        )
+        assert resp.status_code == 400
+
+    async def test_upload_zip_with_pdf_extension(self, client: AsyncClient) -> None:
+        """ZIP file with .pdf extension rejected at upload."""
+        case_id = await _create_case(client)
+        zip_content = b"PK\x03\x04\x00\x00\x00\x00zip fake content"
+        resp = await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("doc.pdf", zip_content, "application/pdf")},
+        )
+        assert resp.status_code == 400
+
+    async def test_upload_empty_file(self, client: AsyncClient) -> None:
+        """Empty file with PDF mime rejected at upload."""
+        case_id = await _create_case(client)
+        resp = await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("empty.pdf", b"", "application/pdf")},
+        )
+        assert resp.status_code == 400
+
+    async def test_upload_valid_pdf_wrong_mime_rejected(self, client: AsyncClient) -> None:
+        """Valid PDF with wrong MIME type rejected — content validation first, then MIME check."""
+        case_id = await _create_case(client)
+        resp = await client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("doc.pdf", MINIMAL_PDF_BYTES, "application/octet-stream")},
+        )
+        assert resp.status_code == 400
 
     async def test_get_text(self, client: AsyncClient) -> None:
         """Get extracted text from an uploaded document."""
         case_id = await _create_case(client)
         upload_resp = await client.post(
             f"/api/v1/cases/{case_id}/documents",
-            files={"file": ("doc.pdf", b"%PDF-1.4 content", "application/pdf")},
+            files={"file": ("doc.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
         )
         doc_id = upload_resp.json()["document_id"]
 

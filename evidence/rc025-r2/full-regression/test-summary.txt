@@ -1,0 +1,66 @@
+........................................................................ [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 18%]
+........................................................................ [ 25%]
+........................................................................ [ 31%]
+...............................F...F...FF............................... [ 37%]
+........................................................................ [ 43%]
+........................................................................ [ 50%]
+........................................................................ [ 56%]
+........................................................................ [ 62%]
+........................................................................ [ 69%]
+........................................................................ [ 75%]
+........................................................................ [ 81%]
+........................................................................ [ 87%]
+........................................................................ [ 94%]
+..................................................................       [100%]Running teardown with pytest sessionfinish...
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /media/xxammaxx/projekte/Rechtssoftware/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/rc025/test_m7b_contract_red.py:19
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025/test_m7b_contract_red.py:19: PytestUnknownMarkWarning: Unknown pytest.mark.rc025_red - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_red, pytest.mark.m7b_contracts]
+
+tests/rc025/test_m7b_contract_red.py:19
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025/test_m7b_contract_red.py:19: PytestUnknownMarkWarning: Unknown pytest.mark.m7b_contracts - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_red, pytest.mark.m7b_contracts]
+
+tests/rc025-r1/test_verifier_red.py:22
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025-r1/test_verifier_red.py:22: PytestUnknownMarkWarning: Unknown pytest.mark.rc025_r1_verifier - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r1_verifier, pytest.mark.m7b_integrity]
+
+tests/rc025-r1/test_verifier_red.py:22
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025-r1/test_verifier_red.py:22: PytestUnknownMarkWarning: Unknown pytest.mark.m7b_integrity - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r1_verifier, pytest.mark.m7b_integrity]
+
+tests/rc025_r2_verifier/test_post_fix_verifier.py:28
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025_r2_verifier/test_post_fix_verifier.py:28: PytestUnknownMarkWarning: Unknown pytest.mark.rc025_r2_verifier - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r2_verifier, pytest.mark.m7b_post_fix]
+
+tests/rc025_r2_verifier/test_post_fix_verifier.py:28
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025_r2_verifier/test_post_fix_verifier.py:28: PytestUnknownMarkWarning: Unknown pytest.mark.m7b_post_fix - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r2_verifier, pytest.mark.m7b_post_fix]
+
+tests/integration/test_m6ui_slice2_confirmation.py: 14 warnings
+tests/integration/test_m6ui_slice2_parallelism.py: 4 warnings
+  /media/xxammaxx/projekte/Rechtssoftware/.venv/lib/python3.12/site-packages/httpx/_client.py:1859: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return await self.request(
+
+tests/integration/test_m6ui_slice2_confirmation.py::TestSecurityDependencies::test_wrong_content_type_rejected
+  /media/xxammaxx/projekte/Rechtssoftware/.venv/lib/python3.12/site-packages/httpx/_models.py:408: DeprecationWarning: Use 'content=<...>' to upload raw bytes/text content.
+    headers, stream = encode_request(
+
+tests/unit/test_restore_helper.py::TestValidateZipEntries::test_blocks_duplicate_normalized_path
+  /usr/lib/python3.12/zipfile/__init__.py:1620: UserWarning: Duplicate name: 'file.txt'
+    return self._open_to_write(zinfo, force_zip64=force_zip64)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/rc025/test_m7b_contract_red.py::test_red4_single_download_per_apply
+FAILED tests/rc025/test_m7b_contract_red.py::test_red8_byte_identity_invariant
+FAILED tests/rc025-r1/test_verifier_red.py::test_red_r1_byte_identity_violation
+FAILED tests/rc025-r1/test_verifier_red.py::test_red_r1_no_download_count_check
+4 failed, 1142 passed, 27 warnings in 223.11s (0:03:43)

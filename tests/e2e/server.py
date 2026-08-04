@@ -34,8 +34,8 @@ def seed_test_data(data_dir: Path) -> dict:
         LocalFileStorage,
     )
 
-    case_repo = SqliteCaseRepository(data_dir / "pln.db")
-    doc_repo = SqliteDocumentRepository(data_dir / "pln.db")
+    case_repo = SqliteCaseRepository(data_dir / "private_legal_navigator.db")
+    doc_repo = SqliteDocumentRepository(data_dir / "private_legal_navigator.db")
     file_storage = LocalFileStorage(data_dir / "documents")
 
     from private_legal_navigator.infrastructure.pdf_text_extractor import PdfTextExtractor
@@ -55,12 +55,22 @@ def seed_test_data(data_dir: Path) -> dict:
     test_text = (
         "Bescheid vom 15.06.2026\n\n"
         "Sehr geehrte Damen und Herren,\n\n"
-        "hiermit ergeht folgender Bescheid. Sie können innerhalb von 14 Tagen "
+        "hiermit ergeht folgender Bescheid. Sie konnen innerhalb von 14 Tagen "
         "Widerspruch einlegen. Die Frist beginnt mit der Bekanntgabe.\n\n"
-        "Mit freundlichen Grüßen\n"
-        "Die Behörde\n"
+        "Mit freundlichen Grussen\n"
+        "Die Behorde\n"
     )
-    test_pdf = b"%PDF-1.4\n%" + test_text.encode("utf-8")
+
+    import io
+    import pymupdf
+
+    pdf_writer = pymupdf.open()
+    page = pdf_writer.new_page(width=595, height=842)
+    page.insert_text((72, 72), test_text, fontsize=11)
+    pdf_buffer = io.BytesIO()
+    pdf_writer.save(pdf_buffer)
+    pdf_writer.close()
+    test_pdf = pdf_buffer.getvalue()
 
     doc = doc_service.upload_document(
         case_id=test_case.case_id,
@@ -105,7 +115,7 @@ if __name__ == "__main__":
     data_dir.mkdir(parents=True, exist_ok=True)
     (data_dir / "documents").mkdir(exist_ok=True)
 
-    db_path = data_dir / "pln.db"
+    db_path = data_dir / "private_legal_navigator.db"
     SqliteCaseRepository(db_path).initialize_schema()
     SqliteDocumentRepository(db_path).initialize_schema()
     SqliteReferenceEventRepository(db_path).initialize_schema()

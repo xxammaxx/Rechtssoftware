@@ -12,6 +12,10 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+/release/output/
+*.whl
+*.tar.gz
+*.zip
 
 # Environment and secrets
 .env
@@ -39,3 +43,19 @@ Desktop.ini
 
 # Temporary reports
 *.tmp
+
+# Generated local verification output (never source, specs, docs, or preservation evidence)
+coverage.xml
+coverage.json
+node_modules/
+test-results/
+playwright-report/
+.playwright-mcp/
+/e2e-*.png
+/e2e-screenshots/*.png
+/server-stdout*.log
+/server-stderr*.log
+/evidence/**/*.log
+/evidence/**/*.txt
+/evidence/**/*.json
+/evidence/**/*.png

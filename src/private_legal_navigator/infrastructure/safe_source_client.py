@@ -139,6 +139,34 @@ class DownloadResult:
 
 
 # ──────────────────────────────────────────────
+# Verified Source Payload (RC-025-R1 F4)
+# ──────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class VerifiedSourcePayload:
+    """Immutable, hash-verified download artifact for byte-identity contract.
+
+    RC-025-R1 F4: DOWNLOADED_BYTES == HASHED_BYTES == PARSED_BYTES
+    == SNAPSHOT_BYTES == ACTIVATED_BYTES.
+
+    Content is downloaded exactly once. SHA-256 is computed once from
+    those bytes. Every downstream consumer receives this same object
+    or exactly its content bytes. No re-download is permitted.
+    """
+
+    source_identifier: str
+    effective_url: str
+    content: bytes
+    sha256: str
+    http_status: int
+    etag: str = ""
+    last_modified: str = ""
+    content_type: str = ""
+    fetched_at: str = ""
+
+
+# ──────────────────────────────────────────────
 # Configuration
 # ──────────────────────────────────────────────
 
@@ -328,6 +356,42 @@ class SourceClient:
         """
         self.policy.validate_url(url)
         return self._fetch_download_result(url, self._config.max_redirects)
+
+    def download_verified(
+        self, url: str, source_identifier: str = ""
+    ) -> "VerifiedSourcePayload":
+        """Download and return a VerifiedSourcePayload with hash pre-computed.
+
+        RC-025-R1 F4: Single-download contract.
+        Downloads exactly once, computes SHA-256 once, and packages
+        everything in an immutable VerifiedSourcePayload. Downstream
+        consumers receive this object directly — no re-download permitted.
+
+        Args:
+            url: The download URL (validated against transport policy).
+            source_identifier: Logical identifier (e.g., GII source_identifier)
+                              used for byte-identity tracking.
+
+        Returns:
+            VerifiedSourcePayload with content, SHA-256, and HTTP metadata.
+        """
+        from datetime import UTC, datetime
+
+        result = self.download_with_headers(url)
+        sha256 = compute_sha256(result.content)
+        fetched_at = datetime.now(UTC).isoformat()
+
+        return VerifiedSourcePayload(
+            source_identifier=source_identifier or url,
+            effective_url=url,
+            content=result.content,
+            sha256=sha256,
+            http_status=result.http_status,
+            etag=result.etag,
+            last_modified=result.last_modified,
+            content_type=result.content_type,
+            fetched_at=fetched_at,
+        )
 
 
 # ──────────────────────────────────────────────

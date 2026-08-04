@@ -305,10 +305,21 @@ class ReferenceEventService:
         The revocation record has confirmed_date=None to distinguish it
         structurally from CONFIRMED records. The is_revoke flag in the
         repository marks this as a revocation in the database.
+
+        Returns None if the confirmation does not exist or has already
+        been superseded (double-revoke prevention).
         """
         existing = self._repo.get_confirmation(confirmation_id)
         if existing is None:
             return None
+
+        history = self._repo.get_history_for_candidate(
+            existing.document_id,
+            existing.deadline_candidate_index,
+        )
+        for h in history:
+            if h.supersedes_confirmation_id == confirmation_id:
+                return None
 
         now = datetime.now(UTC)
         revoked = ConfirmedReferenceEvent(

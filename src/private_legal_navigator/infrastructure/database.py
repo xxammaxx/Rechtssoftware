@@ -303,6 +303,9 @@ M7A_INDEXES = [
     # expressions
     "CREATE INDEX IF NOT EXISTS idx_le_instrument ON legal_expressions(instrument_id)",
     "CREATE INDEX IF NOT EXISTS idx_le_valid_from ON legal_expressions(valid_from)",
+    # RC-025-R4: Enforce at most one CURRENT expression per instrument at DB level
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_le_one_current "
+    "ON legal_expressions(instrument_id) WHERE temporal_status = 'CURRENT'",
     # provisions
     "CREATE INDEX IF NOT EXISTS idx_lp_expression ON legal_provisions(expression_id)",
     "CREATE INDEX IF NOT EXISTS idx_lp_stable_key ON legal_provisions(stable_key)",

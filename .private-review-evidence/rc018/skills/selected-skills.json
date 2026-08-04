@@ -1,0 +1,54 @@
+{
+  "selected": [
+    {
+      "name": "requesting-code-review",
+      "source": "hermes-native",
+      "role": "Pre-commit review with security scan, quality gates, auto-fix"
+    },
+    {
+      "name": "dogfood",
+      "source": "hermes-native", 
+      "role": "Exploratory QA: find bugs, evidence, reports — serves as UX audit"
+    },
+    {
+      "name": "claude-design",
+      "source": "hermes-native",
+      "role": "Design one-off HTML artifacts (landing, deck, prototype)"
+    },
+    {
+      "name": "popular-web-designs",
+      "source": "hermes-native",
+      "role": "54 real design systems (Stripe, Linear, Vercel) as reference"
+    },
+    {
+      "name": "sketch",
+      "source": "hermes-native",
+      "role": "Throwaway HTML mockups: 2-3 design variants"
+    },
+    {
+      "name": "design-md",
+      "source": "hermes-native",
+      "role": "Google DESIGN.md token spec files — author/validate/export"
+    },
+    {
+      "name": "computer-use",
+      "source": "hermes-native",
+      "role": "Visual testing, headed browser runs, screenshots"
+    }
+  ],
+  "rejected": [],
+  "restricted_reference": [
+    {
+      "name": "impeccable",
+      "reason": "Gen Agent Trust Hub: Warn, Snyk: Warn",
+      "decision": "READ_ONLY_REFERENCE"
+    },
+    {
+      "name": "ux-audit",
+      "reason": "Snyk: Warn",
+      "decision": "READ_ONLY_REFERENCE — methodology applied manually via dogfood"
+    }
+  ],
+  "search_date": "2026-07-31",
+  "note": "All externally referenced skills are Claude Code skills. Methodologies extracted and applied manually within Hermes. No npm packages or Claude-specific toolchains introduced."
+}

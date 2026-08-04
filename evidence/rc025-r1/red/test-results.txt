@@ -1,0 +1,27 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /media/xxammaxx/projekte/Rechtssoftware/.venv/bin/python
+cachedir: .pytest_cache
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /media/xxammaxx/projekte/Rechtssoftware
+configfile: pyproject.toml
+plugins: timeout-2.4.0, anyio-4.14.2, asyncio-1.4.0, benchmark-5.2.3, repeat-0.9.4, xdist-3.8.0, typeguard-4.4.4, deepeval-4.0.2, cov-7.1.0, httpx-0.36.2, rerunfailures-16.2, langsmith-0.6.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 4 items
+
+tests/rc025-r1/test_verifier_red.py::test_red_r1_double_download_detected PASSED [ 25%]
+tests/rc025-r1/test_verifier_red.py::test_red_r1_byte_identity_violation PASSED [ 50%]
+tests/rc025-r1/test_verifier_red.py::test_red_r1_no_download_count_check PASSED [ 75%]
+tests/rc025-r1/test_verifier_red.py::test_red_r1_snapshot_hash_not_cross_validated PASSED [100%]Running teardown with pytest sessionfinish...
+
+
+=============================== warnings summary ===============================
+tests/rc025-r1/test_verifier_red.py:22
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025-r1/test_verifier_red.py:22: PytestUnknownMarkWarning: Unknown pytest.mark.rc025_r1_verifier - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r1_verifier, pytest.mark.m7b_integrity]
+
+tests/rc025-r1/test_verifier_red.py:22
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025-r1/test_verifier_red.py:22: PytestUnknownMarkWarning: Unknown pytest.mark.m7b_integrity - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r1_verifier, pytest.mark.m7b_integrity]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 4 passed, 2 warnings in 0.47s =========================

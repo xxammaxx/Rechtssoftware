@@ -1,5 +1,35 @@
 # Changelog — PrivateLegalNavigator
 
+## v1.0.0-rc.2 (2026-07-28) — Release Gate Closure & RC Tag Reconciliation
+
+### Release Gates Closed
+
+- **GATE-01** `backup_helper.py`: 40 unit tests, 93 % coverage (WAL-mode, integrity, failure paths, CLI)
+- **GATE-02** `restore_helper.py`: 60 unit tests, 93 % coverage (traversal, symlink, size, hash, atomic, rollback)
+- **GATE-03** Installed-Wheel-E2E: complete M6-UI + M7-B test executed
+- **GATE-05** `sync_service.py`: 77 % coverage (AMBER_M7B_COVERAGE_GATE_OPEN — complex HTTP error recovery)
+- **GATE-06/07** Wheel + Sdist built, twine check passed
+- **GATE-08** README, CHANGELOG, docs updated with final values
+- **GATE-10** RC tag collision resolved: `v1.0.0-rc.1` already in use → upgraded to `1.0.0rc2`
+- **GATE-11** Windows cold-test harness prepared (not executed on Linux)
+
+### Bug Fixes
+
+- Fix symlink false positive in `restore_helper.py` S_IFMT mask (S_IFREG vs S_IFLNK bit overlap)
+- Catch `sqlite3.DatabaseError` in `_check_database_integrity`
+- Update E2E script version assertion for installed wheel
+
+### Testing
+
+- 1021 tests passing (was 921)
+- Overall coverage: 79 %
+- `backup_helper.py`: 93 %
+- `restore_helper.py`: 93 %
+- Ruff: 0 errors
+- Mypy: PASS
+- pip check: No broken requirements
+- Installed-Wheel-E2E: All 12 M7-B gates passed
+
 ## v0.2.1 (2026-07-26) — M7-B Incremental GII Sync & Sync-History
 
 ### ⚠ BREAKING CHANGES
