@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design-Richtung C: Evidence-first Analyseoberfläche</title>
+<style>
+/* === Design Tokens: Evidence-first (analytisch, dokumentzentriert, timeline-basiert) === */
+:root {
+  --ink: #18181b;
+  --ink-soft: #52525b;
+  --ink-muted: #a1a1aa;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-alt: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-light: #f5f3ff;
+  --accent-soft: #ede9fe;
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #6366f1;
+  --info-bg: #eef2ff;
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --font: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --max-w: 1100px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);line-height:1.55;font-size:14px}
+.container{max-width:var(--max-w);margin:0 auto;padding:0 20px}
+/* Header — kompakt, analytisch */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 0}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;max-width:var(--max-w);margin:0 auto;padding:0 20px}
+.hdr-home{font-size:15px;font-weight:700;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:6px}
+.hdr-home::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--accent)}
+.hdr-right{display:flex;gap:8px;align-items:center}
+.hdr-right a{padding:5px 12px;font-size:12px;font-weight:500;color:var(--ink-soft);text-decoration:none;border-radius:var(--radius-sm)}
+.hdr-right a:hover{background:var(--accent-light);color:var(--accent)}
+.hdr-right a.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.hdr-badge{font-size:11px;color:var(--ink-muted);background:var(--surface-alt);border:1px solid var(--border);border-radius:12px;padding:3px 10px}
+/* Layout: Evidence-first = Timeline-Sidebar + Content */
+.evidence-layout{display:grid;grid-template-columns:280px 1fr;gap:24px;padding-top:24px;align-items:start}
+/* Timeline Sidebar */
+.tl-sidebar{position:sticky;top:20px}
+.tl-sidebar h2{font-size:13px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.timeline-v{position:relative;padding-left:20px}
+.timeline-v::before{content:"";position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border)}
+.tlv-item{position:relative;margin-bottom:16px;cursor:pointer}
+.tlv-item::before{content:"";position:absolute;left:-17px;top:3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--surface);transition:all .15s}
+.tlv-item.active::before{background:var(--accent);border-color:var(--accent)}
+.tlv-item:hover::before{border-color:var(--accent)}
+.tlv-date{font-size:11px;color:var(--ink-muted);margin-bottom:1px;font-variant-numeric:tabular-nums}
+.tlv-title{font-size:13px;font-weight:500;color:var(--ink)}
+.tlv-item.active .tlv-title{font-weight:600;color:var(--accent)}
+.tlv-doc{font-size:11px;color:var(--ink-muted);margin-top:1px}
+/* Main content */
+main{min-width:0}
+/* Top bar */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:8px;flex-wrap:wrap}
+.topbar h1{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.topbar-actions{display:flex;gap:6px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;font-size:13px;font-weight:600;border-radius:var(--radius-sm);border:1px solid transparent;cursor:pointer;text-decoration:none;font-family:var(--font);transition:all .12s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--surface-alt)}
+.btn-ghost{background:transparent;color:var(--ink-soft)}
+.btn-ghost:hover{background:var(--surface-alt)}
+.btn-sm{padding:4px 10px;font-size:12px}
+/* Evidence card */
+.ev-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:box-shadow .15s}
+.ev-card:hover{box-shadow:var(--shadow)}
+.ev-card.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ev-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.ev-card-kinds{display:flex;gap:6px}
+.ev-kind{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:4px}
+.ev-kind-doc{background:var(--info-bg);color:var(--info)}
+.ev-kind-frist{background:var(--warn-bg);color:var(--warn)}
+.ev-kind-ereignis{background:var(--success-bg);color:var(--success)}
+.ev-kind-norm{background:var(--accent-light);color:var(--accent)}
+.ev-card-date{font-size:11px;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.ev-card h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.ev-card p{font-size:13px;color:var(--ink-soft);line-height:1.6}
+.ev-card-meta{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--ink-muted)}
+.ev-card-meta span{display:flex;align-items:center;gap:4px}
+/* Frist highlight */
+.frist-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--warn-bg);border:1px solid var(--warn);border-radius:20px;font-size:13px;font-weight:600;color:var(--warn)}
+.frist-pill .frist-date{font-variant-numeric:tabular-nums}
+/* Berechnungsleineiste */
+.calc-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;font-size:14px}
+.calc-step{display:flex;align-items:center;gap:6px}
+.calc-step .label{font-size:11px;color:var(--ink-muted)}
+.calc-step .value{font-weight:700;font-variant-numeric:tabular-nums}
+.calc-arrow{color:var(--ink-muted);font-size:18px}
+.calc-result{font-weight:700;color:var(--accent);font-size:16px;margin-left:auto}
+/* Case list (kompakt, kartenbasiert) */
+.case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.case-card{display:block;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:all .15s}
+.case-card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+.case-card h3{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;line-height:1.3}
+.case-progress{height:4px;background:var(--border);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.case-progress-fill{height:100%;background:var(--accent);border-radius:2px}
+.case-stats{display:flex;gap:16px;font-size:12px;color:var(--ink-muted)}
+.case-stats strong{color:var(--ink);font-weight:600}
+/* Search */
+.search-ev{display:flex;gap:8px;margin-bottom:20px}
+.search-ev input{flex:1;padding:10px 16px;font-size:14px;font-family:var(--font);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:44px}
+.search-ev input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+/* Norm card */
+.norm-card{padding:16px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;margin-bottom:8px}
+.norm-card h4{font-size:14px;font-weight:600;margin-bottom:4px}
+.norm-card p{font-size:13px;color:var(--ink-soft)}
+.norm-card .verknuepft{font-size:11px;color:var(--accent);font-weight:600;margin-top:6px}
+/* Warn */
+.warn-compact{padding:10px 14px;background:var(--warn-bg);border-radius:var(--radius-sm);font-size:13px;color:var(--warn);margin-bottom:16px;font-weight:500}
+/* Empty state */
+.empty-state{padding:32px;text-align:center;color:var(--ink-muted);font-size:13px}
+.empty-state strong{display:block;font-size:15px;color:var(--ink);margin-bottom:4px}
+/* Mobile */
+.mobile-view{max-width:390px;margin:40px auto;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.1)}
+.mobile-view .container{padding:0 12px}
+.mobile-view .evidence-layout{grid-template-columns:1fr}
+.mobile-view .tl-sidebar{display:none}
+.mobile-view h1{font-size:20px}
+/* Responsive */
+@media(max-width:800px){
+  .evidence-layout{grid-template-columns:1fr}
+  .tl-sidebar{display:none}
+  .case-grid{grid-template-columns:1fr}
+}
+footer{padding:12px 0;border-top:1px solid var(--border);font-size:11px;color:var(--ink-muted);text-align:center}
+</style>
+</head>
+<body>
+
+<div style="padding:6px;background:var(--accent);color:#fff;text-align:center;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">
+  Design-Richtung C: Evidence-first Analyseoberfläche — timeline-zentriert, dokumentbasiert
+</div>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <a href="#" class="hdr-home">Evidence Board</a>
+    <div class="hdr-right">
+      <a href="#" class="active">Fälle</a>
+      <a href="#">Rechtsquellen</a>
+      <a href="#">Analyse</a>
+      <span class="hdr-badge">🛡️ Lokal</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- === FALLLISTE (Kartenraster) === -->
+<section style="padding-top:24px">
+<div class="topbar">
+  <h1>Fälle</h1>
+  <button class="btn btn-primary btn-sm">+ Neuer Fall</button>
+</div>
+
+<div class="case-grid">
+  <a href="#" class="case-card">
+    <h3>Widerspruch gegen Einkommensteuerbescheid 2025</h3>
+    <div class="case-progress"><div class="case-progress-fill" style="width:65%"></div></div>
+    <div class="case-stats">
+      <span><strong>3</strong> Dokumente</span>
+      <span><strong>2</strong> Fristen</span>
+      <span><strong>4</strong> Ereignisse</span>
+      <span style="color:var(--warn)">Frist: <strong>31.08.2026</strong></span>
+    </div>
+  </a>
+  <a href="#" class="case-card">
+    <h3>Mietminderung Schimmelbefall</h3>
+    <div class="case-progress"><div class="case-progress-fill" style="width:40%"></div></div>
+    <div class="case-stats">
+      <span><strong>5</strong> Dokumente</span>
+      <span><strong>1</strong> Frist</span>
+      <span><strong>2</strong> Ereignisse</span>
+      <span style="color:var(--warn)">Frist: <strong>15.09.2026</strong></span>
+    </div>
+  </a>
+  <a href="#" class="case-card">
+    <h3>Wohngeldantrag — Nachforderung</h3>
+    <div class="case-progress"><div class="case-progress-fill" style="width:15%"></div></div>
+    <div class="case-stats">
+      <span><strong>1</strong> Dokument</span>
+      <span><strong>0</strong> Fristen</span>
+      <span><strong>1</strong> Ereignis</span>
+    </div>
+  </a>
+</div>
+</section>
+
+<!-- === FALLDETAIL: Evidence Board === -->
+<section style="padding-top:32px">
+<div class="topbar">
+  <div>
+    <div style="font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Fall</div>
+    <h1>Widerspruch Einkommensteuerbescheid 2025</h1>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm">Export</button>
+    <button class="btn btn-primary btn-sm">Dokument hinzufügen</button>
+  </div>
+</div>
+
+<div class="evidence-layout">
+
+<!-- Timeline Sidebar -->
+<aside class="tl-sidebar">
+  <h2>Chronologie</h2>
+  <div class="timeline-v">
+    <div class="tlv-item active">
+      <div class="tlv-date">31.07.2026</div>
+      <div class="tlv-title">Widerspruch eingereicht</div>
+      <div class="tlv-doc">→ Widerspruchsschreiben</div>
+    </div>
+    <div class="tlv-item">
+      <div class="tlv-date">30.07.2026</div>
+      <div class="tlv-title">Widerspruchsentwurf erstellt</div>
+      <div class="tlv-doc">→ Entwurf</div>
+    </div>
+    <div class="tlv-item">
+      <div class="tlv-date">28.07.2026</div>
+      <div class="tlv-title">Fahrtenbuch hochgeladen</div>
+      <div class="tlv-doc">→ Fahrtenbuch.pdf</div>
+    </div>
+    <div class="tlv-item">
+      <div class="tlv-date">15.07.2025</div>
+      <div class="tlv-title">Einkommensteuerbescheid erhalten</div>
+      <div class="tlv-doc">→ Bescheid 2025</div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Evidence-Karten -->
+<main>
+
+<!-- Frist-Pill -->
+<div class="frist-pill" style="margin-bottom:16px">
+  ⏰ Nächste Frist: <span class="frist-date">31.08.2026</span> (Einspruchsfrist)
+</div>
+
+<!-- Evidence Card: Dokument -->
+<div class="ev-card active">
+  <div class="ev-card-header">
+    <div class="ev-card-kinds">
+      <span class="ev-kind ev-kind-doc">Dokument</span>
+      <span class="ev-kind ev-kind-frist">Frist</span>
+    </div>
+    <div class="ev-card-date">15.07.2025</div>
+  </div>
+  <h3>Einkommensteuerbescheid 2025</h3>
+  <p>Steuernummer 123/456/789. Festgesetztes Einkommen: 45.000 EUR. Einspruchsfrist: 31.08.2025. Enthält Angaben zu Werbungskosten (1.200 EUR).</p>
+  <div class="ev-card-meta">
+    <span>📄 Bescheid</span>
+    <span>1,5 KB</span>
+    <span>2 Fristkandidaten</span>
+  </div>
+</div>
+
+<!-- Evidence Card: Fristkandidat -->
+<div class="ev-card">
+  <div class="ev-card-header">
+    <div class="ev-card-kinds">
+      <span class="ev-kind ev-kind-frist">Fristkandidat</span>
+    </div>
+    <div class="ev-card-date">31.08.2025</div>
+  </div>
+  <h3>Einspruchsfrist — 31. August 2025</h3>
+  <p>Explizite Zeitangabe aus dem Dokument: „Einspruchsfrist: 31.08.2025".</p>
+  <div class="ev-card-meta">
+    <span>Quelle: Einkommensteuerbescheid</span>
+    <span style="color:var(--accent);font-weight:600;cursor:pointer">→ Als verbindlich bestätigen</span>
+  </div>
+</div>
+
+<!-- Berechnungsvorschau -->
+<div class="calc-bar">
+  <div class="calc-step"><span class="label">Datum</span><span class="value">15.07.2025</span></div>
+  <span class="calc-arrow">→</span>
+  <div class="calc-step"><span class="label">Frist</span><span class="value">1 Monat</span></div>
+  <span class="calc-arrow">→</span>
+  <div class="calc-result">Fristende: 15.08.2025</div>
+</div>
+
+<!-- Evidence Card: Norm -->
+<div class="ev-card">
+  <div class="ev-card-header">
+    <div class="ev-card-kinds">
+      <span class="ev-kind ev-kind-norm">Rechtsnorm</span>
+    </div>
+    <div class="ev-card-date">AO</div>
+  </div>
+  <h3>§ 355 AO — Einspruchsfrist</h3>
+  <p>Die Einspruchsfrist beträgt einen Monat nach Bekanntgabe des Verwaltungsakts. (§ 355 Abs. 1 AO)</p>
+  <div class="ev-card-meta">
+    <span>Abgabenordnung</span>
+    <span style="color:var(--accent);font-weight:600;cursor:pointer">Mit Fall verknüpft →</span>
+  </div>
+</div>
+
+<!-- Evidence Card: Ereignis -->
+<div class="ev-card">
+  <div class="ev-card-header">
+    <div class="ev-card-kinds">
+      <span class="ev-kind ev-kind-ereignis">Ereignis</span>
+    </div>
+    <div class="ev-card-date">31.07.2026</div>
+  </div>
+  <h3>Widerspruch eingereicht</h3>
+  <p>Der Widerspruch gegen den Einkommensteuerbescheid 2025 wurde form- und fristgerecht beim Finanzamt eingereicht.</p>
+  <div class="ev-card-meta">
+    <span>Status: Bestätigt</span>
+    <span>Quelle: Widerspruchsschreiben</span>
+  </div>
+</div>
+
+</main>
+</div>
+</section>
+
+<!-- === RECHTSQUELLENSUCHE === -->
+<section style="padding-top:32px">
+<h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Rechtsquellensuche</h2>
+<div class="search-ev">
+  <input type="search" placeholder="Norm, Paragraph oder Stichwort durchsuchen…">
+  <button class="btn btn-primary">Suchen</button>
+</div>
+<div class="norm-card">
+  <h4>§ 355 AO — Einspruchsfrist</h4>
+  <p>Die Einspruchsfrist beträgt einen Monat nach Bekanntgabe des Verwaltungsakts.</p>
+  <div class="verknuepft">✓ Mit Fall „Einkommensteuer 2025" verknüpft</div>
+</div>
+<div class="norm-card">
+  <h4>§ 356 AO — Rücknahme des Einspruchs</h4>
+  <p>Der Einspruch kann bis zur Entscheidung zurückgenommen werden.</p>
+</div>
+</section>
+
+</div>
+
+<!-- Mobile -->
+<div class="mobile-view">
+  <div class="hdr"><div class="hdr-inner"><a class="hdr-home" style="font-size:14px">Evidence</a><span class="hdr-badge">Lokal</span></div></div>
+  <div style="padding:12px">
+    <h1 style="font-size:18px;margin-bottom:12px">Widerspruch ESt 2025</h1>
+    <div class="frist-pill" style="margin-bottom:12px;font-size:12px">⏰ Frist: 31.08.2026</div>
+    <div class="ev-card" style="padding:14px">
+      <div class="ev-card-header"><div class="ev-card-kinds"><span class="ev-kind ev-kind-doc">Dokument</span><span class="ev-kind ev-kind-frist">Frist</span></div><div class="ev-card-date">15.07.2025</div></div>
+      <h3 style="font-size:14px">Einkommensteuerbescheid 2025</h3>
+      <p style="font-size:12px">Einspruchsfrist: 31.08.2025. 2 Fristkandidaten.</p>
+    </div>
+    <div class="calc-bar" style="flex-direction:column;align-items:flex-start;gap:4px;font-size:12px">
+      <div class="calc-step"><span class="label">Ereignis:</span><span class="value">15.07.2025</span></div>
+      <div class="calc-step"><span class="label">Frist:</span><span class="value">1 Monat</span></div>
+      <div class="calc-result" style="margin-left:0;font-size:14px">Fristende: 15.08.2025</div>
+    </div>
+  </div>
+</div>
+
+<footer><div class="container">Lokale Anwendung — keine Cloud, keine Telemetrie. Keine rechtliche Bewertung — menschliche Prüfung erforderlich.</div></footer>
+
+<!-- Bewertung -->
+<div class="container" style="padding-top:40px;padding-bottom:40px">
+  <h2 style="font-size:18px;font-weight:700;border-top:2px solid var(--accent);padding-top:20px;margin-bottom:16px">Bewertung: Richtung C — Evidence-first Analyseoberfläche</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="ev-card"><div>
+      <h3 style="font-size:14px;color:var(--success);margin-bottom:8px">✅ Vorteile</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Dokumente und deren Analyse stehen im Zentrum</li>
+        <li>Timeline-Sidebar gibt chronologische Orientierung</li>
+        <li>Fristen, Normen und Ereignisse als gleichwertige „Evidence Cards"</li>
+        <li>Fortschrittsbalken zeigen Fallstatus visuell</li>
+        <li>Modernes, datengetriebenes Look-and-Feel</li>
+        <li>Geeignet für Bürger UND Profis durch Informationsdichte</li>
+      </ul>
+    </div></div>
+    <div class="ev-card"><div>
+      <h3 style="font-size:14px;color:var(--danger);margin-bottom:8px">❌ Nachteile</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Timeline-Layout erfordert Disziplin bei Datenpflege</li>
+        <li>Sidebar verschwindet auf Mobilgeräten</li>
+        <li>„Evidence Card"-Konzept könnte für einfache Fälle Overkill sein</li>
+        <li>Höherer Implementierungsaufwand für Karten-Typen</li>
+      </ul>
+    </div></div>
+    <div class="ev-card"><div>
+      <h3 style="font-size:14px;color:var(--warn);margin-bottom:8px">⚠️ Risiken</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Nutzer könnten Evidence Board mit „Analyse-Tool" verwechseln (zu hohe Erwartung an Automatisierung)</li>
+        <li>Leere Timeline bei neuen Fällen wirkt abschreckend</li>
+        <li>Komplexität könnte Bürger abschrecken</li>
+      </ul>
+    </div></div>
+    <div class="ev-card"><div>
+      <h3 style="font-size:14px;color:var(--ink);margin-bottom:8px">🔧 Umsetzungsaufwand</h3>
+      <ul style="font-size:12px;padding-left:16px;line-height:1.7">
+        <li>Hoch — neues Layout-Konzept (Timeline + Evidence Cards)</li>
+        <li>CSS: Grid-Layout, Karten-Typisierung, Progress-Bars</li>
+        <li>Templates: Evidence Cards statt formularbasierter Ansicht</li>
+        <li>Ca. 7-10 Tage Entwicklungsaufwand</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+</body>
+</html>

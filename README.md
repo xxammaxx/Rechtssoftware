@@ -5,8 +5,8 @@ behördlichen Angelegenheiten.
 
 ## Status
 
-**M7-A — Legal Source Foundation + Case Legal Timeline (v0.2.0)** — implementiert.
-**M7-B — Incremental GII Sync (v0.2.1)** — implementiert (Inkrementeller GII-Sync mit Sync-Historie).
+**M7-A — Legal Source Foundation + Case Legal Timeline (v1.0.0rc2)** — implementiert.
+**M7-B — Incremental GII Sync (v1.0.0rc2)** — implementiert (Inkrementeller GII-Sync mit Sync-Historie, Backup/Recovery).
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)
@@ -42,6 +42,7 @@ Aktuell implementiert:
 - **M7-B — CLI-Schnittstelle:** `legal-source sync` (dry-run/apply/force) und `legal-source sync-status`
 - **M7-B — Phase 9 UI:** Sync-Verlauf auf Rechtsquellen-Statusseite (letzte Synchronisation, Stand-Datum)
 - **M7-B — SourceClient.download_with_headers():** HTTP-Metadaten-Erfassung (ETag, Last-Modified) pro Download
+- **M7-B — Backup & Restore:** Transaktionale SQLite-Backups mit SHA-256-Manifest und atomarem ZIP-Restore mit Path-Traversal-Schutz
 
 ## Explizite Grenzen
 
@@ -125,10 +126,10 @@ Konfiguration über Umgebungsvariablen:
 # Full test suite with coverage measurement
 .venv/Scripts/python.exe -m pytest --cov=src/private_legal_navigator
 
-# Note: Overall project coverage is 71 % (864/864 tests passing).
+# Note: Overall project coverage is 79 % (1091 collected, 1087 passing, 4 Frozen-RED).
 # --cov-fail-under=90 is NOT currently usable as a gate; it fails.
 # For M7-B and onward: new production modules require >=90 % coverage.
-# Overall coverage must not decrease from the 71 % baseline.
+# Overall coverage must not decrease from the 79 % baseline.
 
 # Lint
 .venv/Scripts/python.exe -m ruff check src tests
@@ -187,7 +188,7 @@ Vollständige API-Dokumentation: [contracts/api.md](specs/001-greenfield-case-co
 - Keine Cloud-Verarbeitung, keine Telemetrie
 - Backend bindet nur an 127.0.0.1
 - Keine Falldaten in Logs
-- Keine externen Laufzeitrequests
+- GII-Rechtsquellen-Sync über HTTPS (nur gesetze-im-internet.de, Host-Allowlist)
 
 ## Projektstruktur
 

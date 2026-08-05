@@ -1,0 +1,7 @@
+{
+  "validated_at": "2026-07-31T13:36:41Z",
+  "gate_file": "USER-ACCEPTANCE-GATE.json",
+  "gate_sha256": "e4b5029e23436542cbe8f1504dea34e5e78c8a29d7403e2a3a26bbaa1fa6dab7",
+  "validation_result": "VALID_USER_ACCEPTANCE_GATE",
+  "errors": []
+}

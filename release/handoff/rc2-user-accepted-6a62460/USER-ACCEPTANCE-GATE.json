@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "repository": "xxammaxx/Rechtssoftware",
+  "candidate_commit": "6a62460aaa798ede5784f07ac39a51953db5a0dd",
+  "candidate_tree_sha": "15518e936c129566cb0159856bce62ed83b850cf",
+  "package_version": "1.0.0rc2",
+  "wheel_sha256": "c59e5a6380b053bef6fc4b2317785fc00f108027d8a69d1e8fcca5b920a682a0",
+  "sdist_sha256": "480f39ef631aad2df91b45b90d9775fbfb2d31c812bcd0f785b16a392f4e3cba",
+  "visible_e2e_completed": true,
+  "browser_headless": false,
+  "xvfb_used": false,
+  "manual_review_performed": true,
+  "manual_review_started_at": "2026-07-31T13:50:17Z",
+  "manual_review_finished_at": "2026-07-31T13:57:52Z",
+  "user_verdict": "ACCEPT",
+  "user_notes": "keine",
+  "notes_blocking": null,
+  "agent_generated_verdict": false,
+  "recorded_at": "2026-07-31T13:57:52Z"
+}

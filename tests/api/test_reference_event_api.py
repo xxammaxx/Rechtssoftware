@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from private_legal_navigator.app import create_app
 from private_legal_navigator.config import Settings
+from tests.fixtures.synthetic_pdf import MINIMAL_PDF_BYTES
 
 
 @pytest.fixture
@@ -43,10 +44,9 @@ def case_id(client):
 @pytest.fixture
 def document_id(client, case_id):
     """Upload a PDF and return its document ID."""
-    pdf_content = b"%PDF-1.4 SYNTHETISCH - Test PDF content"
     resp = client.post(
         f"/api/v1/cases/{case_id}/documents",
-        files={"file": ("test.pdf", io.BytesIO(pdf_content), "application/pdf")},
+        files={"file": ("test.pdf", io.BytesIO(MINIMAL_PDF_BYTES), "application/pdf")},
     )
     assert resp.status_code == 201
     return resp.json()["document_id"]
@@ -199,6 +199,120 @@ class TestConfirmReferenceEvent:
         )
         assert resp.status_code == 400
 
+    def test_revoke_cross_case(self, client):
+        """BUG 1: Confirmation from Case A cannot be revoked via Case B."""
+        case_a = client.post(
+            "/api/v1/cases",
+            json={"title": "SYNTHETISCH – Cross-Case Test A"},
+        )
+        assert case_a.status_code == 201
+        case_a_id = case_a.json()["case_id"]
+
+        case_b = client.post(
+            "/api/v1/cases",
+            json={"title": "SYNTHETISCH – Cross-Case Test B"},
+        )
+        assert case_b.status_code == 201
+        case_b_id = case_b.json()["case_id"]
+
+        doc_a = client.post(
+            f"/api/v1/cases/{case_a_id}/documents",
+            files={"file": ("a.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_a.status_code == 201
+        doc_a_id = doc_a.json()["document_id"]
+
+        doc_b = client.post(
+            f"/api/v1/cases/{case_b_id}/documents",
+            files={"file": ("b.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_b.status_code == 201
+        doc_b_id = doc_b.json()["document_id"]
+
+        confirm_resp = client.post(
+            f"/api/v1/cases/{case_a_id}/documents/{doc_a_id}/deadline-candidates/0/reference-events/confirm",
+            json={
+                "action": "confirm",
+                "event_type": "issue_date",
+                "confirmed_date": "2026-07-15",
+                "source_type": "auto_detected",
+            },
+        )
+        assert confirm_resp.status_code == 200
+        confirm_id = confirm_resp.json()["confirmation_id"]
+
+        revoke_resp = client.post(
+            f"/api/v1/cases/{case_b_id}/documents/{doc_b_id}/deadline-candidates/0/reference-events/confirm",
+            json={
+                "action": "revoke",
+                "confirmation_id": confirm_id,
+            },
+        )
+        assert revoke_resp.status_code == 404
+
+    def test_revoke_confirmation_from_other_document(self, client, case_id):
+        """BUG 1: Confirmation owned by Doc A cannot be revoked via Doc B."""
+        doc_a_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("a.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_a_resp.status_code == 201
+        doc_a_id = doc_a_resp.json()["document_id"]
+
+        doc_b_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("b.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_b_resp.status_code == 201
+        doc_b_id = doc_b_resp.json()["document_id"]
+
+        confirm_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents/{doc_a_id}/deadline-candidates/0/reference-events/confirm",
+            json={
+                "action": "confirm",
+                "event_type": "issue_date",
+                "confirmed_date": "2026-07-15",
+                "source_type": "auto_detected",
+            },
+        )
+        assert confirm_resp.status_code == 200
+        confirm_id = confirm_resp.json()["confirmation_id"]
+
+        revoke_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents/{doc_b_id}/deadline-candidates/0/reference-events/confirm",
+            json={
+                "action": "revoke",
+                "confirmation_id": confirm_id,
+            },
+        )
+        assert revoke_resp.status_code == 404
+
+    def test_revoke_double_revoke(self, client, case_id, document_id):
+        """BUG D: Revoking an already revoked confirmation returns 404."""
+        confirm_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/0/reference-events/confirm",
+            json={
+                "action": "confirm",
+                "event_type": "issue_date",
+                "confirmed_date": "2026-07-15",
+                "source_type": "auto_detected",
+            },
+        )
+        assert confirm_resp.status_code == 200
+        confirm_id = confirm_resp.json()["confirmation_id"]
+
+        revoke1 = client.post(
+            f"/api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/0/reference-events/confirm",
+            json={"action": "revoke", "confirmation_id": confirm_id},
+        )
+        assert revoke1.status_code == 200
+
+        revoke2 = client.post(
+            f"/api/v1/cases/{case_id}/documents/{document_id}/deadline-candidates/0/reference-events/confirm",
+            json={"action": "revoke", "confirmation_id": confirm_id},
+        )
+        assert revoke2.status_code == 404
+
 
 # ── Calculation Preview ──
 
@@ -243,6 +357,88 @@ class TestCalculationPreview:
         assert data["legal_validity_assessed"] is False
         assert data["human_review_required"] is True
         assert data["adjustments_applied"]["weekend_adjustment_applied"] is False
+
+    def test_calculation_preview_cross_case(self, client):
+        """BUG 2: Calculation preview leaks cross-case confirmation data."""
+        case_a = client.post(
+            "/api/v1/cases",
+            json={"title": "SYNTHETISCH – Calc Cross-Case A"},
+        )
+        assert case_a.status_code == 201
+        case_a_id = case_a.json()["case_id"]
+
+        case_b = client.post(
+            "/api/v1/cases",
+            json={"title": "SYNTHETISCH – Calc Cross-Case B"},
+        )
+        assert case_b.status_code == 201
+        case_b_id = case_b.json()["case_id"]
+
+        doc_a = client.post(
+            f"/api/v1/cases/{case_a_id}/documents",
+            files={"file": ("a.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_a.status_code == 201
+        doc_a_id = doc_a.json()["document_id"]
+
+        doc_b = client.post(
+            f"/api/v1/cases/{case_b_id}/documents",
+            files={"file": ("b.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_b.status_code == 201
+        doc_b_id = doc_b.json()["document_id"]
+
+        confirm_resp = client.post(
+            f"/api/v1/cases/{case_a_id}/documents/{doc_a_id}/deadline-candidates/0/reference-events/confirm",
+            json={
+                "action": "confirm",
+                "event_type": "issue_date",
+                "confirmed_date": "2026-07-15",
+                "source_type": "auto_detected",
+            },
+        )
+        assert confirm_resp.status_code == 200
+        confirm_id = confirm_resp.json()["confirmation_id"]
+
+        calc_resp = client.post(
+            f"/api/v1/cases/{case_b_id}/documents/{doc_b_id}/deadline-candidates/0/calculation-preview",
+            json={"confirmation_id": confirm_id},
+        )
+        assert calc_resp.status_code == 404
+
+    def test_calculation_preview_cross_document(self, client, case_id):
+        """BUG 2: Calculation preview cross-document within same case."""
+        doc_a_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("a.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_a_resp.status_code == 201
+        doc_a_id = doc_a_resp.json()["document_id"]
+
+        doc_b_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents",
+            files={"file": ("b.pdf", MINIMAL_PDF_BYTES, "application/pdf")},
+        )
+        assert doc_b_resp.status_code == 201
+        doc_b_id = doc_b_resp.json()["document_id"]
+
+        confirm_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents/{doc_a_id}/deadline-candidates/0/reference-events/confirm",
+            json={
+                "action": "confirm",
+                "event_type": "issue_date",
+                "confirmed_date": "2026-07-15",
+                "source_type": "auto_detected",
+            },
+        )
+        assert confirm_resp.status_code == 200
+        confirm_id = confirm_resp.json()["confirmation_id"]
+
+        calc_resp = client.post(
+            f"/api/v1/cases/{case_id}/documents/{doc_b_id}/deadline-candidates/0/calculation-preview",
+            json={"confirmation_id": confirm_id},
+        )
+        assert calc_resp.status_code == 404
 
 
 # ── Confirmation History ──

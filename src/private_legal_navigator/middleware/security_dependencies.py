@@ -7,6 +7,7 @@ and body size limits as FastAPI dependencies (not global middleware).
 import logging
 import re
 from typing import Annotated
+from urllib.parse import ParseResult, urlparse
 
 from fastapi import Depends, HTTPException, Request
 
@@ -16,12 +17,15 @@ from private_legal_navigator.middleware.csrf import CsrfTokenService
 logger = logging.getLogger("private_legal_navigator.ui")
 
 MAX_BODY_BYTES = 65_536  # 64 KB limit for form submissions
+MAX_UPLOAD_BODY_BYTES = 21 * 1024 * 1024  # 21 MB limit for file uploads (20 MB + overhead)
 ALLOWED_CONTENT_TYPE = "application/x-www-form-urlencoded"
+_LOCAL_ORIGIN_HOSTS = frozenset({"127.0.0.1", "localhost"})
 
 # M6-UI Slice 2 action suffixes that extend the candidate page path.
 # CSRF tokens are bound to the page path (/candidates/{idx}) and
 # validated by stripping these known action suffixes from the POST path.
 _ACTION_SUFFIX_PATTERN = re.compile(r"/(confirm|reject|manual-confirm|correct|revoke)$")
+_UPLOAD_ACTION_PATTERN = re.compile(r"/(upload)$")
 
 
 async def require_form_content_type(request: Request) -> None:
@@ -76,9 +80,38 @@ async def require_origin_or_referer(request: Request) -> None:
 
 
 def _is_same_origin(header_value: str, request: Request) -> bool:
-    """Check if a URL from a header matches the request's origin."""
-    base = str(request.base_url).rstrip("/")
-    return header_value.startswith(base)
+    """Accept only structurally valid local origins for the request port.
+
+    Origin values contain an origin only, while a Referer may contain a path.
+    Both are parsed as URLs so a hostname or port cannot be smuggled through a
+    string prefix that merely looks like the local development server.
+    """
+    try:
+        candidate = urlparse(header_value)
+        request_origin = urlparse(str(request.base_url))
+        candidate_port = _effective_port(candidate)
+        request_port = _effective_port(request_origin)
+    except ValueError:
+        return False
+
+    return (
+        candidate.scheme.lower() == request_origin.scheme.lower()
+        and candidate.hostname in _LOCAL_ORIGIN_HOSTS
+        and candidate.username is None
+        and candidate.password is None
+        and candidate_port == request_port
+    )
+
+
+def _effective_port(url: ParseResult) -> int | None:
+    """Return an explicit or scheme-default port, rejecting unknown schemes."""
+    if url.port is not None:
+        return url.port
+    if url.scheme.lower() == "http":
+        return 80
+    if url.scheme.lower() == "https":
+        return 443
+    return None
 
 
 async def require_csrf_token(request: Request) -> None:
@@ -146,4 +179,94 @@ async def ui_post_security(
     _csrf: Annotated[None, Depends(require_csrf_token)],
 ) -> None:
     """Aggregate all POST security checks in one dependency."""
+    pass
+
+
+# ── Upload-specific security (multipart/form-data, larger body limit) ──
+
+
+async def require_upload_body_size_limit(request: Request) -> None:
+    """Reject POST upload requests exceeding MAX_UPLOAD_BODY_BYTES."""
+    if request.method != "POST":
+        return
+
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > MAX_UPLOAD_BODY_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Die Datei ist zu groß (maximal 20 MB).",
+        )
+
+
+async def require_multipart_content_type(request: Request) -> None:
+    """Enforce multipart/form-data Content-Type on file upload POST."""
+    if request.method != "POST":
+        return
+
+    content_type = request.headers.get("content-type", "")
+    if "multipart/form-data" not in content_type:
+        raise HTTPException(
+            status_code=415,
+            detail="Nicht unterstütztes Medienformat.",
+        )
+
+
+async def require_csrf_token_multipart(request: Request) -> None:
+    """Validate CSRF token from multipart form against browser nonce cookie.
+
+    Caches the form in request.state._upload_form so the route handler
+    can read the file without re-consuming the form stream.
+    """
+    if request.method != "POST":
+        return
+
+    csrf_service: CsrfTokenService | None = getattr(request.app.state, "csrf_service", None)
+    if csrf_service is None:
+        safe_log_failure(
+            logger,
+            "ui.csrf_service_missing",
+            error_code="CSRF_SERVICE_MISSING",
+        )
+        raise HTTPException(
+            status_code=500, detail="Der Vorgang konnte nicht abgeschlossen werden."
+        )
+
+    try:
+        form = await request.form()
+    except Exception as exc:
+        safe_log_failure(
+            logger,
+            "ui.csrf_form_read_failed",
+            error_code="CSRF_FORM_READ_ERROR",
+            exception=exc,
+        )
+        raise HTTPException(status_code=400, detail="Ungültiges Formular.") from exc
+
+    raw_token = form.get("csrf_token", "")
+    csrf_token: str = raw_token.strip() if isinstance(raw_token, str) else ""
+
+    browser_nonce = request.cookies.get("pln_csrf_nonce", "")
+
+    if not csrf_token or not browser_nonce:
+        raise HTTPException(status_code=403, detail="Fehlende Sicherheitsdaten.")
+
+    raw_path = request.url.path
+    action_path = _UPLOAD_ACTION_PATTERN.sub("", raw_path)
+
+    if not csrf_service.validate_token(csrf_token, browser_nonce, action_path):
+        raise HTTPException(
+            status_code=403,
+            detail="Die Anfrage konnte nicht verarbeitet werden.",
+        )
+
+    request.state._upload_form = form
+
+
+async def ui_upload_security(
+    _content_type: Annotated[None, Depends(require_multipart_content_type)],
+    _body_size: Annotated[None, Depends(require_upload_body_size_limit)],
+    _origin: Annotated[None, Depends(require_origin_or_referer)],
+    _csrf: Annotated[None, Depends(require_csrf_token_multipart)],
+) -> None:
+    """Aggregate all upload security checks in one dependency."""
     pass

@@ -29,6 +29,38 @@ async def client(settings: Settings) -> AsyncClient:
 class TestLegalSourcesSyncHistory:
     """Tests for the sync history section on /ui/legal-sources (M7-B Phase 9)."""
 
+    async def test_legal_sources_shows_truthful_sync_run_id(
+        self, client: AsyncClient, settings: Settings
+    ) -> None:
+        """A displayed history row exposes the persisted run identifier."""
+        from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
+            SqliteLegalSourceRepository,
+        )
+
+        repo = SqliteLegalSourceRepository(settings.database_path)
+        run = SyncRun(
+            sync_run_id="SYNTHETISCH-ui-run-id",
+            source_key="gesetze-im-internet",
+            started_at="2026-07-26T12:00:00",
+            completed_at="2026-07-26T12:05:00",
+            status=SyncRunStatus.COMPLETED,
+            dry_run=False,
+            total_in_catalog=3,
+            new_count=1,
+            changed_count=1,
+            unchanged_count=1,
+            failed_count=0,
+        )
+        repo.save_sync_run(run)
+
+        resp = await client.get("/ui/legal-sources")
+
+        assert "Run-ID" in resp.text
+        assert run.sync_run_id in resp.text
+        assert "Gesamt" in resp.text
+        assert "Unver&auml;ndert" in resp.text
+        assert "26.07.2026 12:05" in resp.text
+
     async def test_legal_sources_page_renders(self, client: AsyncClient) -> None:
         """The legal sources page renders successfully."""
         resp = await client.get("/ui/legal-sources")

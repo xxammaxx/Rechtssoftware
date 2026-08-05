@@ -1,0 +1,74 @@
+{
+  "version": "1.0",
+  "created_at": "2026-07-27",
+  "description": "Private source evidence snapshots - not for publication",
+  "source_directory": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources",
+  "backup_directory": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content",
+  "file_count": 9,
+  "files": [
+    {
+      "relative_path": "11/11b4aac2f592a04d9502d8c554fb1a00c8321244b76834db1eb210f6f9214f74.html",
+      "sha256": "11b4aac2f592a04d9502d8c554fb1a00c8321244b76834db1eb210f6f9214f74",
+      "size": 17886,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/11/11b4aac2f592a04d9502d8c554fb1a00c8321244b76834db1eb210f6f9214f74.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/11/11b4aac2f592a04d9502d8c554fb1a00c8321244b76834db1eb210f6f9214f74.html"
+    },
+    {
+      "relative_path": "3b/3bcefb70c6dddfb551772d871345c25b72874d1b33c1756589da3fdcb755d877.html",
+      "sha256": "3bcefb70c6dddfb551772d871345c25b72874d1b33c1756589da3fdcb755d877",
+      "size": 41642,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/3b/3bcefb70c6dddfb551772d871345c25b72874d1b33c1756589da3fdcb755d877.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/3b/3bcefb70c6dddfb551772d871345c25b72874d1b33c1756589da3fdcb755d877.html"
+    },
+    {
+      "relative_path": "4f/4f47b9a0b9b520d4ad55e2c6719919a5aa7619061accd245f492850ed5975265.html",
+      "sha256": "4f47b9a0b9b520d4ad55e2c6719919a5aa7619061accd245f492850ed5975265",
+      "size": 28998,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/4f/4f47b9a0b9b520d4ad55e2c6719919a5aa7619061accd245f492850ed5975265.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/4f/4f47b9a0b9b520d4ad55e2c6719919a5aa7619061accd245f492850ed5975265.html"
+    },
+    {
+      "relative_path": "56/563ff796e89dc07f52d798ec6350e30a78be3cb618f5048e1f190fa81b9eb16e.html",
+      "sha256": "563ff796e89dc07f52d798ec6350e30a78be3cb618f5048e1f190fa81b9eb16e",
+      "size": 94351,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/56/563ff796e89dc07f52d798ec6350e30a78be3cb618f5048e1f190fa81b9eb16e.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/56/563ff796e89dc07f52d798ec6350e30a78be3cb618f5048e1f190fa81b9eb16e.html"
+    },
+    {
+      "relative_path": "56/5649569db61215880b1012e5fa2fb110debeb88fd4f9e305008d802d1be20eec.html",
+      "sha256": "5649569db61215880b1012e5fa2fb110debeb88fd4f9e305008d802d1be20eec",
+      "size": 5606,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/56/5649569db61215880b1012e5fa2fb110debeb88fd4f9e305008d802d1be20eec.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/56/5649569db61215880b1012e5fa2fb110debeb88fd4f9e305008d802d1be20eec.html"
+    },
+    {
+      "relative_path": "91/91851d772b7db1e73eaa2a2fd07d8c19fb9e637cba62594a9869bb59e60b1d91.html",
+      "sha256": "91851d772b7db1e73eaa2a2fd07d8c19fb9e637cba62594a9869bb59e60b1d91",
+      "size": 5519,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/91/91851d772b7db1e73eaa2a2fd07d8c19fb9e637cba62594a9869bb59e60b1d91.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/91/91851d772b7db1e73eaa2a2fd07d8c19fb9e637cba62594a9869bb59e60b1d91.html"
+    },
+    {
+      "relative_path": "93/93e3f03b2577459eabe3f2e7e25ca7848c4313b1a9ae124dcf49f7c12e05d710.html",
+      "sha256": "93e3f03b2577459eabe3f2e7e25ca7848c4313b1a9ae124dcf49f7c12e05d710",
+      "size": 5356,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/93/93e3f03b2577459eabe3f2e7e25ca7848c4313b1a9ae124dcf49f7c12e05d710.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/93/93e3f03b2577459eabe3f2e7e25ca7848c4313b1a9ae124dcf49f7c12e05d710.html"
+    },
+    {
+      "relative_path": "b5/b57d55da25053188717a6c5f7f9a985b34b1e35f6213c31cea2c0f342aee0c3e.html",
+      "sha256": "b57d55da25053188717a6c5f7f9a985b34b1e35f6213c31cea2c0f342aee0c3e",
+      "size": 20288,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/b5/b57d55da25053188717a6c5f7f9a985b34b1e35f6213c31cea2c0f342aee0c3e.html",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/b5/b57d55da25053188717a6c5f7f9a985b34b1e35f6213c31cea2c0f342aee0c3e.html"
+    },
+    {
+      "relative_path": "e5/e5db55ee448f4d298fbd5b6789bd0f4aefccd9ebc009d629203a53f06fe470c5.pdf",
+      "sha256": "e5db55ee448f4d298fbd5b6789bd0f4aefccd9ebc009d629203a53f06fe470c5",
+      "size": 189448,
+      "original_path": "/media/xxammaxx/projekte/Rechtssoftware/src/private_legal_navigator/data/legal_sources/e5/e5db55ee448f4d298fbd5b6789bd0f4aefccd9ebc009d629203a53f06fe470c5.pdf",
+      "backup_path": "/media/xxammaxx/projekte/Rechtssoftware/.private-review-evidence/m6b2/source-content/e5/e5db55ee448f4d298fbd5b6789bd0f4aefccd9ebc009d629203a53f06fe470c5.pdf"
+    }
+  ],
+  "manifest_sha256": "dd76591851eb3b0c8fab723e1334aa495454b404c0b34f39a5be85d5ff2b39a3"
+}

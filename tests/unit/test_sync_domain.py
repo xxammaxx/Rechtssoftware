@@ -35,6 +35,7 @@ class TestSyncItemStatus:
         expected = {
             "PENDING",
             "NEW",
+            "KNOWN_UNVERIFIED",
             "KNOWN",
             "CHANGED",
             "UNCHANGED",

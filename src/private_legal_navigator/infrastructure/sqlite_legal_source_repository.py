@@ -574,6 +574,20 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
                 ),
             )
 
+            # ADR-010 Variant B: Explicit de-current of old expression.
+            # When a new CURRENT expression is inserted, any other CURRENT
+            # expression for the same instrument is set to SUPERSEDED.
+            # This happens within the same SQLite transaction as the insert.
+            if expression.temporal_status.value == "CURRENT":
+                conn.execute(
+                    """UPDATE legal_expressions
+                       SET temporal_status = 'SUPERSEDED'
+                       WHERE instrument_id = ?
+                         AND expression_id != ?
+                         AND temporal_status = 'CURRENT'""",
+                    (str(expression.instrument_id), str(expression.expression_id)),
+                )
+
             # 4. Save all provisions
             for prov in provisions:
                 conn.execute(
@@ -596,15 +610,20 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
                     ),
                 )
 
-            # 5. Rebuild FTS index (using content sync for reliability)
-            import contextlib
-
-            with contextlib.suppress(sqlite3.DatabaseError):
-                conn.execute("DELETE FROM legal_provisions_fts")
-            conn.execute(
-                """INSERT INTO legal_provisions_fts (rowid, provision_number, heading, text_content)
-                SELECT rowid, provision_number, heading, text_content FROM legal_provisions"""
-            )
+            # 5. Incremental FTS insert (RC-025-R1 F6)
+            # Only insert the newly added provisions, not a full rebuild.
+            # Query the rowids of the provisions we just inserted.
+            prov_ids = [str(prov.provision_id) for prov in provisions if prov.provision_id]
+            if prov_ids:
+                placeholders = ",".join("?" for _ in prov_ids)
+                conn.execute(
+                    f"""INSERT OR REPLACE INTO legal_provisions_fts
+                        (rowid, provision_number, heading, text_content)
+                    SELECT rowid, provision_number, heading, text_content
+                    FROM legal_provisions
+                    WHERE provision_id IN ({placeholders})""",
+                    prov_ids,
+                )
 
             # Commit happens automatically on context manager exit
 
@@ -697,6 +716,12 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
     # ── Search ───────────────────────────────────
 
     def search_provisions_fts(self, query: str, limit: int = 50) -> list[dict[str, Any]]:
+        """Search provisions via FTS5, returning only currently active expressions.
+
+        ADR-010 Variant B: Default search filters to temporal_status='CURRENT'.
+        Historical expressions are excluded from normal search results.
+        Use search_provisions_fts_historical() for historical search.
+        """
         conn = get_connection(self._db_path)
         try:
             rows = conn.execute(
@@ -711,7 +736,42 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
                 JOIN legal_expressions e ON e.expression_id = p.expression_id
                 JOIN legal_instruments i ON i.instrument_id = e.instrument_id
                 WHERE legal_provisions_fts MATCH ?
+                  AND e.temporal_status = 'CURRENT'
                 ORDER BY rank
+                LIMIT ?
+                """,
+                (query, limit),
+            ).fetchall()
+            return [dict(row) for row in rows]
+        except sqlite3.OperationalError:
+            return []
+        finally:
+            conn.close()
+
+    def search_provisions_fts_historical(
+        self, query: str, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """Search provisions via FTS5, including historical expressions.
+
+        ADR-010 Variant B: Explicit historical search mode.
+        Returns provisions from all expressions regardless of temporal_status.
+        Use search_provisions_fts() for default current-only search.
+        """
+        conn = get_connection(self._db_path)
+        try:
+            rows = conn.execute(
+                """
+                SELECT p.provision_id, p.provision_number, p.heading,
+                       p.stable_key, p.text_content,
+                       e.expression_id, i.abbreviation, i.official_title,
+                       i.authority_tier, e.temporal_status, e.retrieved_at,
+                       snippet(legal_provisions_fts, 2, '<mark>', '</mark>', '...', 32) as snippet
+                FROM legal_provisions_fts fts
+                JOIN legal_provisions p ON p.rowid = fts.rowid
+                JOIN legal_expressions e ON e.expression_id = p.expression_id
+                JOIN legal_instruments i ON i.instrument_id = e.instrument_id
+                WHERE legal_provisions_fts MATCH ?
+                ORDER BY e.valid_from DESC, rank
                 LIMIT ?
                 """,
                 (query, limit),
@@ -1072,7 +1132,7 @@ class SqliteLegalSourceRepository(LegalSourceRepository):
 
     def update_legal_source_catalog_stand_date(self, source_key: str, stand_date: str) -> None:
         """Update the last_catalog_stand_date on a legal source record."""
-        conn = get_connection()
+        conn = get_connection(self._db_path)
         try:
             conn.execute(
                 "UPDATE legal_sources SET last_catalog_stand_date = ? WHERE source_key = ?",

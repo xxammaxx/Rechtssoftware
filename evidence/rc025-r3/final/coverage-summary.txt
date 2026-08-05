@@ -1,0 +1,7 @@
+src/private_legal_navigator/middleware/csrf.py                                       79      5    94%
+src/private_legal_navigator/middleware/host_validation.py                            15      0   100%
+src/private_legal_navigator/middleware/security_dependencies.py                     114     12    89%
+src/private_legal_navigator/middleware/security_headers.py                           16      0   100%
+TOTAL                                                                              6385   1365    79%
+Success: no issues found in 73 source files
+All checks passed!

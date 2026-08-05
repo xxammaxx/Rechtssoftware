@@ -1,0 +1,2 @@
+e59cd13e56ae4bf14dac0aa7e6b4a0f6849798d38b8d1763d43d4129167b3ffb  tests/rc025/test_m7b_contract_red.py
+93f6d35fdeee13b553f67f450284474608d66543c688f51560092813e20e3e39  evidence/rc025/red/acceptance-manifest.md

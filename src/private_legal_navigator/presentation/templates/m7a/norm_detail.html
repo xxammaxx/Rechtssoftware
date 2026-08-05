@@ -54,7 +54,7 @@
         <input type="hidden" name="provision_id" value="{{ provision_id_str }}">
         <div class="form-group">
             <label for="case-select">Fall:</label>
-            <select id="case-select" name="case_selector" required onchange="updateFormAction()">
+            <select id="case-select" name="case_selector" required>
                 <option value="">-- Fall auswählen --</option>
                 {% for c in cases %}
                 <option value="{{ c.case_id }}">{{ c.title }}</option>
@@ -68,16 +68,7 @@
         </div>
         <button type="submit">Mit ausgewähltem Fall verknüpfen</button>
     </form>
-    <script>
-    function updateFormAction() {
-        var select = document.getElementById('case-select');
-        var form = document.getElementById('link-form');
-        var caseId = select.value;
-        if (caseId) {
-            form.action = '/ui/cases/' + caseId + '/legal-situation/link';
-        }
-    }
-    </script>
+    <script src="{{ url_for('static', path='js/norm-detail.js') }}" defer></script>
     {% else %}
     <p><em>Keine Fälle vorhanden. <a href="/ui/cases">Erstelle zuerst einen Fall</a>.</em></p>
     {% endif %}

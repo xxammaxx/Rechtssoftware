@@ -4,68 +4,78 @@
 <nav aria-label="Brotkrümel">
   <ol class="breadcrumbs">
     <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
-    <li><a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}">Fall</a></li>
+    <li><a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}">{{ view.case_title or 'Fall' }}</a></li>
     <li><span aria-current="page">{{ view.document_filename }}</span></li>
   </ol>
 </nav>
 
 <h1 class="page-title">{{ view.document_filename }}</h1>
 
-{# Warnings #}
+{# ── Warnings (translated, compact) ─────────────────────────────── #}
 {% if view.warnings %}
-<div class="warnings-box" role="alert">
-    <h2 class="section-title">Hinweise</h2>
-    <ul>
-    {% for warning in view.warnings %}
-        <li class="warning-item">
-            <span class="warning-code">{{ warning.code }}</span>:
-            {{ warning.message }}
-        </li>
-    {% endfor %}
-    </ul>
-</div>
+  {% for warning in view.warnings %}
+  <div class="warn-compact" role="status">
+    {% if 'LEGAL_CALCULATION_NOT_PERFORMED' in warning.code %}
+      <strong>Keine automatische Fristberechnung:</strong> {{ warning.message }}
+    {% elif 'MULTIPLE_DEADLINE_CANDIDATES' in warning.code %}
+      <strong>Mehrere Fristkandidaten:</strong> {{ warning.message }}
+    {% elif 'NO_TEXT_EXTRACTED' in warning.code %}
+      <strong>Kein Text extrahiert:</strong> {{ warning.message }}
+    {% else %}
+      <strong>{{ warning.code }}:</strong> {{ warning.message }}
+    {% endif %}
+  </div>
+  {% endfor %}
 {% endif %}
 
-{# Deadline Candidates #}
+{# ── Deadline Candidates (as Evidence Cards) ────────────────────── #}
 <h2 class="section-title">Datums- und Zeitraumhinweise</h2>
 
 {% if not view.has_candidates %}
-    <p class="empty-state">Keine Datums- oder Zeitraumhinweise erkannt.</p>
+  <div class="empty-state">Keine Datums- oder Zeitraumhinweise erkannt.</div>
 {% else %}
-    <p class="count-badge">Menschliche Prüfung erforderlich. Rechtliche Gültigkeit nicht bewertet.</p>
+  <p class="count-badge">Menschliche Prüfung erforderlich. Rechtliche Gültigkeit nicht bewertet.</p>
 
-    <ul class="candidate-list">
-    {% for c in view.candidates %}
-        <li class="candidate-card-item">
-            <a href="{{ url_for('ui_candidate_detail', case_id=view.case_id, document_id=view.document_id, candidate_index=c.index) }}"
-               class="candidate-card-item__link">
-                <span class="candidate-card-item__kind">{{ c.kind }}</span>
-                <p class="candidate-card-item__text">{{ c.display_text }}</p>
+  <div class="candidate-list">
+  {% for c in view.candidates %}
+    <div class="ev-card">
+      <div class="ev-card__kinds">
+        <span class="ev-kind ev-kind--frist">{{ c.kind }}</span>
+        {% if c.date_value %}
+        <span class="ev-card__date">{{ c.date_value }}</span>
+        {% endif %}
+      </div>
+      <h3>{{ c.display_text }}</h3>
+      {% if c.date_value %}
+      <p class="ev-card__date-value">{{ c.date_value }}</p>
+      {% endif %}
+      {% if c.is_relative and c.duration_amount and c.duration_unit %}
+      <p>{{ c.duration_amount }} {{ c.duration_unit }}{% if c.duration_amount != 1 %}n{% endif %} — Bezugsereignis erforderlich</p>
+      {% endif %}
+      <div class="ev-card__meta">
+        <a href="{{ url_for('ui_candidate_detail', case_id=view.case_id, document_id=view.document_id, candidate_index=c.index) }}"
+           class="ev-card__link">
+          Bezugsdatum prüfen →
+        </a>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
 
-                {% if c.date_value %}
-                <p class="candidate-card-item__date">Datum: {{ c.date_value }}</p>
-                {% endif %}
-
-                {% if c.is_relative %}
-                <p class="candidate-card-item__duration">
-                    {% if c.duration_amount and c.duration_unit %}
-                    {{ c.duration_amount }} {{ c.duration_unit }}{% if c.duration_amount != 1 %}n{% endif %}
-                    {% endif %}
-                </p>
-                <p class="candidate-card-item__ref">
-                    Bezugsereignis erforderlich.
-                </p>
-                {% endif %}
-
-                <span class="candidate-card-item__action">Bezugsdatum prüfen →</span>
-            </a>
-        </li>
-    {% endfor %}
-    </ul>
+  {# ── Calc Bar (preview) ──────────────────────────────────────── #}
+  {% if view.candidates and view.candidates[0].date_value %}
+  <div class="calc-bar">
+    <div class="calc-step"><span class="label">Datum</span><span class="value">{{ view.candidates[0].date_value }}</span></div>
+    <span class="calc-arrow">→</span>
+    <div class="calc-step"><span class="label">Frist</span><span class="value">Prüfung nötig</span></div>
+    <span class="calc-arrow">→</span>
+    <div class="calc-result">Bitte Bezugsdatum bestätigen</div>
+  </div>
+  {% endif %}
 {% endif %}
 
 <p class="u-mt-4">
-    <a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}" class="btn btn--secondary btn--small">← Zurück zum Fall</a>
+  <a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}" class="btn btn--secondary btn--small">← Zurück zum Fall</a>
 </p>
 
 {% endblock %}

@@ -46,6 +46,20 @@ class DocumentService:
         if self._case_repo.get_by_id(case_id) is None:
             raise ValueError("Der Fall wurde nicht gefunden.")
 
+        if not content:
+            raise ValueError("Die Datei ist leer.")
+
+        if not content.startswith(b"%PDF-"):
+            raise ValueError("Nur PDF-Dateien sind erlaubt.")
+
+        import pymupdf
+
+        try:
+            pdf = pymupdf.open(stream=content, filetype="pdf")  # type: ignore[no-untyped-call]
+            pdf.close()  # type: ignore[no-untyped-call]
+        except Exception:
+            raise ValueError("Kein gültiges PDF-Dokument.") from None
+
         # Text extraction (returns ExtractionResult with text and optional error)
         result = self._text_extractor.extract(content)
 

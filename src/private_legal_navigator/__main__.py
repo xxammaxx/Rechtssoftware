@@ -358,6 +358,7 @@ def _handle_sync_status(args: argparse.Namespace) -> None:
 
     print(f"\nSync History: {args.source}")
     print(f"{'=' * 60}")
+    print(f"  Run ID:           {latest.sync_run_id}")
     print(f"  Last sync:        {latest.started_at}")
     print(f"  Status:           {latest.status.value}")
     print(f"  Catalog date:     {latest.catalog_stand_date}")

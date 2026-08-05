@@ -2,6 +2,13 @@
 {% block content %}
 <h1>{{ case.title }} — Rechtsverlauf</h1>
 
+<nav aria-label="Fall-Navigation" class="case-tabs">
+  <a href="{{ url_for('ui_case_detail', case_id=case_id) }}" class="case-tabs__tab">Übersicht</a>
+  <a href="{{ url_for('case_legal_situation', case_id=case_id) }}" class="case-tabs__tab">Rechtslage</a>
+  <a href="{{ url_for('case_legal_timeline', case_id=case_id) }}" class="case-tabs__tab" aria-current="page">Verlauf</a>
+  <a href="{{ url_for('evidence_pack', case_id=case_id) }}" class="case-tabs__tab">Evidence</a>
+</nav>
+
 <h2>Aktive Ereignisse</h2>
 {% if active_events %}
 <table class="data-table">
@@ -15,13 +22,13 @@
     <td>{{ e.source_document_id or "–" }}</td>
     <td>{{ e.review_status.value if e.review_status else "–" }}</td>
     <td>
-        <form method="post" action="{{ url_for('correct_legal_event', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('correct_legal_event', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="event_id" value="{{ e.event_id }}">
-            <input type="text" name="new_title" value="{{ e.title }}" style="width:12em">
+            <input type="text" name="new_title" value="{{ e.title }}" class="input--compact">
             <button type="submit" class="btn btn--small">Korrigieren</button>
         </form>
-        <form method="post" action="{{ url_for('revoke_legal_event', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('revoke_legal_event', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="event_id" value="{{ e.event_id }}">
             <button type="submit" class="btn btn--small btn--danger">Widerrufen</button>
@@ -32,7 +39,10 @@
 </tbody>
 </table>
 {% else %}
-<p><em>Keine aktiven Ereignisse.</em></p>
+<p class="empty-state">
+  <strong>Noch keine aktiven Ereignisse.</strong><br>
+  Lege ein neues Ereignis an, um den rechtlichen Verlauf dieses Falls zu dokumentieren.
+</p>
 {% endif %}
 
 <h2>Ereigniskandidaten</h2>
@@ -47,14 +57,14 @@
     <td>{{ e.title }}</td>
     <td>{{ e.description or "–" }}</td>
     <td>
-        <form method="post" action="{{ url_for('confirm_legal_event', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('confirm_legal_event', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="event_id" value="{{ e.event_id }}">
             <button type="submit" class="btn btn--small btn--success">✓ Bestätigen</button>
         </form>
     </td>
     <td>
-        <form method="post" action="{{ url_for('reject_legal_event', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('reject_legal_event', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="event_id" value="{{ e.event_id }}">
             <button type="submit" class="btn btn--small btn--warning">✗ Ablehnen</button>

@@ -1,0 +1,32 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /media/xxammaxx/projekte/Rechtssoftware/.venv/bin/python
+cachedir: .pytest_cache
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /media/xxammaxx/projekte/Rechtssoftware
+configfile: pyproject.toml
+plugins: timeout-2.4.0, anyio-4.14.2, asyncio-1.4.0, benchmark-5.2.3, repeat-0.9.4, xdist-3.8.0, typeguard-4.4.4, deepeval-4.0.2, cov-7.1.0, httpx-0.36.2, rerunfailures-16.2, langsmith-0.6.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 9 items
+
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC1SingleDownload::test_new_instrument_download_count_is_one PASSED [ 11%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC1SingleDownload::test_known_unchanged_does_not_download_again PASSED [ 22%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC1SingleDownload::test_parser_error_still_only_one_download PASSED [ 33%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC2ByteIdentity::test_downloaded_bytes_equal_snapshot_file_bytes PASSED [ 44%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC3Adversarial::test_no_second_download_with_adversarial_stub PASSED [ 55%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC4SnapshotTampering::test_tampered_snapshot_raises_integrity_error PASSED [ 66%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC5AtomicVisibility::test_old_fts_data_visible_after_failure PASSED [ 77%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC6SuccessfulReplacement::test_new_data_visible_after_successful_import PASSED [ 88%]
+tests/rc025_r2_verifier/test_post_fix_verifier.py::TestC7RetryIdempotency::test_retry_produces_exactly_one_expression PASSED [100%]Running teardown with pytest sessionfinish...
+
+
+=============================== warnings summary ===============================
+tests/rc025_r2_verifier/test_post_fix_verifier.py:28
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025_r2_verifier/test_post_fix_verifier.py:28: PytestUnknownMarkWarning: Unknown pytest.mark.rc025_r2_verifier - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r2_verifier, pytest.mark.m7b_post_fix]
+
+tests/rc025_r2_verifier/test_post_fix_verifier.py:28
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025_r2_verifier/test_post_fix_verifier.py:28: PytestUnknownMarkWarning: Unknown pytest.mark.m7b_post_fix - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_r2_verifier, pytest.mark.m7b_post_fix]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 9 passed, 2 warnings in 1.86s =========================

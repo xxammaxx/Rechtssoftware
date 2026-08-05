@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Designrichtungen — PrivateLegalNavigator RC2</title>
+<style>
+:root {
+  --bg: #f8f9fa;
+  --text: #1a1a1a;
+  --border: #dee2e6;
+  --primary: #2563eb;
+  --font: system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: #e9ecef; color: var(--text); line-height: 1.5; }
+.header { background: #1e293b; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+.header h1 { font-size: 1.1rem; font-weight: 600; }
+.tabs { display: flex; gap: 2px; }
+.tab-btn { padding: 8px 20px; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 0.85rem; font-weight: 600; background: #334155; color: #94a3b8; }
+.tab-btn.active { background: #fff; color: #1e293b; }
+.container { max-width: 1300px; margin: 0 auto; padding: 20px; }
+.direction { display: none; }
+.direction.active { display: block; }
+.dir-header { background: #fff; border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.dir-header h2 { font-size: 1.5rem; margin-bottom: 6px; }
+.dir-header p { color: #64748b; font-size: 0.9rem; max-width: 800px; }
+.screens { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+.screen { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+.screen-label { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid var(--border); }
+.screen-content { padding: 16px; font-size: 0.78rem; min-height: 200px; }
+.analysis { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+.ana-card { background: #fff; border-radius: 8px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.ana-card h4 { font-size: 0.82rem; margin-bottom: 6px; }
+.ana-card ul { font-size: 0.75rem; color: #475569; padding-left: 16px; }
+.ana-card li { margin-bottom: 3px; }
+.tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.68rem; font-weight: 700; }
+.tag-pro { background: #dcfce7; color: #166534; }
+.tag-con { background: #fef2f2; color: #991b1b; }
+.tag-risk { background: #fffbeb; color: #92400e; }
+
+/* Direction-specific previews */
+.preview-card { border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+.preview-title { font-weight: 600; font-size: 0.82rem; margin-bottom: 4px; }
+.preview-meta { font-size: 0.7rem; color: #64748b; display: flex; gap: 10px; }
+.preview-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.preview-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 600; }
+.preview-input { border: 1px solid #d4d4d4; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; width: 100%; margin: 3px 0; }
+.preview-btn { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; border: none; cursor: pointer; }
+.preview-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+.preview-table th, .preview-table td { padding: 3px 6px; border-bottom: 1px solid #e5e5e5; text-align: left; }
+.preview-table th { font-size: 0.65rem; color: #64748b; font-weight: 600; }
+.preview-tabs { display: flex; gap: 0; border-bottom: 2px solid #e5e5e5; margin-bottom: 8px; }
+.preview-tab { padding: 4px 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+.preview-tab.active { border-bottom: 2px solid; }
+.preview-warn { padding: 6px 8px; border-radius: 4px; font-size: 0.68rem; margin-bottom: 6px; }
+.preview-sidebar { width: 160px; flex-shrink: 0; }
+.preview-layout { display: flex; gap: 10px; }
+.preview-main { flex: 1; min-width: 0; }
+
+@media (max-width: 800px) {
+  .screens { grid-template-columns: 1fr; }
+  .analysis { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>PrivateLegalNavigator — Designrichtungs-Gate RC-018</h1>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="show('a')">A — Bürgerwerkzeug</button>
+    <button class="tab-btn" onclick="show('b')">B — Fallarbeitsplatz</button>
+    <button class="tab-btn" onclick="show('c')">C — Evidence-first</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ================================================================ -->
+<!-- RICHTUNG A — Vertrauenswürdiges Bürgerwerkzeug                     -->
+<!-- ================================================================ -->
+<div id="dir-a" class="direction active">
+
+<div class="dir-header">
+  <h2>Richtung A — Vertrauenswürdiges Bürgerwerkzeug</h2>
+  <p>Warm, ruhig, zugänglich. Serifen-Typografie, erdige Farbpalette (Salbeigrün + Sand). Behördennah, nicht bürokratisch. Starke Warnhierarchie. Großzügige Lesbarkeit. 900px zentriert.</p>
+</div>
+
+<div class="screens">
+  <!-- Fallliste -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Fallliste</div>
+    <div class="screen-content" style="font-family: Georgia, serif; background: #f7f5f0;">
+      <div style="border-bottom:3px solid #4a6741;padding:8px 12px;background:#fff;display:flex;justify-content:space-between;align-items:center;">
+        <strong style="font-size:0.95rem;">PrivateLegalNavigator</strong>
+        <span style="font-size:0.65rem;background:#eaf2e8;padding:2px 8px;border-radius:12px;">Nur lokale Verarbeitung</span>
+      </div>
+      <div style="padding:12px;">
+        <div style="font-size:0.7rem;color:#6b5e4a;margin-bottom:8px;">Fälle</div>
+        <h3 style="font-family:Georgia;font-weight:400;font-size:1.3rem;margin-bottom:4px;">Ihre Fälle</h3>
+        <div style="font-size:0.75rem;color:#6b5e4a;margin-bottom:10px;">1 Fall</div>
+        <div class="preview-card" style="background:#fff;border-color:#d9d0c1;">
+          <div class="preview-title" style="font-family:Georgia;">SYNTHETISCH — Sichtbarer Linux E2E Test</div>
+          <div class="preview-meta">
+            <span class="preview-badge" style="background:#eaf2e8;color:#3a5a3a;">offen</span>
+            <span>📄 1 Dokument</span>
+            <span>31.07.2026</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <span class="preview-btn" style="background:#4a6741;color:#fff;">+ Neuen Fall anlegen</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Falldetail -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Falldetail</div>
+    <div class="screen-content" style="font-family: Georgia, serif; background: #f7f5f0;">
+      <div style="font-size:0.65rem;color:#6b5e4a;margin-bottom:4px;">Fälle › SYNTHETISCH — Sichtbarer Linux E2E Test</div>
+      <h3 style="font-family:Georgia;font-weight:400;font-size:1.15rem;margin-bottom:4px;">SYNTHETISCH — Sichtbarer Linux E2E Test</h3>
+      <div style="font-size:0.7rem;margin-bottom:10px;">Status: <span class="preview-badge" style="background:#eaf2e8;color:#3a5a3a;">offen</span></div>
+      <div class="preview-tabs">
+        <span class="preview-tab active" style="border-color:#4a6741;color:#4a6741;">Übersicht</span>
+        <span class="preview-tab" style="color:#6b5e4a;">Rechtslage</span>
+        <span class="preview-tab" style="color:#6b5e4a;">Verlauf</span>
+        <span class="preview-tab" style="color:#6b5e4a;">Evidence</span>
+      </div>
+      <div style="font-weight:600;font-size:0.8rem;margin-bottom:4px;">Dokumente (1)</div>
+      <div class="preview-card" style="background:#fff;border-color:#d9d0c1;">
+        <div class="preview-title" style="font-family:Georgia;">SYNTHETISCH-Testbescheid-RC2.pdf</div>
+        <div class="preview-meta"><span>sonstiges</span><span>1.068 B</span></div>
+      </div>
+      <div class="preview-card" style="background:#fff;border:2px dashed #d9d0c1;text-align:center;padding:10px;">
+        <div style="font-size:0.68rem;color:#6b5e4a;">PDF hier ablegen oder</div>
+        <span class="preview-btn" style="background:#fff;color:#4a6741;border:1px solid #4a6741;margin-top:4px;">Datei auswählen</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dokumentansicht -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Dokumentansicht + Fristkandidaten</div>
+    <div class="screen-content" style="font-family: Georgia, serif; background: #f7f5f0;">
+      <h3 style="font-family:Georgia;font-weight:400;font-size:1.1rem;margin-bottom:6px;">SYNTHETISCH-Testbescheid-RC2.pdf</h3>
+      <div class="preview-warn" style="background:#fff8e7;border:1px solid #e8d58b;">
+        <strong style="color:#8b6914;">⚠ Bitte prüfen:</strong><br>
+        <span style="font-size:0.65rem;">2 Fristkandidaten erkannt. Keine automatische Berechnung. Manuelle Prüfung erforderlich.</span>
+      </div>
+      <div class="preview-card" style="background:#fff;">
+        <div class="preview-title" style="font-family:Georgia;">explizite Zeitangabe</div>
+        <div class="preview-row">
+          <span style="font-weight:600;">📅 15. Juli 2026</span>
+          <span style="font-size:0.65rem;color:#6b5e4a;">Quelle: Im Dokument erkannt</span>
+        </div>
+      </div>
+      <div class="preview-card" style="background:#fff;border-left:3px solid #c47f3a;">
+        <div class="preview-title" style="font-family:Georgia;">relative Zeitangabe</div>
+        <div class="preview-row">
+          <span style="font-weight:600;">⏱ 14 Tage</span>
+          <span style="font-size:0.65rem;color:#c47f3a;">⚠ Bezugsereignis nötig</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Berechnungsvorschau -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Berechnungsvorschau</div>
+    <div class="screen-content" style="font-family: Georgia, serif; background: #f7f5f0;">
+      <h3 style="font-family:Georgia;font-weight:400;font-size:1.05rem;margin-bottom:6px;">Fristberechnung</h3>
+      <div class="preview-card" style="background:#fff;">
+        <div class="preview-row"><span style="color:#6b5e4a;">Start:</span><strong>15. Juli 2026</strong></div>
+        <div class="preview-row"><span style="color:#6b5e4a;">Dauer:</span><strong>14 Tage</strong></div>
+        <div style="border-top:1px dashed #d9d0c1;margin:6px 0;"></div>
+        <div class="preview-row"><span style="color:#6b5e4a;">Fristende:</span><strong style="font-size:0.9rem;color:#4a6741;">29. Juli 2026</strong></div>
+        <div style="font-size:0.62rem;color:#6b5e4a;margin-top:4px;">§ 187 Abs. 1, § 188 Abs. 2 BGB · Nicht verbindlich</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rechtsquellensuche -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Rechtsquellensuche</div>
+    <div class="screen-content" style="font-family: Georgia, serif; background: #f7f5f0;">
+      <h3 style="font-family:Georgia;font-weight:400;font-size:1.05rem;margin-bottom:6px;">Gesetze durchsuchen</h3>
+      <input class="preview-input" placeholder="§ 187 BGB, Frist, VwVfG..." style="margin-bottom:6px;">
+      <span class="preview-btn" style="background:#4a6741;color:#fff;">Suchen</span>
+      <div style="font-size:0.62rem;color:#6b5e4a;margin-top:6px;">Quelle: Gesetze im Internet (BMJ) — nicht amtlich</div>
+    </div>
+  </div>
+
+  <!-- Timeline + Evidence -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Timeline & Evidence Pack</div>
+    <div class="screen-content" style="font-family: Georgia, serif; background: #f7f5f0;">
+      <div style="font-weight:600;font-size:0.8rem;margin-bottom:4px;">Rechtsverlauf</div>
+      <div style="border-left:2px solid #d9d0c1;padding-left:10px;">
+        <div style="margin-bottom:6px;">
+          <div style="font-size:0.62rem;color:#6b5e4a;">31.07. 09:12</div>
+          <div style="font-size:0.72rem;">Korrigiert auf 20.07.2026</div>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="font-size:0.62rem;color:#6b5e4a;">31.07. 09:11</div>
+          <div style="font-size:0.72rem;font-weight:600;">Bestätigt: 15.07.2026</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;padding:8px;background:#fff;border-radius:4px;border:1px solid #d9d0c1;">
+        <div style="font-size:0.7rem;font-weight:600;">Evidence Pack</div>
+        <div style="font-size:0.62rem;color:#6b5e4a;">1 Tatsache bestätigt · 1 offen · 0 Normen</div>
+        <span class="preview-btn" style="background:#4a6741;color:#fff;margin-top:4px;font-size:0.65rem;">Exportieren</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Small viewport -->
+  <div class="screen">
+    <div class="screen-label">Mobile (360px) — Fallliste</div>
+    <div class="screen-content" style="font-family: Georgia, serif; background: #f7f5f0; max-width: 320px; margin: 0 auto;">
+      <div style="border-bottom:3px solid #4a6741;padding:6px 10px;background:#fff;font-size:0.8rem;">
+        <strong>PrivateLegalNavigator</strong>
+      </div>
+      <div style="padding:8px;">
+        <h3 style="font-family:Georgia;font-weight:400;font-size:1.1rem;margin-bottom:4px;">Ihre Fälle</h3>
+        <div class="preview-card" style="background:#fff;padding:8px;">
+          <div class="preview-title" style="font-size:0.75rem;">SYNTHETISCH — Sichtbarer Linux E2E Test</div>
+          <div class="preview-meta"><span class="preview-badge" style="background:#eaf2e8;color:#3a5a3a;">offen</span> <span>📄 1</span></div>
+        </div>
+        <span class="preview-btn" style="background:#4a6741;color:#fff;margin-top:6px;font-size:0.7rem;">+ Neuer Fall</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="analysis" style="margin-top:16px;">
+  <div class="ana-card">
+    <h4>Vorteile <span class="tag tag-pro">PRO</span></h4>
+    <ul>
+      <li>Vertrauenswürdig, warm, nahbar — passt zum Bürgerwerkzeug-Versprechen</li>
+      <li>Starke Warnhierarchie durch warme Akzentfarben</li>
+      <li>Serifen-Typografie signalisiert Seriosität und Behördennähe</li>
+      <li>900px zentriert — ruhig, lesbar, kein Überfluss</li>
+      <li>Reduzierte Informationsdichte — gut für nicht-technische Nutzer</li>
+    </ul>
+  </div>
+  <div class="ana-card">
+    <h4>Nachteile <span class="tag tag-con">CON</span></h4>
+    <ul>
+      <li>Nicht platzsparend — viele Scrollvorgänge bei datenreichen Fällen</li>
+      <li>Serifen auf Screens nicht optimal bei kleinen Größen</li>
+      <li>Warme Farben könnten "unprofessionell" wirken für Anwalt-Nutzer</li>
+      <li>900px max-width verschwendet Platz auf großen Monitoren</li>
+    </ul>
+  </div>
+  <div class="ana-card">
+    <h4>Risiken & Aufwand <span class="tag tag-risk">RISK</span></h4>
+    <ul>
+      <li><strong>Aufwand:</strong> Medium — Bestehende Tokens anpassen, neue Typografie</li>
+      <li>Font-Fallback: Georgia → Serif. Keine externen Fonts nötig.</li>
+      <li>Farbpalette braucht ~10 neue Tokens</li>
+      <li>Gefahr: "Zu wenig Information auf einen Blick" für Power-User</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- ================================================================ -->
+<!-- RICHTUNG B — Professioneller Fallarbeitsplatz                       -->
+<!-- ================================================================ -->
+<div id="dir-b" class="direction">
+
+<div class="dir-header">
+  <h2>Richtung B — Professioneller Fallarbeitsplatz</h2>
+  <p>Kompakt, informationsreich, schnelle Navigation. Dunkle Sidebar, blaue Akzente, Tab-Leiste, 2-Spalten-Layout. Arbeitsorientiert mit Seitenleiste für Aktionen, Status und Suche.</p>
+</div>
+
+<div class="screens">
+  <!-- Fallliste -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Fallliste (mit Sidebar)</div>
+    <div class="screen-content" style="font-size:0.78rem;">
+      <div class="preview-layout">
+        <div class="preview-sidebar" style="background:#1e293b;color:#e2e8f0;padding:10px 0;border-radius:6px;">
+          <div style="padding:0 10px 8px;font-weight:700;font-size:0.75rem;border-bottom:1px solid #334155;">PLN</div>
+          <div style="padding:4px 10px;font-size:0.68rem;border-left:3px solid #2563eb;background:#334155;">📋 Fälle</div>
+          <div style="padding:4px 10px;font-size:0.68rem;color:#94a3b8;">📚 Quellen</div>
+          <div style="padding:4px 10px;font-size:0.68rem;color:#94a3b8;">⚖️ Suche</div>
+        </div>
+        <div class="preview-main">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h3 style="font-size:1rem;font-weight:700;">Fälle</h3>
+            <span class="preview-btn" style="background:#2563eb;color:#fff;">+ Neu</span>
+          </div>
+          <div class="preview-card">
+            <div class="preview-title">SYNTHETISCH — Sichtbarer Linux E2E Test</div>
+            <div class="preview-meta">
+              <span class="preview-badge" style="background:#dcfce7;color:#166534;">offen</span>
+              <span>📄 1 Dokument</span>
+              <span>31.07.2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Falldetail -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Falldetail (Tabs + Sidebar-Aktionen)</div>
+    <div class="screen-content" style="font-size:0.78rem;">
+      <div class="preview-tabs">
+        <span class="preview-tab active" style="border-color:#2563eb;color:#2563eb;">Übersicht</span>
+        <span class="preview-tab" style="color:#5f6b7a;">Rechtslage</span>
+        <span class="preview-tab" style="color:#5f6b7a;">Verlauf</span>
+        <span class="preview-tab" style="color:#5f6b7a;">Evidence</span>
+      </div>
+      <div class="preview-layout">
+        <div class="preview-main">
+          <h3 style="font-size:0.9rem;font-weight:700;">SYNTHETISCH — Sichtbarer Linux E2E Test</h3>
+          <div style="font-size:0.68rem;color:#5f6b7a;margin-bottom:6px;">Status: <span class="preview-badge" style="background:#dcfce7;color:#166534;">offen</span> · Erstellt 31.07.2026</div>
+          <div style="font-weight:600;font-size:0.72rem;color:#5f6b7a;margin-bottom:4px;">DOKUMENTE (1)</div>
+          <div class="preview-card">
+            <div class="preview-title">SYNTHETISCH-Testbescheid-RC2.pdf</div>
+            <div class="preview-meta"><span>sonstiges</span><span>1.068 B</span><span>31.07.</span></div>
+          </div>
+          <div style="border:1px dashed #d4d4d4;border-radius:4px;padding:8px;text-align:center;font-size:0.65rem;color:#5f6b7a;margin-top:6px;">
+            PDF auswählen · Max. 20 MB
+          </div>
+        </div>
+        <div style="width:140px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
+          <div style="background:#f8fafc;border:1px solid #e2e5ea;border-radius:4px;padding:8px;">
+            <div style="font-size:0.62rem;color:#5f6b7a;font-weight:700;">STATUS</div>
+            <div style="font-size:1rem;font-weight:700;">Offen</div>
+          </div>
+          <div style="font-size:0.62rem;">
+            <div style="padding:3px 0;border-bottom:1px solid #e2e5ea;">📄 Hochladen</div>
+            <div style="padding:3px 0;border-bottom:1px solid #e2e5ea;">🔗 Norm verknüpfen</div>
+            <div style="padding:3px 0;">📋 Export</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dokumentansicht -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Dokument + Kandidaten (kompakt)</div>
+    <div class="screen-content" style="font-size:0.78rem;">
+      <h3 style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">SYNTHETISCH-Testbescheid-RC2.pdf</h3>
+      <table class="preview-table" style="margin-bottom:8px;">
+        <tr><th>Kandidat</th><th>Typ</th><th>Wert</th><th>Status</th><th></th></tr>
+        <tr><td>1</td><td>explizit</td><td><strong>15.07.2026</strong></td><td><span class="preview-badge" style="background:#dcfce7;color:#166534;">bestätigt</span></td><td><span style="color:#2563eb;cursor:pointer;">Prüfen</span></td></tr>
+        <tr><td>2</td><td>relativ</td><td>14 Tage</td><td><span class="preview-badge" style="background:#fffbeb;color:#92400e;">Bezug nötig</span></td><td><span style="color:#2563eb;cursor:pointer;">Prüfen</span></td></tr>
+      </table>
+      <div class="preview-warn" style="background:#eff6ff;border:1px solid #93c5fd;font-size:0.65rem;">
+        ⚠ 2 Kandidaten — manuelle Prüfung erforderlich
+      </div>
+    </div>
+  </div>
+
+  <!-- Berechnung -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Berechnungsvorschau</div>
+    <div class="screen-content" style="font-size:0.78rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#f8fafc;padding:8px;border-radius:4px;">
+          <div style="font-size:0.62rem;color:#5f6b7a;">STARTDATUM</div>
+          <div style="font-weight:700;">15.07.2026</div>
+        </div>
+        <div style="background:#f8fafc;padding:8px;border-radius:4px;">
+          <div style="font-size:0.62rem;color:#5f6b7a;">DAUER</div>
+          <div style="font-weight:700;">14 Tage</div>
+        </div>
+      </div>
+      <div style="text-align:center;padding:8px;margin-top:6px;background:#2563eb;color:#fff;border-radius:4px;">
+        <div style="font-size:0.62rem;">FRISTENDE</div>
+        <div style="font-size:1rem;font-weight:700;">29.07.2026</div>
+      </div>
+      <div style="font-size:0.6rem;color:#5f6b7a;margin-top:4px;">§ 187 I, § 188 II BGB · Nicht verbindlich</div>
+    </div>
+  </div>
+
+  <!-- Rechtssuche -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Rechtsquellensuche</div>
+    <div class="screen-content" style="font-size:0.78rem;">
+      <input class="preview-input" placeholder="§ 187 BGB..." style="margin-bottom:6px;">
+      <span class="preview-btn" style="background:#2563eb;color:#fff;">Suchen</span>
+      <div style="margin-top:8px;padding:6px;background:#f8fafc;border-radius:4px;font-size:0.65rem;">
+        <strong>BGB § 187</strong> — Fristbeginn<br>
+        <span style="color:#5f6b7a;">Quelle: Gesetze im Internet (BMJ) · SHA-256: a1b2...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline + Evidence -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Timeline & Evidence</div>
+    <div class="screen-content" style="font-size:0.78rem;">
+      <table class="preview-table" style="margin-bottom:8px;">
+        <tr><th>Zeit</th><th>Aktion</th><th>Datum</th><th>Status</th></tr>
+        <tr><td>09:12</td><td>Korrigiert</td><td>—</td><td><span class="preview-badge" style="background:#fffbeb;">widerrufen</span></td></tr>
+        <tr><td>09:11</td><td>Bestätigt</td><td>15.07.</td><td><span class="preview-badge" style="background:#f1f5f9;">ersetzt</span></td></tr>
+      </table>
+      <div style="display:flex;gap:6px;">
+        <span class="preview-btn" style="background:#2563eb;color:#fff;font-size:0.65rem;">Evidence exportieren</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile -->
+  <div class="screen">
+    <div class="screen-label">Mobile (360px) — kompakt mit Hamburger</div>
+    <div class="screen-content" style="font-size:0.78rem;max-width:300px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <strong style="font-size:0.8rem;">PLN</strong><span style="font-size:0.7rem;">☰</span>
+      </div>
+      <div class="preview-card">
+        <div class="preview-title" style="font-size:0.75rem;">SYNTHETISCH — Sichtbarer Linux E2E Test</div>
+        <div class="preview-meta"><span class="preview-badge" style="background:#dcfce7;color:#166534;font-size:0.6rem;">offen</span> <span style="font-size:0.62rem;">📄 1</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="analysis" style="margin-top:16px;">
+  <div class="ana-card">
+    <h4>Vorteile <span class="tag tag-pro">PRO</span></h4>
+    <ul>
+      <li>Informationsdichte — viel Inhalt auf einem Screen</li>
+      <li>Schnelle Navigation durch Sidebar und Tabs</li>
+      <li>Klare visuelle Hierarchie (Dunkel=Nav, Weiß=Content, Blau=Action)</li>
+      <li>Tabellen-Ansicht für Kandidaten — scanbar, vergleichbar</li>
+      <li>Gut für Nutzer, die viele Fälle/Dokumente managen</li>
+    </ul>
+  </div>
+  <div class="ana-card">
+    <h4>Nachteile <span class="tag tag-con">CON</span></h4>
+    <ul>
+      <li>Überwältigend für nicht-technische Erstnutzer</li>
+      <li>Dunkle Sidebar wirkt "Enterprise" — passt nicht zum Bürgerwerkzeug-Image</li>
+      <li>Mehr CSS-Aufwand (Sidebar, Responsive-Hamburger)</li>
+      <li>Kompakte Tabellen erfordern präzise Spaltenbreiten</li>
+    </ul>
+  </div>
+  <div class="ana-card">
+    <h4>Risiken & Aufwand <span class="tag tag-risk">RISK</span></h4>
+    <ul>
+      <li><strong>Aufwand:</strong> Mittel-Hoch — Sidebar-Layout, Responsive-Navigation</li>
+      <li>Bestehende Templates müssen auf 2-Spalten-Layout umgebaut werden</li>
+      <li>Keine dunklen Farbschema-Tokens vorhanden — neue Token-Gruppe nötig</li>
+      <li>Gefahr: "Zu komplex" für den primären Use Case (Bürger mit 1–3 Fällen)</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- ================================================================ -->
+<!-- RICHTUNG C — Evidence-first Analyseoberfläche                       -->
+<!-- ================================================================ -->
+<div id="dir-c" class="direction">
+
+<div class="dir-header">
+  <h2>Richtung C — Evidence-first Analyseoberfläche</h2>
+  <p>Provenienz im Mittelpunkt. Dokument, Kandidat, Entscheidung und Quelle visuell verbunden. Starke Rechenspur. Starke Timeline. Prüfbare Zustände. Monospace für Werte.</p>
+</div>
+
+<div class="screens">
+  <!-- Fallliste -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Fallliste (Provenienz-Summary)</div>
+    <div class="screen-content" style="font-size:0.78rem;background:#fafbfc;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="font-size:1rem;font-weight:700;">Fälle</h3>
+        <span class="preview-btn" style="background:#0f172a;color:#fff;">+ Neu</span>
+      </div>
+      <div class="preview-card" style="border-left:3px solid #22c55e;">
+        <div class="preview-title">SYNTHETISCH — Sichtbarer Linux E2E Test</div>
+        <div class="preview-meta">
+          <span class="preview-badge" style="background:#f0fdf4;color:#166534;">offen</span>
+          <span>📄 1 Dok → 2 Kandidaten → 1 bestätigt</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#0f172a;"></span>
+          <span style="width:20px;height:1px;background:#e2e8f0;"></span>
+          <span style="width:8px;height:8px;border-radius:50%;background:#0891b2;"></span>
+          <span style="width:20px;height:1px;background:#e2e8f0;"></span>
+          <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>
+          <span style="font-size:0.62rem;color:#64748b;">Dokument → Kandidaten → Bestätigt</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Falldetail -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Falldetail (Provenienz-Leiste)</div>
+    <div class="screen-content" style="font-size:0.78rem;background:#fafbfc;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:6px 8px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;">
+        <span style="font-size:0.65rem;">📄 Dok</span>
+        <span style="color:#e2e8f0;">→</span>
+        <span style="font-size:0.65rem;font-weight:600;">2 Kandidaten</span>
+        <span style="color:#e2e8f0;">→</span>
+        <span style="font-size:0.65rem;">1 bestätigt</span>
+        <span style="color:#e2e8f0;">→</span>
+        <span style="font-size:0.65rem;color:#64748b;">0 Normen</span>
+      </div>
+      <div class="preview-tabs">
+        <span class="preview-tab active" style="border-color:#0f172a;color:#0f172a;">Übersicht</span>
+        <span class="preview-tab" style="color:#64748b;">Rechtslage</span>
+        <span class="preview-tab" style="color:#64748b;">Verlauf</span>
+        <span class="preview-tab" style="color:#64748b;">Evidence</span>
+      </div>
+      <div class="preview-card">
+        <div class="preview-title">SYNTHETISCH-Testbescheid-RC2.pdf</div>
+        <div class="preview-meta"><span>sonstiges</span><span>1.068 B</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dokument + Kandidaten -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Dokument + Kandidaten (Evidence-Blöcke)</div>
+    <div class="screen-content" style="font-size:0.78rem;background:#fafbfc;">
+      <h3 style="font-size:0.85rem;font-weight:700;margin-bottom:6px;">SYNTHETISCH-Testbescheid-RC2.pdf</h3>
+      <div style="border-left:3px solid #166534;background:#f0fdf4;padding:6px 8px;margin-bottom:6px;border-radius:0 4px 4px 0;">
+        <div style="font-size:0.62rem;font-weight:700;color:#166534;">EXPLIZITE ZEITANGABE</div>
+        <div style="font-family:monospace;font-weight:600;">15. Juli 2026</div>
+        <div style="font-size:0.62rem;color:#64748b;">Quelle: Im Dokument erkannt</div>
+      </div>
+      <div style="border-left:3px solid #f59e0b;background:#fffbeb;padding:6px 8px;border-radius:0 4px 4px 0;">
+        <div style="font-size:0.62rem;font-weight:700;color:#92400e;">RELATIVE ZEITANGABE</div>
+        <div style="font-family:monospace;font-weight:600;">14 Tage</div>
+        <div style="font-size:0.62rem;color:#92400e;">⚠ Bezugsereignis erforderlich</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Berechnung -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Berechnungsvorschau (Rechenspur)</div>
+    <div class="screen-content" style="font-size:0.78rem;background:#fafbfc;">
+      <div style="border-left:3px solid #0891b2;background:#ecfeff;padding:6px 8px;margin-bottom:6px;border-radius:0 4px 4px 0;">
+        <div style="font-size:0.62rem;font-weight:700;color:#0891b2;">BERECHNUNG</div>
+        <div style="font-family:monospace;font-size:0.72rem;margin:4px 0;">
+          Start: 2026-07-15<br>
+          + 14 Tage (§ 187 I, § 188 II BGB)<br>
+          = <strong>2026-07-29</strong>
+        </div>
+      </div>
+      <div style="font-size:0.6rem;color:#64748b;">Schritt-für-Schritt nachvollziehbar. Nicht verbindlich.</div>
+    </div>
+  </div>
+
+  <!-- Rechtssuche -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Rechtssuche (Normverknüpfung)</div>
+    <div class="screen-content" style="font-size:0.78rem;background:#fafbfc;">
+      <input class="preview-input" placeholder="§ 187 BGB..." style="margin-bottom:6px;">
+      <div style="border-left:3px solid #6366f1;background:#eef2ff;padding:6px 8px;border-radius:0 4px 4px 0;">
+        <div style="font-size:0.62rem;font-weight:700;color:#6366f1;">BGB § 187 — Fristbeginn</div>
+        <div style="font-size:0.62rem;color:#64748b;">Gesetze im Internet (BMJ) · SHA-256: a1b2c3...</div>
+        <span class="preview-btn" style="background:#6366f1;color:#fff;font-size:0.6rem;margin-top:3px;">Mit Fall verknüpfen</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline + Evidence -->
+  <div class="screen">
+    <div class="screen-label">Desktop — Timeline (Punkt-Visualisierung)</div>
+    <div class="screen-content" style="font-size:0.78rem;background:#fafbfc;">
+      <div style="border-left:2px solid #e2e8f0;padding-left:10px;">
+        <div style="margin-bottom:6px;position:relative;">
+          <div style="position:absolute;left:-15px;top:2px;width:8px;height:8px;border-radius:50%;background:#fff;border:2px solid #e2e8f0;"></div>
+          <div style="font-family:monospace;font-size:0.6rem;color:#64748b;">09:12</div>
+          <div style="font-size:0.72rem;">Korrigiert → widerrufen</div>
+        </div>
+        <div style="margin-bottom:6px;position:relative;">
+          <div style="position:absolute;left:-15px;top:2px;width:8px;height:8px;border-radius:50%;background:#22c55e;"></div>
+          <div style="font-family:monospace;font-size:0.6rem;color:#64748b;">09:11</div>
+          <div style="font-size:0.72rem;font-weight:600;">Bestätigt: 15.07.2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile -->
+  <div class="screen">
+    <div class="screen-label">Mobile (360px) — Provenienz kompakt</div>
+    <div class="screen-content" style="font-size:0.78rem;background:#fafbfc;max-width:300px;margin:0 auto;">
+      <h3 style="font-size:0.9rem;font-weight:700;">SYNTHETISCH — Sichtbarer Linux E2E Test</h3>
+      <div style="display:flex;align-items:center;gap:3px;margin:6px 0;font-size:0.6rem;color:#64748b;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#0f172a;"></span>Dok
+        <span>→</span>
+        <span style="width:6px;height:6px;border-radius:50%;background:#0891b2;"></span>2 Kandidaten
+      </div>
+      <div style="border-left:3px solid #166534;background:#f0fdf4;padding:6px;margin-bottom:4px;border-radius:0 4px 4px 0;">
+        <div style="font-family:monospace;font-weight:600;font-size:0.7rem;">15.07.2026</div>
+        <div style="font-size:0.58rem;">explizit · bestätigt</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="analysis" style="margin-top:16px;">
+  <div class="ana-card">
+    <h4>Vorteile <span class="tag tag-pro">PRO</span></h4>
+    <ul>
+      <li>Provenienz ist das Kernversprechen — visuell eingelöst</li>
+      <li>Jeder Datenpunkt hat klare Herkunft (Dokument→Kandidat→Bestätigung→Quelle)</li>
+      <li>Timeline und Evidence-Blöcke machen den Fall prüfbar</li>
+      <li>Monospace für Werte schafft Vertrauen (nichts verschleiert)</li>
+      <li>Farbcodierung transportiert Status sofort (grün=ok, gelb=Warnung, blau=Norm)</li>
+    </ul>
+  </div>
+  <div class="ana-card">
+    <h4>Nachteile <span class="tag tag-con">CON</span></h4>
+    <ul>
+      <li>Provenienz-Visualisierung nimmt Platz — weniger Content pro Screen</li>
+      <li>Farbcodierung allein ist keine Barrierefreiheit (braucht Text-Alternativen)</li>
+      <li>Komplexer zu implementieren (Provenienz-Kette, Timeline-Punkte)</li>
+      <li>Monospace-Werte könnten technisch wirken für Nicht-Techniker</li>
+    </ul>
+  </div>
+  <div class="ana-card">
+    <h4>Risiken & Aufwand <span class="tag tag-risk">RISK</span></h4>
+    <ul>
+      <li><strong>Aufwand:</strong> Mittel — Neue CSS-Komponenten (Provenienz-Leiste, Evidence-Blöcke, Timeline-Punkte)</li>
+      <li>Bestehende Tokens bleiben nutzbar — nur neue Status-Farben nötig</li>
+      <li>Gefahr: "Zu viel Visualisierung" — Over-Engineering für einfache Fälle</li>
+      <li>Timeline-Punkte müssen responsive sein (absolute Positionierung)</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+function show(dir) {
+  document.querySelectorAll('.direction').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('dir-' + dir).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

@@ -104,19 +104,25 @@
             <caption>Sync-L&auml;ufe: {{ s.sync_run_count }}</caption>
             <thead>
             <tr>
-                <th scope="col">Datum</th>
+                <th scope="col">Run-ID</th>
+                <th scope="col">Beginn</th>
+                <th scope="col">Ende</th>
                 <th scope="col">Status</th>
                 <th scope="col">Typ</th>
                 <th scope="col">Katalogstand</th>
+                <th scope="col">Gesamt</th>
                 <th scope="col">Neu</th>
                 <th scope="col">Ge&auml;ndert</th>
+                <th scope="col">Unver&auml;ndert</th>
                 <th scope="col">Fehler</th>
             </tr>
             </thead>
             <tbody>
             {% for run in sync_runs %}
             <tr>
+                <td><code>{{ run.run_id }}</code></td>
                 <td>{{ run.started_at }}</td>
+                <td>{% if run.finished_at %}{{ run.finished_at }}{% else %}&ndash;{% endif %}</td>
                 <td>
                     {% if run.status == "COMPLETED" %}
                     <span class="sync-status-label sync-status-label--completed">abgeschlossen</span>
@@ -137,9 +143,11 @@
                     <span class="sync-type-label sync-type-label--apply">Angewendet</span>
                     {% endif %}
                 </td>
-                <td>{{ run.catalog_stand_date if run.catalog_stand_date else "&ndash;" }}</td>
+                <td>{% if run.catalog_stand_date %}{{ run.catalog_stand_date }}{% else %}&ndash;{% endif %}</td>
+                <td>{{ run.total_items }}</td>
                 <td>{{ run.new_items }}</td>
                 <td>{{ run.changed_items }}</td>
+                <td>{{ run.unchanged_items }}</td>
                 <td>{{ run.failed_items if run.failed_items > 0 else "&ndash;" }}</td>
             </tr>
             {% endfor %}

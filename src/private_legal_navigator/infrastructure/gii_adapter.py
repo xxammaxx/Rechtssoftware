@@ -47,6 +47,7 @@ from private_legal_navigator.domain.legal_source import (
 )
 from private_legal_navigator.infrastructure.safe_source_client import (
     SourceClient,
+    VerifiedSourcePayload,
 )
 from private_legal_navigator.infrastructure.safe_xml_parser import (
     parse_xml_bytes,
@@ -250,48 +251,76 @@ class GiiAdapter:
 
     # ── Instrument Sync ──────────────────────────
 
-    def sync_instrument(self, item: GiiCatalogItem) -> GiiParsedInstrument:
+    def sync_instrument(
+        self,
+        item: GiiCatalogItem,
+        payload: "VerifiedSourcePayload | None" = None,
+    ) -> GiiParsedInstrument:
         """Download, snapshot, and parse a single GII instrument.
 
-        1. Download the XML
-        2. Compute SHA-256
+        RC-025-R1 F4: When `payload` is provided (from a prior
+        download_verified call), the instrument is NOT re-downloaded.
+        The payload's bytes are used directly for parsing and snapshot
+        storage. The payload's SHA-256 is cross-validated against the
+        content-addressed snapshot hash.
+
+        1. Download the XML (or use provided payload)
+        2. Compute SHA-256 (or verify from payload)
         3. Save snapshot to disk
-        4. Create SourceSnapshot entity
-        5. Parse XML into LegalInstrument + LegalExpression + provisions
+        4. Cross-validate payload.sha256 == snapshot.sha256
+        5. Create SourceSnapshot entity
+        6. Parse XML into LegalInstrument + LegalExpression + provisions
         """
-        # 1. Download — upgrade http→https (GII catalog uses http links but site supports https)
-        law_url = item.link
-        if not law_url.startswith("http"):
-            law_url = (
-                GII_BASE_URL + law_url if law_url.startswith("/") else GII_BASE_URL + "/" + law_url
-            )
-        if law_url.startswith("http://"):
-            law_url = law_url.replace("http://", "https://", 1)
+        from private_legal_navigator.infrastructure.safe_source_client import (
+            _write_content_addressed,
+        )
 
-        raw_bytes = self._client.download(law_url)
-
-        # 2. Extract XML from ZIP if needed (GII serves ZIP archives)
-        if law_url.endswith(".zip") or raw_bytes[:2] == b"PK":
-            xml_bytes = _extract_xml_from_zip_bytes(raw_bytes, law_url)
+        if payload is not None:
+            # ── Pre-downloaded path (RC-025-R1 F4) ──
+            # Use the already-downloaded, hash-verified payload.
+            # No network access. Bytes pass through unchanged.
+            xml_bytes = payload.content
+            law_url = payload.effective_url
         else:
-            xml_bytes = raw_bytes
+            # ── Legacy path: download now ──
+            law_url = item.link
+            if not law_url.startswith("http"):
+                law_url = (
+                    GII_BASE_URL + law_url if law_url.startswith("/")
+                    else GII_BASE_URL + "/" + law_url
+                )
+            if law_url.startswith("http://"):
+                law_url = law_url.replace("http://", "https://", 1)
 
-        # 3. Validate magic bytes before processing
+            raw_bytes = self._client.download(law_url)
+
+            # Extract XML from ZIP if needed
+            if law_url.endswith(".zip") or raw_bytes[:2] == b"PK":
+                xml_bytes = _extract_xml_from_zip_bytes(raw_bytes, law_url)
+            else:
+                xml_bytes = raw_bytes
+
+        # Validate magic bytes before processing
         from private_legal_navigator.infrastructure.safe_xml_parser import validate_xml_magic_bytes
 
         if not validate_xml_magic_bytes(xml_bytes):
             raise ValueError(f"Downloaded content from {law_url} does not appear to be XML")
 
-        # 4. Write to content-addressed path (hash is computed during write)
-        from private_legal_navigator.infrastructure.safe_source_client import (
-            _write_content_addressed,
-        )
-
+        # Write to content-addressed path (hash is computed during write)
         snapshot_path, sha256 = _write_content_addressed(xml_bytes, self._snapshot_dir)
+
+        # RC-025-R1 F4: Cross-validate payload hash against snapshot hash
+        if payload is not None and payload.sha256 != sha256:
+            raise ValueError(
+                "SNAPSHOT_INTEGRITY_FAILED: "
+                f"payload.sha256 ({payload.sha256[:16]}...) != "
+                f"snapshot.sha256 ({sha256[:16]}...). "
+                "Bytes were mutated after download."
+            )
 
         retrieved_at = datetime.now()
 
-        # 4. Create snapshot entity
+        # Create snapshot entity
         gii_source = make_gii_source()
         assert gii_source.source_id is not None
         snapshot = SourceSnapshot(
@@ -308,7 +337,7 @@ class GiiAdapter:
             immutable=True,
         )
 
-        # 5. Parse XML into domain entities
+        # Parse XML into domain entities
         instrument, expression, provisions = _parse_law_xml(
             xml_bytes=xml_bytes,
             snapshot=snapshot,

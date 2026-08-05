@@ -1,0 +1,62 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /media/xxammaxx/projekte/Rechtssoftware/.venv/bin/python
+cachedir: .pytest_cache
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /media/xxammaxx/projekte/Rechtssoftware
+configfile: pyproject.toml
+plugins: timeout-2.4.0, anyio-4.14.2, asyncio-1.4.0, benchmark-5.2.3, repeat-0.9.4, xdist-3.8.0, typeguard-4.4.4, deepeval-4.0.2, cov-7.1.0, httpx-0.36.2, rerunfailures-16.2, langsmith-0.6.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 39 items
+
+tests/rc025/test_m7b_contract_red.py::test_red1_dry_run_does_not_modify_product_db PASSED [  2%]
+tests/rc025/test_m7b_contract_red.py::test_red2_dry_run_creates_no_sync_history PASSED [  5%]
+tests/rc025/test_m7b_contract_red.py::test_red3_known_unverified_required PASSED [  7%]
+tests/rc025/test_m7b_contract_red.py::test_red4_single_download_per_apply PASSED [ 10%]
+tests/rc025/test_m7b_contract_red.py::test_red5_plan_stale_detection PASSED [ 12%]
+tests/rc025/test_m7b_contract_red.py::test_red6_plan_integrity_check PASSED [ 15%]
+tests/rc025/test_m7b_contract_red.py::test_red7_concurrent_apply_prevention PASSED [ 17%]
+tests/rc025/test_m7b_contract_red.py::test_red8_byte_identity_invariant PASSED [ 20%]
+tests/rc025/test_m7b_contract_red.py::test_red9_atomic_fts_activation PASSED [ 23%]
+tests/rc025/test_m7b_contract_red.py::test_red10_truth_mirror_requires_fresh_evidence PASSED [ 25%]
+tests/unit/test_sync_domain.py::TestSyncRunStatus::test_all_expected_values_are_present PASSED [ 28%]
+tests/unit/test_sync_domain.py::TestSyncRunStatus::test_running_is_default_transitional_state PASSED [ 30%]
+tests/unit/test_sync_domain.py::TestSyncItemStatus::test_all_expected_values_are_present PASSED [ 33%]
+tests/unit/test_sync_domain.py::TestSyncItemStatus::test_pending_is_default PASSED [ 35%]
+tests/unit/test_sync_domain.py::TestSyncRun::test_create_minimal_sync_run PASSED [ 38%]
+tests/unit/test_sync_domain.py::TestSyncRun::test_dry_run_default_is_false_in_domain PASSED [ 41%]
+tests/unit/test_sync_domain.py::TestSyncRun::test_dry_run_explicit_true PASSED [ 43%]
+tests/unit/test_sync_domain.py::TestSyncRun::test_default_status_is_running PASSED [ 46%]
+tests/unit/test_sync_domain.py::TestSyncRun::test_all_counters_default_to_zero PASSED [ 48%]
+tests/unit/test_sync_domain.py::TestSyncRun::test_catalog_fields_default_to_empty PASSED [ 51%]
+tests/unit/test_sync_domain.py::TestSyncRun::test_completed_run PASSED   [ 53%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_create_minimal_sync_item PASSED [ 56%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_new_item_status PASSED [ 58%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_changed_item_has_sha256 PASSED [ 61%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_unchanged_item_sha256_match PASSED [ 64%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_failed_item_has_error PASSED [ 66%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_http_fields_default_to_empty PASSED [ 69%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_item_with_http_headers PASSED [ 71%]
+tests/unit/test_sync_domain.py::TestSyncItem::test_retry_count_defaults_to_zero PASSED [ 74%]
+tests/unit/test_sync_domain.py::TestSyncPlan::test_create_empty_plan PASSED [ 76%]
+tests/unit/test_sync_domain.py::TestSyncPlan::test_plan_with_items PASSED [ 79%]
+tests/unit/test_sync_domain.py::TestSyncPlan::test_plan_dry_run_flag PASSED [ 82%]
+tests/unit/test_sync_service_catalog_stand.py::test_successful_apply_persists_catalog_stand_on_source PASSED [ 84%]
+tests/integration/test_sync_dry_run.py::TestDryRunSync::test_dry_run_creates_sync_run_with_dry_run_true PASSED [ 87%]
+tests/integration/test_sync_dry_run.py::TestDryRunSync::test_dry_run_produces_no_downloads PASSED [ 89%]
+tests/integration/test_sync_dry_run.py::TestDryRunSync::test_dry_run_produces_no_database_mutations PASSED [ 92%]
+tests/integration/test_sync_dry_run.py::TestDryRunSync::test_dry_run_sync_run_persists_for_history PASSED [ 94%]
+tests/integration/test_sync_dry_run.py::TestDryRunSync::test_dry_run_sync_run_status_is_completed PASSED [ 97%]
+tests/integration/test_sync_dry_run.py::TestDryRunSync::test_dry_run_sync_items_are_persisted PASSED [100%]Running teardown with pytest sessionfinish...
+
+
+=============================== warnings summary ===============================
+tests/rc025/test_m7b_contract_red.py:19
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025/test_m7b_contract_red.py:19: PytestUnknownMarkWarning: Unknown pytest.mark.rc025_red - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_red, pytest.mark.m7b_contracts]
+
+tests/rc025/test_m7b_contract_red.py:19
+  /media/xxammaxx/projekte/Rechtssoftware/tests/rc025/test_m7b_contract_red.py:19: PytestUnknownMarkWarning: Unknown pytest.mark.m7b_contracts - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = [pytest.mark.rc025_red, pytest.mark.m7b_contracts]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 39 passed, 2 warnings in 1.18s ========================

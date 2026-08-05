@@ -11,6 +11,7 @@ hashes, and imports changed/new instruments. Respects dry_run mode.
 import logging
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from private_legal_navigator.application.legal_source_repository import LegalSourceRepository
@@ -86,8 +87,9 @@ class SyncPlanningService:
           3. Query local corpus for existing instruments & snapshot hashes
           4. For each catalog item:
              - source_identifier NOT in local DB → NEW
-             - source_identifier in local DB       → KNOWN
-               (pre-fill previous_sha256 from latest snapshot)
+             - source_identifier in local DB       → KNOWN_UNVERIFIED
+               (pre-fill previous_sha256 from latest snapshot;
+               CHANGED/UNCHANGED determined ONLY after remote check)
              - filtered out by instrument_filter   → SKIPPED
           5. Detects REMOTE_MISSING: local items not in current catalog
           6. Counts classifications and estimates download volume
@@ -169,7 +171,8 @@ class SyncPlanningService:
                     continue
 
             if sid in local_index:
-                # KNOWN: exists both in catalog and locally
+                # KNOWN_UNVERIFIED: exists both in catalog and locally,
+                # but remote content not yet checked — defer to apply phase
                 known_count += 1
                 local_data = local_index[sid]
                 classified_items.append(
@@ -179,7 +182,7 @@ class SyncPlanningService:
                         source_identifier=sid,
                         abbreviation=item["abbreviation"],
                         title=item["title"],
-                        item_status=SyncItemStatus.KNOWN,
+                        item_status=SyncItemStatus.KNOWN_UNVERIFIED,
                         previous_sha256=local_data.get("sha256", ""),
                         instrument_id=local_data.get("instrument_id", ""),
                         expression_id=local_data.get("expression_id", ""),
@@ -241,10 +244,35 @@ class SyncPlanningService:
         estimated_download_bytes = (new_count + known_count) * _ESTIMATED_AVG_BYTES
 
         sync_plan = SyncPlan(
+            schema_version="1.0",
+            plan_id=str(uuid.uuid4()),
             sync_run_id=sync_run_id,
+            source_key=source_key,
+            catalog_url=GII_CATALOG_URL,
+            catalog_sha256=catalog_sha256,
+            catalog_stand_date=stand_date,
+            generated_at=now,
+            base_corpus_fingerprint=_compute_corpus_fingerprint(local_index),
             items=classified_items,
             warnings=warnings,
             estimated_download_bytes=estimated_download_bytes,
+            plan_digest="",  # computed after construction
+        )
+        # Compute plan digest from canonical fields
+        sync_plan = SyncPlan(
+            schema_version=sync_plan.schema_version,
+            plan_id=sync_plan.plan_id,
+            sync_run_id=sync_plan.sync_run_id,
+            source_key=sync_plan.source_key,
+            catalog_url=sync_plan.catalog_url,
+            catalog_sha256=sync_plan.catalog_sha256,
+            catalog_stand_date=sync_plan.catalog_stand_date,
+            generated_at=sync_plan.generated_at,
+            base_corpus_fingerprint=sync_plan.base_corpus_fingerprint,
+            items=sync_plan.items,
+            warnings=sync_plan.warnings,
+            estimated_download_bytes=sync_plan.estimated_download_bytes,
+            plan_digest=_compute_plan_digest(sync_plan),
         )
 
         safe_log_event(
@@ -411,10 +439,15 @@ class SyncExecutionService:
     ) -> SyncRun:
         """Execute the sync plan.
 
+        Phase 0: Validate plan integrity (digest, staleness).
         Phase A: Create SyncRun record with RUNNING status.
         Phase B: Process each SyncItem (download, hash, optionally import).
         Phase C: Finalize SyncRun with counts and status.
         Phase D: Update catalog stand date on LegalSource (if applicable).
+
+        Dry-run safety: In dry_run=True mode, SyncRun and SyncItems are
+        NOT persisted to the database — only in-memory classification
+        and counting is performed.
 
         Args:
             plan: The SyncPlan produced by SyncPlanningService.plan().
@@ -427,6 +460,30 @@ class SyncExecutionService:
         now = datetime.now(UTC).isoformat()
         source_key = "gesetze-im-internet"
 
+        # ── Phase 0: Plan integrity check ────────
+        if not dry_run:
+            # Validate plan integrity only if plan has a digest
+            if plan.plan_digest:
+                recomputed = _compute_plan_digest(plan)
+                if recomputed != plan.plan_digest:
+                    raise ValueError(
+                        "PLAN_INTEGRITY_FAILED: plan_digest mismatch — "
+                        "plan may have been modified after creation."
+                    )
+            if plan.source_key and plan.source_key != source_key:
+                raise ValueError(
+                    f"PLAN_INTEGRITY_FAILED: plan source_key "
+                    f"'{plan.source_key}' != '{source_key}'"
+                )
+
+            # ── Acquire process lock ──────────────
+            lock_path = self._acquire_lock(source_key)
+            if lock_path is None:
+                raise RuntimeError(
+                    "SYNC_ALREADY_RUNNING: Another sync process is "
+                    f"already running for source '{source_key}'."
+                )
+
         # ── Phase A: Create SyncRun ─────────────
         sync_run = SyncRun(
             sync_run_id=plan.sync_run_id,
@@ -434,15 +491,20 @@ class SyncExecutionService:
             started_at=now,
             status=SyncRunStatus.RUNNING,
             dry_run=dry_run,
+            catalog_stand_date=plan.catalog_stand_date,
+            catalog_url=plan.catalog_url,
+            catalog_sha256=plan.catalog_sha256,
         )
-        self._repo.save_sync_run(sync_run)
+        if not dry_run:
+            self._repo.save_sync_run(sync_run)
 
         # ── Empty plan edge case ───────────────
         if not plan.items:
             sync_run.status = SyncRunStatus.COMPLETED
             sync_run.completed_at = now
             sync_run.total_in_catalog = 0
-            self._repo.update_sync_run(sync_run)
+            if not dry_run:
+                self._repo.update_sync_run(sync_run)
             safe_log_event(
                 logger,
                 "sync.execute.empty_plan",
@@ -467,17 +529,23 @@ class SyncExecutionService:
             # Items already classified as SKIPPED (e.g., from filter)
             if item.item_status == SyncItemStatus.SKIPPED:
                 skipped_count += 1
-                self._repo.save_sync_item(item)
+                if not dry_run:
+                    self._repo.save_sync_item(item)
                 continue
 
             # Items classified as REMOTE_MISSING (local-only, not in catalog)
             if item.item_status == SyncItemStatus.REMOTE_MISSING:
                 remote_missing_count += 1
-                self._repo.save_sync_item(item)
+                if not dry_run:
+                    self._repo.save_sync_item(item)
                 continue
 
-            # Items classified as NEW or KNOWN
-            if item.item_status not in (SyncItemStatus.NEW, SyncItemStatus.KNOWN):
+            # Items classified as NEW or KNOWN_UNVERIFIED
+            if item.item_status not in (
+                SyncItemStatus.NEW,
+                SyncItemStatus.KNOWN_UNVERIFIED,
+                SyncItemStatus.KNOWN,
+            ):
                 # Unexpected status — skip with warning
                 safe_log_event(
                     logger,
@@ -493,10 +561,10 @@ class SyncExecutionService:
                 if item.item_status == SyncItemStatus.NEW:
                     new_count += 1
                 else:
-                    # KNOWN items are counted later based on actual outcome;
-                    # in dry_run mode we conservatively count as potentially changed
+                    # KNOWN_UNVERIFIED items: in dry_run mode we conservatively
+                    # count as potentially needing remote verification.
                     changed_count += 1
-                self._repo.save_sync_item(item)
+                # Do NOT persist in dry-run mode
                 continue
 
             # ── Apply: download, hash, import ───
@@ -534,7 +602,8 @@ class SyncExecutionService:
         else:
             sync_run.status = SyncRunStatus.COMPLETED
 
-        self._repo.update_sync_run(sync_run)
+        if not dry_run:
+            self._repo.update_sync_run(sync_run)
 
         # ── Phase D: Catalog stand date update ──
         if not dry_run and sync_run.status == SyncRunStatus.COMPLETED:
@@ -564,9 +633,9 @@ class SyncExecutionService:
     ) -> str:
         """Process a single NEW or KNOWN sync item in apply mode.
 
-        Downloads, hashes, and optionally imports the instrument.
-        Mutates the item in place (status, IDs, metadata) and saves
-        it to the repository.
+        RC-025-R1 F4: Downloads exactly ONCE via download_verified(),
+        producing a VerifiedSourcePayload. The same bytes pass through
+        hash, dedup, and import. No second download is performed.
 
         Args:
             item: The SyncItem to process (mutated in place).
@@ -574,12 +643,17 @@ class SyncExecutionService:
 
         Returns:
             Outcome string: "new", "changed", "unchanged", or "failed".
-            The caller is responsible for aggregating counts.
         """
-        try:
-            # 1. Download with HTTP metadata
-            download_result = self._client.download_with_headers(item.source_identifier)
+        from private_legal_navigator.infrastructure.safe_source_client import (
+            VerifiedSourcePayload,
+        )
 
+        # ── 1. Single download with hash pre-computed (RC-025-R1 F4) ──
+        try:
+            payload: VerifiedSourcePayload = self._client.download_verified(
+                url=item.source_identifier,
+                source_identifier=item.source_identifier,
+            )
         except SourceClientError as exc:
             item.item_status = SyncItemStatus.FAILED
             item.error_summary = _cap_summary(str(exc))
@@ -594,17 +668,17 @@ class SyncExecutionService:
             )
             return "failed"
 
-        # 2. Capture HTTP metadata
-        item.http_status = download_result.http_status
-        item.http_etag = download_result.etag
-        item.http_last_modified = download_result.last_modified
-        item.byte_size = len(download_result.content)
+        # ── 2. Capture HTTP metadata from payload ──
+        item.http_status = payload.http_status
+        item.http_etag = payload.etag
+        item.http_last_modified = payload.last_modified
+        item.byte_size = len(payload.content)
 
-        # 3. Handle HTTP errors (non-200)
-        if download_result.http_status != 200:
+        # ── 3. Handle HTTP errors (non-200) ──
+        if payload.http_status != 200:
             item.item_status = SyncItemStatus.FAILED
             item.error_summary = _cap_summary(
-                f"HTTP {download_result.http_status} from {item.source_identifier}"
+                f"HTTP {payload.http_status} from {item.source_identifier}"
             )
             item.checked_at = now
             self._repo.save_sync_item(item)
@@ -613,23 +687,22 @@ class SyncExecutionService:
                 "sync.execute.http_error",
                 sync_item_id=item.sync_item_id,
                 abbreviation=item.abbreviation,
-                http_status=download_result.http_status,
+                http_status=payload.http_status,
             )
             return "failed"
 
-        # 4. Compute SHA-256 from downloaded content
-        computed_sha256 = compute_sha256(download_result.content)
-        item.new_sha256 = computed_sha256
+        # ── 4. Record SHA-256 from payload (pre-computed, immutable) ──
+        item.new_sha256 = payload.sha256
 
-        # 5. Check if hash matches previous — UNCHANGED
-        if item.previous_sha256 and computed_sha256 == item.previous_sha256:
+        # ── 5. Check if hash matches previous — UNCHANGED ──
+        if item.previous_sha256 and payload.sha256 == item.previous_sha256:
             item.item_status = SyncItemStatus.UNCHANGED
             item.checked_at = now
             self._repo.save_sync_item(item)
             return "unchanged"
 
-        # 6. Check dedup: hash already exists in DB
-        existing_snapshot = self._repo.get_snapshot_by_hash(computed_sha256)
+        # ── 6. Check dedup: hash already exists in DB ──
+        existing_snapshot = self._repo.get_snapshot_by_hash(payload.sha256)
         if existing_snapshot is not None:
             item.item_status = SyncItemStatus.UNCHANGED
             if existing_snapshot.snapshot_id:
@@ -641,13 +714,15 @@ class SyncExecutionService:
                 "sync.execute.hash_dedup",
                 sync_item_id=item.sync_item_id,
                 abbreviation=item.abbreviation,
-                sha256_prefix=computed_sha256[:16],
+                sha256_prefix=payload.sha256[:16],
             )
             return "unchanged"
 
-        # 7. Import — use LegalSourceService for full pipeline
+        # ── 7. Import — pass payload through (NO re-download) ──
         try:
-            parsed = self._legal_source_service.sync_gii_instrument(item.abbreviation)
+            parsed = self._legal_source_service.sync_gii_instrument(
+                item.abbreviation, payload=payload
+            )
         except Exception as exc:
             item.item_status = SyncItemStatus.FAILED
             item.error_summary = _cap_summary(str(exc))
@@ -671,7 +746,25 @@ class SyncExecutionService:
             self._repo.save_sync_item(item)
             return "failed"
 
-        # 8. Populate IDs from import result
+        # ── 8. Cross-validate: payload.sha256 == snapshot.sha256 (RC-025-R1 F4) ──
+        if payload.sha256 != parsed.snapshot.sha256:
+            item.item_status = SyncItemStatus.FAILED
+            item.error_summary = _cap_summary(
+                "SNAPSHOT_INTEGRITY_FAILED: "
+                f"payload.sha256 ({payload.sha256[:16]}...) != "
+                f"snapshot.sha256 ({parsed.snapshot.sha256[:16]}...)"
+            )
+            item.checked_at = now
+            self._repo.save_sync_item(item)
+            safe_log_event(
+                logger,
+                "sync.execute.integrity_failed",
+                sync_item_id=item.sync_item_id,
+                abbreviation=item.abbreviation,
+            )
+            return "failed"
+
+        # ── 9. Populate IDs from import result ──
         if parsed.snapshot.snapshot_id:
             item.snapshot_id = str(parsed.snapshot.snapshot_id)
         if parsed.instrument.instrument_id:
@@ -681,12 +774,9 @@ class SyncExecutionService:
 
         item.checked_at = now
 
-        # 9. Set terminal status
+        # ── 10. Set terminal status ──
         was_new = item.item_status == SyncItemStatus.NEW
-        if was_new:
-            # NEW items stay NEW after first import
-            pass
-        else:
+        if not was_new:
             # Was KNOWN — SHA-256 differs, so it's CHANGED
             item.item_status = SyncItemStatus.CHANGED
 
@@ -704,6 +794,101 @@ class SyncExecutionService:
 
     # ── Private: Catalog Stand Date ────────────────
 
+    # ── Private: Process Lock ──────────────────────
+
+    def _acquire_lock(self, source_key: str) -> Path | None:
+        """Acquire a process-level lock for the given source_key.
+
+        Uses a lock file in the data directory. Returns the lock path
+        if acquired, None if another process holds the lock.
+
+        Lock file contains PID, start time, and source_key for debugging.
+        Stale lock recovery: if the lock file exists but the PID is no
+        longer running, the lock is acquired by the new process.
+        """
+        import os
+        import tempfile
+
+        data_dir = Path(tempfile.gettempdir()) / "private-legal-navigator" / "locks"
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+        lock_path = data_dir / f"sync-{source_key}.lock"
+
+        if lock_path.exists():
+            # Check if lock is stale
+            try:
+                content = lock_path.read_text()
+                # Extract PID from lock file (format: "PID:TIMESTAMP:SOURCE_KEY")
+                parts = content.strip().split(":", 1)
+                if parts:
+                    pid = int(parts[0])
+                    # Check if process is still running
+                    try:
+                        os.kill(pid, 0)
+                    except OSError:
+                        # Process no longer exists — stale lock
+                        safe_log_event(
+                            logger,
+                            "sync.lock_stale_recovery",
+                            source_key=source_key,
+                            stale_pid=pid,
+                        )
+                        lock_path.unlink(missing_ok=True)
+                    else:
+                        # Process is still running
+                        if pid == os.getpid():
+                            # Same process — allow re-entry
+                            safe_log_event(
+                                logger,
+                                "sync.lock_reentry",
+                                source_key=source_key,
+                                pid=pid,
+                            )
+                            return lock_path
+                        # Different process — lock is held
+                        safe_log_event(
+                            logger,
+                            "sync.lock_held",
+                            source_key=source_key,
+                            pid=pid,
+                        )
+                        return None
+            except (ValueError, OSError):
+                # Corrupted lock file — remove it
+                lock_path.unlink(missing_ok=True)
+
+        # Acquire lock
+        try:
+            lock_content = f"{os.getpid()}:{datetime.now(UTC).isoformat()}:{source_key}"
+            lock_path.write_text(lock_content)
+            safe_log_event(
+                logger,
+                "sync.lock_acquired",
+                source_key=source_key,
+                pid=os.getpid(),
+            )
+            return lock_path
+        except OSError:
+            safe_log_event(
+                logger,
+                "sync.lock_acquire_failed",
+                source_key=source_key,
+            )
+            return None
+
+    def _release_lock(self, lock_path: Path | None) -> None:
+        """Release a previously acquired process lock."""
+        if lock_path is not None and lock_path.exists():
+            try:
+                lock_path.unlink()
+                safe_log_event(
+                    logger,
+                    "sync.lock_released",
+                    lock_path=str(lock_path),
+                )
+            except OSError:
+                pass
+
     def _update_catalog_stand_date(
         self,
         source_key: str,
@@ -711,14 +896,10 @@ class SyncExecutionService:
     ) -> None:
         """Update the last_catalog_stand_date on the LegalSource record.
 
-        Uses the catalog_stand_date captured during the planning phase.
-        Checks the SyncRun associated with this plan for the stand date.
+        Uses the catalog_stand_date from the SyncPlan (captured during planning).
+        Only updates if a valid stand date is present.
         """
-        # Retrieve the SyncRun to get the catalog_stand_date
-        sync_run = self._repo.get_latest_sync_run(source_key, successful_only=False)
-        stand_date = ""
-        if sync_run is not None and sync_run.catalog_stand_date:
-            stand_date = sync_run.catalog_stand_date
+        stand_date = plan.catalog_stand_date
 
         if stand_date:
             self._repo.update_legal_source_catalog_stand_date(source_key, stand_date)
@@ -747,3 +928,53 @@ def _cap_summary(message: str, max_chars: int = 500) -> str:
     if len(message) <= max_chars:
         return message
     return message[: max_chars - 3] + "..."
+
+
+def _compute_corpus_fingerprint(local_index: dict[str, dict[str, str]]) -> str:
+    """Compute a deterministic fingerprint of the local corpus state.
+
+    Uses sorted source identifiers and their SHA-256 hashes to produce
+    a stable hash that changes when the local corpus changes.
+    """
+    import hashlib
+
+    hasher = hashlib.sha256()
+    for sid in sorted(local_index.keys()):
+        hasher.update(sid.encode())
+        hasher.update(local_index[sid].get("sha256", "").encode())
+    return hasher.hexdigest()
+
+
+def _compute_plan_digest(plan: "SyncPlan") -> str:
+    """Compute a SHA-256 digest over the canonical plan fields.
+
+    The digest covers all binding fields (schema_version, plan_id,
+    sync_run_id, source_key, catalog_url, catalog_sha256,
+    catalog_stand_date, generated_at, base_corpus_fingerprint,
+    item count, warnings, estimated_download_bytes) in a
+    deterministic order. Item IDs and statuses are included.
+    """
+    import hashlib
+
+    hasher = hashlib.sha256()
+    # Binding metadata fields
+    hasher.update(plan.schema_version.encode())
+    hasher.update(plan.plan_id.encode())
+    hasher.update(plan.sync_run_id.encode())
+    hasher.update(plan.source_key.encode())
+    hasher.update(plan.catalog_url.encode())
+    hasher.update(plan.catalog_sha256.encode())
+    hasher.update(plan.catalog_stand_date.encode())
+    hasher.update(plan.generated_at.encode())
+    hasher.update(plan.base_corpus_fingerprint.encode())
+    # Item-level contributions (sorted by source_identifier for determinism)
+    for item in sorted(plan.items, key=lambda i: i.source_identifier):
+        hasher.update(item.source_identifier.encode())
+        hasher.update(item.item_status.value.encode())
+        hasher.update(item.previous_sha256.encode())
+    # Warnings
+    for w in sorted(plan.warnings):
+        hasher.update(w.encode())
+    # Estimate
+    hasher.update(str(plan.estimated_download_bytes).encode())
+    return hasher.hexdigest()

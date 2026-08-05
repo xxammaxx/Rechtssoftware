@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav aria-label="Brotkrümel">
+  <ol class="breadcrumbs">
+    <li><a href="{{ url_for('ui_case_list') }}">Fälle</a></li>
+    <li><span aria-current="page">Neuen Fall anlegen</span></li>
+  </ol>
+</nav>
+
+<h1 class="page-title">Neuen Fall anlegen</h1>
+
+{% if error_message %}
+<div role="alert" class="flash-banner flash-banner--error">
+  <strong>Fehler beim Anlegen.</strong>
+  {{ error_message }}
+</div>
+{% endif %}
+
+<form method="POST" class="action-form" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <fieldset>
+    <legend>Angaben zum Fall</legend>
+
+    <div class="form-field{% if field_errors and field_errors.title %} form-field--error{% endif %}">
+      <label for="case_title">Fallname</label>
+      <input
+        type="text"
+        id="case_title"
+        name="title"
+        required
+        maxlength="200"
+        value="{{ form_title or '' }}"
+        aria-describedby="title_hint{% if field_errors and field_errors.title %} title_error{% endif %}"
+        autocomplete="off"
+      >
+      <span id="title_hint" class="form-hint">
+        Geben Sie einen aussagekräftigen Namen ein (z.&nbsp;B. „Widerspruch Bescheid 07/2026“).
+      </span>
+      {% if field_errors and field_errors.title %}
+      <span id="title_error" class="form-error" role="alert">{{ field_errors.title }}</span>
+      {% endif %}
+    </div>
+
+    <div class="form-field">
+      <label for="case_description">Beschreibung (optional)</label>
+      <textarea
+        id="case_description"
+        name="description"
+        rows="4"
+        maxlength="2000"
+        aria-describedby="desc_hint"
+      >{{ form_description or '' }}</textarea>
+      <span id="desc_hint" class="form-hint">
+        Optional: Wichtige Hintergrundinformationen zum Fall.
+      </span>
+    </div>
+
+    <p class="form-hint">
+      Der Fall wird lokal gespeichert. Keine Übertragung an externe Dienste.
+      Keine rechtliche Bewertung.
+    </p>
+
+    <button type="submit" class="btn btn--primary">Fall anlegen</button>
+  </fieldset>
+</form>
+
+<p class="u-mt-4">
+  <a href="{{ url_for('ui_case_list') }}" class="btn btn--secondary btn--small">← Zurück zur Fallübersicht</a>
+</p>
+
+{% endblock %}

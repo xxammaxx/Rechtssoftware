@@ -8,7 +8,7 @@ import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from private_legal_navigator.application.citation_resolver import (
@@ -34,6 +34,11 @@ from private_legal_navigator.infrastructure.safe_source_client import SourceClie
 from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
     SqliteLegalSourceRepository,
 )
+
+if TYPE_CHECKING:
+    from private_legal_navigator.infrastructure.safe_source_client import (
+        VerifiedSourcePayload,
+    )
 
 logger = logging.getLogger("private_legal_navigator.legal_source_service")
 
@@ -128,13 +133,21 @@ class LegalSourceService:
         """Fetch the GII catalog of available laws."""
         return self._gii.fetch_catalog()
 
-    def sync_gii_instrument(self, key: str) -> GiiParsedInstrument | None:
+    def sync_gii_instrument(
+        self,
+        key: str,
+        payload: "VerifiedSourcePayload | None" = None,
+    ) -> GiiParsedInstrument | None:
         """Sync a single GII instrument by its key/abbreviation.
+
+        RC-025-R1 F4: When `payload` is provided, the instrument is NOT
+        re-downloaded. The payload's bytes and hash are passed through
+        to the adapter and cross-validated.
 
         Steps:
         1. Register GII source if needed
         2. Find instrument in catalog
-        3. Download and snapshot
+        3. Download and snapshot (or use provided payload)
         4. Check for duplicate hash (skip if unchanged)
         5. Parse and persist atomically (SEC-015)
         """
@@ -146,8 +159,8 @@ class LegalSourceService:
             safe_log_event(logger, "legal_source.instrument_not_found", instrument_key=key)
             return None
 
-        # Sync
-        parsed = self._gii.sync_instrument(item)
+        # Sync — pass payload through if provided
+        parsed = self._gii.sync_instrument(item, payload=payload)
 
         # Check for existing snapshot with same hash
         existing = self._repo.get_snapshot_by_hash(parsed.snapshot.sha256)

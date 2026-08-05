@@ -9,6 +9,7 @@ from private_legal_navigator.application.document_service import DocumentService
 from private_legal_navigator.application.text_extractor import ExtractionResult
 from private_legal_navigator.domain.classification import ClassificationResult
 from private_legal_navigator.domain.document import Document
+from tests.fixtures.synthetic_pdf import MINIMAL_PDF_BYTES
 
 
 class TestDocumentService:
@@ -70,7 +71,7 @@ class TestDocumentService:
         result = service.upload_document(
             case_id=case_id,
             filename="test.pdf",
-            content=b"%PDF-1.4",
+            content=MINIMAL_PDF_BYTES,
             mime_type="application/pdf",
             size_bytes=1024,
         )
@@ -80,7 +81,7 @@ class TestDocumentService:
         assert result.doc_type == "bescheid"
         assert result.classification_confidence == 0.85
         assert result.matched_patterns == ["bescheid"]
-        mock_text_extractor.extract.assert_called_once_with(b"%PDF-1.4")
+        mock_text_extractor.extract.assert_called_once_with(MINIMAL_PDF_BYTES)
         mock_classifier.classify.assert_called_once_with("Bescheid über Steuern")
 
     def test_upload_sonstiges_when_no_match(
@@ -98,7 +99,7 @@ class TestDocumentService:
         result = service.upload_document(
             case_id=uuid.uuid4(),
             filename="x.pdf",
-            content=b"x",
+            content=MINIMAL_PDF_BYTES,
             mime_type="application/pdf",
             size_bytes=100,
         )
@@ -125,16 +126,47 @@ class TestDocumentService:
         result = service.upload_document(
             case_id=case_id,
             filename="corrupt.pdf",
-            content=b"garbage",
+            content=MINIMAL_PDF_BYTES,
             mime_type="application/pdf",
             size_bytes=100,
         )
 
         assert result.text_content == ""
         assert result.extraction_error == "PDF ist korrupt"
-        # Upload should still persist file and document
         mock_file_storage.store.assert_called_once()
         mock_doc_repo.save.assert_called_once()
+
+    def test_upload_rejects_non_pdf_content(
+        self,
+        service: DocumentService,
+        mock_case_repo: MagicMock,
+    ) -> None:
+        """Non-PDF content (no %PDF- magic bytes) is rejected."""
+        mock_case_repo.get_by_id.return_value = MagicMock()
+        with pytest.raises(ValueError, match="Nur PDF-Dateien sind erlaubt"):
+            service.upload_document(
+                case_id=uuid.uuid4(),
+                filename="fake.pdf",
+                content=b"not a pdf file",
+                mime_type="application/pdf",
+                size_bytes=100,
+            )
+
+    def test_upload_rejects_empty_content(
+        self,
+        service: DocumentService,
+        mock_case_repo: MagicMock,
+    ) -> None:
+        """Empty content is rejected."""
+        mock_case_repo.get_by_id.return_value = MagicMock()
+        with pytest.raises(ValueError, match="Die Datei ist leer"):
+            service.upload_document(
+                case_id=uuid.uuid4(),
+                filename="empty.pdf",
+                content=b"",
+                mime_type="application/pdf",
+                size_bytes=0,
+            )
 
     def test_upload_nonexistent_case(
         self,

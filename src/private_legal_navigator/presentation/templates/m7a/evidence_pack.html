@@ -2,6 +2,13 @@
 {% block content %}
 <h1>{{ case.title }} — Evidence Pack</h1>
 
+<nav aria-label="Fall-Navigation" class="case-tabs">
+  <a href="{{ url_for('ui_case_detail', case_id=case_id) }}" class="case-tabs__tab">Übersicht</a>
+  <a href="{{ url_for('case_legal_situation', case_id=case_id) }}" class="case-tabs__tab">Rechtslage</a>
+  <a href="{{ url_for('case_legal_timeline', case_id=case_id) }}" class="case-tabs__tab">Verlauf</a>
+  <a href="{{ url_for('evidence_pack', case_id=case_id) }}" class="case-tabs__tab" aria-current="page">Evidence</a>
+</nav>
+
 <p class="notice notice--info">
     Export nur für den konkreten Fall. Widerrufene Daten werden nicht als aktiv exportiert.
 </p>
@@ -16,7 +23,10 @@
 {% endfor %}
 </ul>
 {% else %}
-<p><em>Keine bestätigten Tatsachen.</em></p>
+<p class="empty-state">
+  <strong>Noch keine bestätigten Tatsachen.</strong><br>
+  Sobald ein Dokument mit Fristkandidaten hochgeladen und bestätigt wurde, erscheinen die Tatsachen hier.
+</p>
 {% endif %}
 
 <h2>Offene Tatsachen</h2>

@@ -35,7 +35,10 @@ from private_legal_navigator.domain.reference_event import (
     EventType,
 )
 from private_legal_navigator.infrastructure.safe_logging import safe_log_event, safe_log_failure
-from private_legal_navigator.middleware.security_dependencies import ui_post_security
+from private_legal_navigator.middleware.security_dependencies import (
+    ui_post_security,
+    ui_upload_security,
+)
 
 logger = logging.getLogger("private_legal_navigator.ui")
 
@@ -131,16 +134,143 @@ async def ui_case_list(request: Request) -> HTMLResponse:
     )
 
 
+# =============================================================================
+# Route: GET  /ui/cases/create  (must be BEFORE /ui/cases/{case_id})
+# Route: POST /ui/cases/create
+# =============================================================================
+
+
+@router.get("/cases/create")
+async def ui_case_create_get(request: Request) -> HTMLResponse:
+    """Render the case creation form with CSRF protection."""
+    templates = _get_templates(request)
+    csrf_service = request.app.state.csrf_service
+
+    existing_nonce = request.cookies.get("pln_csrf_nonce", "")
+    is_new_nonce = not existing_nonce
+    browser_nonce = existing_nonce if existing_nonce else csrf_service.generate_browser_nonce()
+
+    csrf_token = csrf_service.generate_form_token(browser_nonce, str(request.url.path))
+
+    response = HTMLResponse(
+        content=templates.get_template("cases/create.html").render(
+            {
+                "request": request,
+                "base": _base_context("Neuen Fall anlegen"),
+                "csrf_token": csrf_token,
+            }
+        ),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+    if is_new_nonce:
+        response.set_cookie(
+            key="pln_csrf_nonce",
+            value=browser_nonce,
+            httponly=True,
+            samesite="strict",
+            path="/ui",
+            secure=False,
+        )
+    return response
+
+
+@router.post(
+    "/cases/create",
+    dependencies=[Depends(ui_post_security)],
+    response_model=None,
+)
+async def ui_case_create_post(request: Request) -> RedirectResponse | HTMLResponse:
+    """Create a new case from the browser form (POST, CSRF, PRG)."""
+    svc = _get_workspace_service(request)
+    templates = _get_templates(request)
+    csrf_service = request.app.state.csrf_service
+
+    try:
+        form = await request.form()
+    except Exception:
+        return _render_error(
+            request,
+            400,
+            "Ungültiges Formular",
+            "Das Formular konnte nicht verarbeitet werden.",
+        )
+
+    title = optional_form_string(form, "title", max_length=200) or ""
+    description = optional_form_string(form, "description", max_length=2000) or ""
+
+    if not title.strip():
+        browser_nonce = request.cookies.get("pln_csrf_nonce", "")
+        csrf_token = csrf_service.generate_form_token(browser_nonce, "/ui/cases/create")
+        return HTMLResponse(
+            content=templates.get_template("cases/create.html").render(
+                {
+                    "request": request,
+                    "base": _base_context("Neuen Fall anlegen"),
+                    "csrf_token": csrf_token,
+                    "error_message": "Bitte geben Sie einen Fallnamen ein.",
+                    "form_title": title,
+                    "form_description": description,
+                }
+            ),
+            status_code=400,
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
+
+    try:
+        svc.create_case_via_ui(title=title, description=description)
+    except ValueError as exc:
+        browser_nonce = request.cookies.get("pln_csrf_nonce", "")
+        csrf_token = csrf_service.generate_form_token(browser_nonce, "/ui/cases/create")
+        return HTMLResponse(
+            content=templates.get_template("cases/create.html").render(
+                {
+                    "request": request,
+                    "base": _base_context("Neuen Fall anlegen"),
+                    "csrf_token": csrf_token,
+                    "error_message": str(exc),
+                    "form_title": title,
+                    "form_description": description,
+                }
+            ),
+            status_code=400,
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
+    except Exception as exc:
+        safe_log_failure(
+            logger,
+            "ui.create_case_failed",
+            error_code="UI_CASE_CREATE_ERROR",
+            exception=exc,
+        )
+        return _render_error(
+            request,
+            500,
+            "Interner Fehler",
+            "Der Vorgang konnte nicht abgeschlossen werden.",
+        )
+
+    safe_log_event(logger, "ui.case_created")
+    return RedirectResponse(url="/ui/cases?created=1", status_code=303)
+
+
 # ---------------------------------------------------------------------------
 # Route: GET /ui/cases/{case_id}
 # ---------------------------------------------------------------------------
 
 
+# =============================================================================
+# Route: GET  /ui/cases/{case_id}
+# Route: POST /ui/cases/{case_id}/upload
+# =============================================================================
+
+
 @router.get("/cases/{case_id}")
 async def ui_case_detail(request: Request) -> HTMLResponse:
-    """Render the case detail page with document list."""
+    """Render the case detail page with document list and upload form."""
     svc = _get_workspace_service(request)
     templates = _get_templates(request)
+    csrf_service = request.app.state.csrf_service
 
     case_id_str = request.path_params.get("case_id", "")
 
@@ -169,11 +299,126 @@ async def ui_case_detail(request: Request) -> HTMLResponse:
             request, 404, "Nicht gefunden", "Der angeforderte Fall wurde nicht gefunden."
         )
 
-    return HTMLResponse(
+    existing_nonce = request.cookies.get("pln_csrf_nonce", "")
+    is_new_nonce = not existing_nonce
+    browser_nonce = existing_nonce if existing_nonce else csrf_service.generate_browser_nonce()
+
+    csrf_token = csrf_service.generate_form_token(browser_nonce, str(request.url.path))
+    upload_error = request.query_params.get("error", "")
+
+    response = HTMLResponse(
         content=templates.get_template("cases/detail.html").render(
-            {"request": request, "base": _base_context(view.title), "view": view}
+            {
+                "request": request,
+                "base": _base_context(view.title),
+                "view": view,
+                "csrf_token": csrf_token,
+                "upload_error": upload_error,
+            }
         ),
         headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+    if is_new_nonce:
+        response.set_cookie(
+            key="pln_csrf_nonce",
+            value=browser_nonce,
+            httponly=True,
+            samesite="strict",
+            path="/ui",
+            secure=False,
+        )
+    return response
+
+
+@router.post(
+    "/cases/{case_id}/upload",
+    dependencies=[Depends(ui_upload_security)],
+    response_model=None,
+)
+async def ui_document_upload_post(request: Request) -> RedirectResponse | HTMLResponse:
+    """Upload a PDF document via the browser (multipart POST, CSRF, PRG)."""
+    svc = _get_workspace_service(request)
+
+    case_id_str = request.path_params.get("case_id", "")
+
+    try:
+        case_id = uuid.UUID(case_id_str)
+    except (ValueError, AttributeError):
+        return _render_error(
+            request, 404, "Nicht gefunden", "Der angeforderte Fall wurde nicht gefunden."
+        )
+
+    form = getattr(request.state, "_upload_form", None)
+    if form is None:
+        return _render_error(
+            request,
+            400,
+            "Ungültiges Formular",
+            "Das Formular konnte nicht verarbeitet werden.",
+        )
+
+    uploaded_file = form.get("file")
+    if uploaded_file is None:
+        return RedirectResponse(
+            url=str(request.url_for("ui_case_detail", case_id=case_id_str)) + "?error=no_file",
+            status_code=303,
+        )
+
+    try:
+        content = await uploaded_file.read()
+        filename = uploaded_file.filename or "unknown.pdf"
+        mime_type = uploaded_file.content_type or "application/pdf"
+        size_bytes = len(content) if isinstance(content, bytes) else 0
+    except Exception:
+        return RedirectResponse(
+            url=str(request.url_for("ui_case_detail", case_id=case_id_str)) + "?error=read_failed",
+            status_code=303,
+        )
+
+    if not isinstance(content, bytes) or size_bytes == 0:
+        return RedirectResponse(
+            url=str(request.url_for("ui_case_detail", case_id=case_id_str)) + "?error=empty_file",
+            status_code=303,
+        )
+
+    try:
+        svc.upload_document_via_ui(
+            case_id=case_id,
+            filename=filename,
+            content=content,
+            mime_type=mime_type,
+            size_bytes=size_bytes,
+        )
+    except ValueError as exc:
+        safe_log_failure(
+            logger,
+            "ui.document_upload_validation_failed",
+            error_code="UI_UPLOAD_VALIDATION_ERROR",
+        )
+        return RedirectResponse(
+            url=str(request.url_for("ui_case_detail", case_id=case_id_str))
+            + f"?error={str(exc)[:100]}",
+            status_code=303,
+        )
+    except Exception as exc:
+        safe_log_failure(
+            logger,
+            "ui.document_upload_failed",
+            error_code="UI_UPLOAD_ERROR",
+            exception=exc,
+        )
+        return _render_error(
+            request,
+            500,
+            "Interner Fehler",
+            "Der Vorgang konnte nicht abgeschlossen werden.",
+        )
+
+    safe_log_event(logger, "ui.document_uploaded")
+    return RedirectResponse(
+        url=str(request.url_for("ui_case_detail", case_id=case_id_str)) + "?uploaded=1",
+        status_code=303,
     )
 
 

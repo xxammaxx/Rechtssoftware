@@ -2,6 +2,13 @@
 {% block content %}
 <h1>{{ case.title }} — Rechtslage</h1>
 
+<nav aria-label="Fall-Navigation" class="case-tabs">
+  <a href="{{ url_for('ui_case_detail', case_id=case_id) }}" class="case-tabs__tab">Übersicht</a>
+  <a href="{{ url_for('case_legal_situation', case_id=case_id) }}" class="case-tabs__tab" aria-current="page">Rechtslage</a>
+  <a href="{{ url_for('case_legal_timeline', case_id=case_id) }}" class="case-tabs__tab">Verlauf</a>
+  <a href="{{ url_for('evidence_pack', case_id=case_id) }}" class="case-tabs__tab">Evidence</a>
+</nav>
+
 <p class="notice notice--info">
     Die Verknüpfung bedeutet nicht, dass die Norm abschließend auf den Fall anwendbar ist.
 </p>
@@ -20,14 +27,14 @@
     <td>{{ link.source or "–" }}</td>
     <td><small>{{ link.snapshot_hash or "–" }}</small></td>
     <td>
-        <form method="post" action="{{ url_for('correct_norm_link', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('correct_norm_link', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="link_id" value="{{ link.link_id }}">
             <input type="hidden" name="new_provision_id" value="{{ link.legal_provision_id }}">
-            <input type="text" name="new_relevance_note" placeholder="Neue Relevanznotiz" style="width:12em">
+            <input type="text" name="new_relevance_note" placeholder="Neue Relevanznotiz" class="input--compact">
             <button type="submit" class="btn btn--small">Korrigieren</button>
         </form>
-        <form method="post" action="{{ url_for('revoke_norm_link', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('revoke_norm_link', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="link_id" value="{{ link.link_id }}">
             <button type="submit" class="btn btn--small btn--danger">Widerrufen</button>
@@ -38,7 +45,13 @@
 </tbody>
 </table>
 {% else %}
-<p><em>Keine aktiven Normverknüpfungen.</em></p>
+<p class="empty-state">
+  <strong>Noch keine aktiven Normverknüpfungen.</strong><br>
+  Nutze die Rechtssuche, um eine passende Norm zu finden und mit diesem Fall zu verknüpfen.
+</p>
+<p class="u-text-center u-mt-2">
+  <a href="{{ url_for('legal_source_search_get') }}" class="btn btn--primary btn--small">Rechtssuche öffnen →</a>
+</p>
 {% endif %}
 
 <h2>Verknüpfungskandidaten</h2>
@@ -52,14 +65,14 @@
     <td>{{ link.provision_number or link.legal_provision_id }}</td>
     <td>{{ link.relevance_note or "–" }}</td>
     <td>
-        <form method="post" action="{{ url_for('confirm_norm_link', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('confirm_norm_link', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="link_id" value="{{ link.link_id }}">
             <button type="submit" class="btn btn--small btn--success">✓ Bestätigen</button>
         </form>
     </td>
     <td>
-        <form method="post" action="{{ url_for('reject_norm_link', case_id=case_id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('reject_norm_link', case_id=case_id) }}" class="form-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="link_id" value="{{ link.link_id }}">
             <button type="submit" class="btn btn--small btn--warning">✗ Ablehnen</button>

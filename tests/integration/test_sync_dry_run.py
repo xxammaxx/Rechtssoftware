@@ -163,7 +163,11 @@ class TestDryRunSync:
     def test_dry_run_sync_run_persists_for_history(
         self, repo, planning_service, patched_source_client, snapshot_dir
     ):
-        """Verify dry-run SyncRun persists (for history)."""
+        """Verify dry-run SyncRun is NOT persisted (RC-025 F1 compliance).
+
+        Dry-run must not modify the product database — the SyncRun
+        exists only in-memory for classification reporting.
+        """
         plan = planning_service.plan()
 
         from private_legal_navigator.application.legal_source_service import (
@@ -176,11 +180,13 @@ class TestDryRunSync:
 
         sync_run = exec_service.execute(plan, dry_run=True)
 
-        # Retrieve the persisted SyncRun
+        # Dry-run SyncRun must not be persisted to database
         persisted = repo.get_latest_sync_run("gesetze-im-internet", successful_only=False)
-        assert persisted is not None
-        assert persisted.sync_run_id == sync_run.sync_run_id
-        assert persisted.dry_run is True
+        if persisted is not None:
+            assert persisted.sync_run_id != sync_run.sync_run_id, (
+                "Dry-run SyncRun must not be persisted to database. "
+                f"Found persisted run: {persisted.sync_run_id}"
+            )
 
     def test_dry_run_sync_run_status_is_completed(
         self, repo, planning_service, patched_source_client, snapshot_dir
@@ -204,7 +210,11 @@ class TestDryRunSync:
     def test_dry_run_sync_items_are_persisted(
         self, repo, planning_service, patched_source_client, snapshot_dir
     ):
-        """Verify dry-run sync items are persisted with correct classifications."""
+        """Verify dry-run does NOT persist sync items (RC-025 F1 compliance).
+
+        Dry-run must not modify the product database — SyncItems are
+        only classified and counted in-memory, not saved to the repository.
+        """
         plan = planning_service.plan()
 
         from private_legal_navigator.application.legal_source_service import (
@@ -217,15 +227,16 @@ class TestDryRunSync:
 
         sync_run = exec_service.execute(plan, dry_run=True)
 
-        # Retrieve items for this run
+        # Dry-run must not persist items to the database
         items = repo.get_items_for_run(sync_run.sync_run_id)
-        assert len(items) > 0, "Should have sync items persisted"
-        assert len(items) == len(plan.items), (
-            f"Expected {len(plan.items)} items, found {len(items)}"
+        assert len(items) == 0, (
+            f"Dry-run must not persist sync items to database. "
+            f"Found {len(items)} items — RC-025 F1 violation."
         )
 
-        # All expected catalog items should have a status
-        statuses = {item["item_status"] for item in items}
-        assert "NEW" in statuses or "KNOWN" in statuses, (
-            f"Expected NEW or KNOWN items, got: {statuses}"
-        )
+        # SyncRun itself must not be persisted during dry-run
+        latest = repo.get_latest_sync_run("gesetze-im-internet", successful_only=False)
+        if latest is not None:
+            assert latest.sync_run_id != sync_run.sync_run_id, (
+                "Dry-run SyncRun must not be persisted to database."
+            )

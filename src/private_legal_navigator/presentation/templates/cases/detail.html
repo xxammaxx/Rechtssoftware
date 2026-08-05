@@ -8,37 +8,114 @@
   </ol>
 </nav>
 
-<h1 class="page-title">{{ view.title }}</h1>
+<div class="topbar">
+  <div>
+    <div class="topbar-context">Fall</div>
+    <h1>{{ view.title }}</h1>
+  </div>
+  <div class="topbar-actions">
+    <a href="{{ url_for('ui_case_create_get') }}" class="btn btn--ghost btn--small">Neuer Fall</a>
+  </div>
+</div>
 
-<p class="count-badge">Status: <strong>{{ view.status }}</strong></p>
+{# ── Stats Row ──────────────────────────────────────────────────── #}
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Status</div>
+    <div class="stat-value highlight">{% if view.status == 'open' %}Offen{% else %}{{ view.status }}{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Dokumente</div>
+    <div class="stat-value">{{ view.documents|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Erstellt</div>
+    <div class="stat-value stat-value--sm">{{ view.created_at_display or view.created_at }}</div>
+  </div>
+</div>
 
-{% if not view.has_documents %}
-    <p class="empty-state">Keine Dokumente im Fall.</p>
-{% else %}
-    <h2 class="section-title">Dokumente ({{ view.documents|length }})</h2>
+{# ── Case Tab Navigation ────────────────────────────────────────── #}
+<nav aria-label="Fall-Navigation" class="case-tabs">
+  <a href="{{ url_for('ui_case_detail', case_id=view.case_id) }}"
+     class="case-tabs__tab" aria-current="page">Übersicht</a>
+  <a href="{{ url_for('case_legal_situation', case_id=view.case_id) }}"
+     class="case-tabs__tab">Rechtslage</a>
+  <a href="{{ url_for('case_legal_timeline', case_id=view.case_id) }}"
+     class="case-tabs__tab">Verlauf</a>
+  <a href="{{ url_for('evidence_pack', case_id=view.case_id) }}"
+     class="case-tabs__tab">Evidence</a>
+</nav>
 
-    <ul class="item-list">
-    {% for doc in view.documents %}
-        <li>
-            <a href="{{ url_for('ui_document_detail', case_id=view.case_id, document_id=doc.document_id) }}"
-               class="item-card">
-                <div class="item-card__title">{{ doc.filename }}</div>
-                <div class="item-card__meta">
-                    <span>{{ doc.classification }}</span>
-                    <span>{{ doc.size_bytes }} Bytes</span>
-                    <span>Hochgeladen: {{ doc.uploaded_at_display or doc.uploaded_at }}</span>
-                </div>
-                {% if not doc.has_text %}
-                <span class="item-card__warning">Kein Text extrahierbar</span>
-                {% endif %}
-            </a>
-        </li>
+<div class="evidence-layout{% if not view.has_timeline_events %} evidence-layout--single{% endif %}">
+
+{# ── Chronology Sidebar (only when entries exist) ───────────────── #}
+{% if view.has_timeline_events %}
+<aside class="tl-sidebar" role="complementary" aria-labelledby="chronologie-heading">
+  <h2 id="chronologie-heading">Chronologie</h2>
+  <div class="timeline-v">
+    {% for item in view.timeline_events %}
+    <div class="tlv-item{% if item.is_latest %} active{% endif %}">
+      <div class="tlv-date">{{ item.date_display }}</div>
+      <div class="tlv-title">{{ item.title }}</div>
+      {% if item.source_hint %}<div class="tlv-doc">→ {{ item.source_hint }}</div>{% endif %}
+    </div>
     {% endfor %}
-    </ul>
+  </div>
+  <p class="u-mt-4">
+    <a href="{{ url_for('case_legal_timeline', case_id=view.case_id) }}"
+       class="btn btn--ghost btn--small">Zum Rechtsverlauf →</a>
+  </p>
+</aside>
 {% endif %}
 
-<p class="u-mt-4">
-    <a href="{{ url_for('ui_case_list') }}" class="btn btn--secondary btn--small">← Zurück zur Fallübersicht</a>
-</p>
+<div>
+
+{# ── Flash Messages ─────────────────────────────────────────────── #}
+{% if upload_error %}
+<div role="alert" class="flash-banner flash-banner--error">
+  <strong>Fehler beim Hochladen.</strong> {{ upload_error }}
+</div>
+{% endif %}
+{% if request.query_params.get('uploaded') %}
+<div role="status" class="flash-banner flash-banner--success">
+  <strong>Dokument wurde hochgeladen.</strong>
+</div>
+{% endif %}
+
+{# ── Dokumente ──────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card__header">Dokumente ({{ view.documents|length }})</div>
+  <div class="card__body card__body--flush">
+    {% if not view.has_documents %}
+      <div class="empty-state empty-state--flush">Keine Dokumente im Fall.</div>
+    {% else %}
+      {% for doc in view.documents %}
+      <div class="doc-row">
+        <span class="doc-type">{{ doc.classification }}</span>
+        <a href="{{ url_for('ui_document_detail', case_id=view.case_id, document_id=doc.document_id) }}" class="doc-name">{{ doc.filename }}</a>
+        <span class="doc-size">{{ doc.size_bytes }} B</span>
+        <span class="doc-date">{{ doc.uploaded_at_display or doc.uploaded_at }}</span>
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    {# ── Upload Inline ────────────────────────────────────────────── #}
+    <form method="POST" enctype="multipart/form-data"
+          action="{{ url_for('ui_document_upload_post', case_id=view.case_id) }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="upload-inline" role="region" aria-labelledby="upload-inline-heading">
+        <span id="upload-inline-heading" class="u-visually-hidden">PDF-Dokument hochladen</span>
+        <p>PDF-Dokument hinzufügen (max. 20 MB)</p>
+        <input type="file" name="file" accept="application/pdf" required
+               aria-label="PDF-Datei auswählen" aria-describedby="upload-hint">
+        <span id="upload-hint" class="u-visually-hidden">Nur PDF-Dateien. Maximale Dateigröße: 20 MB.</span>
+        <button type="submit" class="btn {% if not view.has_documents %}btn--primary{% else %}btn--secondary{% endif %} btn--small">Hochladen</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</div>
+</div>
 
 {% endblock %}
