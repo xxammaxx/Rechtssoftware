@@ -21,12 +21,12 @@
 
 ### Testing
 
-- 1021 tests passing (was 921)
+- 1091 collected, 1087 passing, 4 Frozen-RED (was 1021)
 - Overall coverage: 79 %
 - `backup_helper.py`: 93 %
 - `restore_helper.py`: 93 %
-- Ruff: 0 errors
-- Mypy: PASS
+- Ruff: clean (0 errors, all frozen-boundary violations resolved)
+- Mypy: PASS (73 source files, 0 errors)
 - pip check: No broken requirements
 - Installed-Wheel-E2E: All 12 M7-B gates passed
 

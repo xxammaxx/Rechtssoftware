@@ -38,6 +38,7 @@ from private_legal_navigator.infrastructure.safe_source_client import (
     SourceClientError,
     TransportMode,
     TransportPolicy,
+    VerifiedSourcePayload,
 )
 from private_legal_navigator.infrastructure.sqlite_legal_source_repository import (
     SqliteLegalSourceRepository,
@@ -105,12 +106,13 @@ def mock_client_factory():
 
         def _download_verified(
             url: str, source_identifier: str = ""
-        ) -> "VerifiedSourcePayload":
+        ) -> VerifiedSourcePayload:
+            from datetime import UTC, datetime
+
             from private_legal_navigator.infrastructure.safe_source_client import (
                 VerifiedSourcePayload,
                 compute_sha256,
             )
-            from datetime import UTC, datetime
 
             result = _download_with_headers(url)
             sha256 = compute_sha256(result.content)

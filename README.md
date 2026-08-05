@@ -126,7 +126,7 @@ Konfiguration über Umgebungsvariablen:
 # Full test suite with coverage measurement
 .venv/Scripts/python.exe -m pytest --cov=src/private_legal_navigator
 
-# Note: Overall project coverage is 79 % (1021/1021 tests passing).
+# Note: Overall project coverage is 79 % (1091 collected, 1087 passing, 4 Frozen-RED).
 # --cov-fail-under=90 is NOT currently usable as a gate; it fails.
 # For M7-B and onward: new production modules require >=90 % coverage.
 # Overall coverage must not decrease from the 79 % baseline.

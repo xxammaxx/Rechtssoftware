@@ -7,15 +7,12 @@ Created: 2026-08-02 | Independent Verifier
 Test data: SYNTHETISCH – no real GII calls, no real legal data.
 """
 
-import hashlib
 import io
 import os
-import sqlite3
 import tempfile
-import uuid
 import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -100,7 +97,7 @@ def _make_adversarial_download_fn():
 
     download_with_headers (used by _process_item): always returns V1.
     download (used by sync_instrument): always returns V2.
-    
+
     This simulates a race condition where the server changes between
     the two download calls — proving byte identity violation.
     """
@@ -228,7 +225,7 @@ def test_red_r1_double_download_detected() -> None:
 
 def test_red_r1_byte_identity_violation() -> None:
     """RED: Prove bytes hashed in _process_item differ from snapshot.
-    
+
     Patches SourceClient to serve V1 on download_with_headers and
     V2 on download. After execution, compares the hash from the
     sync item (computed from V1 bytes) with the snapshot hash
@@ -326,7 +323,7 @@ def test_red_r1_byte_identity_violation() -> None:
 def test_red_r1_no_download_count_check() -> None:
     """RED: Prove that _process_item has no mechanism to ensure
     download_count == 1 per instrument.
-    
+
     Inspects the source code of SyncExecutionService._process_item
     and the SyncItem domain model for any download counting.
     """
@@ -364,7 +361,7 @@ def test_red_r1_no_download_count_check() -> None:
 def test_red_r1_snapshot_hash_not_cross_validated() -> None:
     """RED: Prove that snapshot hash is never compared against
     the hash computed from download_with_headers content.
-    
+
     After a non-dry-run apply, verify that there is no code path
     that validates snapshot.sha256 == item.new_sha256.
     """
@@ -376,13 +373,14 @@ def test_red_r1_snapshot_hash_not_cross_validated() -> None:
 
     # Check if there's any cross-validation between new_sha256 and snapshot hash
     # The new_sha256 is computed (line 690) and stored on item (line 691)
-    # But the snapshot hash comes from sync_gii_instrument (line 719) 
+    # But the snapshot hash comes from sync_gii_instrument (line 719)
     # via save_instrument_batch — these two values are NEVER compared.
-    
+
     # The RED condition: new_sha256 exists in source AND
     # there is NO comparison between new_sha256 and any snapshot property
     has_new_sha256 = "new_sha256" in source
-    
+    assert has_new_sha256  # RED: new_sha256 should exist
+
     # Check for explicit cross-validation:
     # "new_sha256 == snapshot" or "new_sha256 != snapshot" or
     # "computed_sha256 == parsed.snapshot" etc.
@@ -395,11 +393,11 @@ def test_red_r1_snapshot_hash_not_cross_validated() -> None:
             "computed_sha256 == parsed.snapshot",
         ]
     )
-    
+
     if not has_explicit_check:
         # RED: no cross-validation between download hash and snapshot hash
         return
-    
+
     pytest.fail(
         "RED-R1-5: Cross-validation between new_sha256 and snapshot.sha256 "
         "may already exist. Manual review required."

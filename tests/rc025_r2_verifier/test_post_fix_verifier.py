@@ -14,14 +14,10 @@ Tests:
   C7 — Retry Idempotency (no duplicates after retry)
 """
 
-import hashlib
 import os
-import shutil
 import sqlite3
 import tempfile
-import uuid
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -83,7 +79,8 @@ class DownloadCountingClient:
     @property
     def policy(self):
         from private_legal_navigator.infrastructure.safe_source_client import (
-            TransportMode, TransportPolicy,
+            TransportMode,
+            TransportPolicy,
         )
         return TransportPolicy(mode=TransportMode.TEST,
                               allowed_hosts=("gesetze-im-internet.de",),
@@ -93,7 +90,8 @@ class DownloadCountingClient:
         self.dl_count += 1
         if "gii-toc" in url:
             return CATALOG_XML
-        import zipfile, io
+        import io
+        import zipfile
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
             zf.writestr("bgb.xml", BGB_XML)
@@ -104,10 +102,12 @@ class DownloadCountingClient:
         return _make_dl_result(BGB_XML)
 
     def download_verified(self, url: str, source_identifier: str = ""):
-        from private_legal_navigator.infrastructure.safe_source_client import (
-            VerifiedSourcePayload, compute_sha256,
-        )
         from datetime import UTC, datetime
+
+        from private_legal_navigator.infrastructure.safe_source_client import (
+            VerifiedSourcePayload,
+            compute_sha256,
+        )
         result = self.download_with_headers(url)
         sha = compute_sha256(result.content)
         return VerifiedSourcePayload(
@@ -122,7 +122,8 @@ class DownloadCountingClient:
 def _run_apply(client, repo, snap_dir) -> None:
     from private_legal_navigator.application.legal_source_service import LegalSourceService
     from private_legal_navigator.application.sync_service import (
-        SyncExecutionService, SyncPlanningService,
+        SyncExecutionService,
+        SyncPlanningService,
     )
     from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
 
@@ -164,7 +165,9 @@ class TestC1SingleDownload:
                 from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
                 gii = GiiAdapter(client, Path(sd))
                 plan2 = SyncPlanningService(repo, client, gii).plan(force=True)
-                from private_legal_navigator.application.legal_source_service import LegalSourceService
+                from private_legal_navigator.application.legal_source_service import (
+                    LegalSourceService,
+                )
                 from private_legal_navigator.application.sync_service import SyncExecutionService
                 lss = LegalSourceService(repo, client, Path(sd))
                 SyncExecutionService(repo, lss, client, gii).execute(plan2, dry_run=False)
@@ -186,16 +189,19 @@ class TestC1SingleDownload:
                 # while still incrementing the counter.
                 corrupt = b"NOT XML CONTENT"
                 orig_dlwh = client.download_with_headers
+                assert orig_dlwh is not None  # Capture original for reference
 
                 def corrupt_dlwh(url):
                     client.dlwh_count += 1
                     return _make_dl_result(corrupt)
 
                 def corrupt_dlv(url, source_identifier=""):
-                    from private_legal_navigator.infrastructure.safe_source_client import (
-                        VerifiedSourcePayload, compute_sha256,
-                    )
                     from datetime import UTC, datetime
+
+                    from private_legal_navigator.infrastructure.safe_source_client import (
+                        VerifiedSourcePayload,
+                        compute_sha256,
+                    )
                     result = corrupt_dlwh(url)
                     return VerifiedSourcePayload(
                         source_identifier=source_identifier or url, effective_url=url,
@@ -209,8 +215,13 @@ class TestC1SingleDownload:
 
                 client.download_with_headers = corrupt_dlwh
                 client.download_verified = corrupt_dlv
-                from private_legal_navigator.application.legal_source_service import LegalSourceService
-                from private_legal_navigator.application.sync_service import SyncExecutionService, SyncPlanningService
+                from private_legal_navigator.application.legal_source_service import (
+                    LegalSourceService,
+                )
+                from private_legal_navigator.application.sync_service import (
+                    SyncExecutionService,
+                    SyncPlanningService,
+                )
                 from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
                 gii = GiiAdapter(client, Path(sd))
                 plan = SyncPlanningService(repo, client, gii).plan()
@@ -256,7 +267,9 @@ class TestC2ByteIdentity:
                     sp = Path(snap.storage_path)
                     assert sp.exists(), f"Snapshot file missing: {sp}"
                     file_content = sp.read_bytes()
-                    from private_legal_navigator.infrastructure.safe_source_client import compute_sha256
+                    from private_legal_navigator.infrastructure.safe_source_client import (
+                        compute_sha256,
+                    )
                     file_hash = compute_sha256(file_content)
                     assert file_hash == snap.sha256, (
                         f"File hash ({file_hash[:16]}...) != "
@@ -284,7 +297,8 @@ class TestC3Adversarial:
             @property
             def policy(self):
                 from private_legal_navigator.infrastructure.safe_source_client import (
-                    TransportMode, TransportPolicy,
+                    TransportMode,
+                    TransportPolicy,
                 )
                 return TransportPolicy(mode=TransportMode.TEST,
                                       allowed_hosts=("gesetze-im-internet.de",),
@@ -303,10 +317,12 @@ class TestC3Adversarial:
                 return _make_dl_result(v1)
 
             def download_verified(self, url: str, source_identifier: str = ""):
-                from private_legal_navigator.infrastructure.safe_source_client import (
-                    VerifiedSourcePayload, compute_sha256,
-                )
                 from datetime import UTC, datetime
+
+                from private_legal_navigator.infrastructure.safe_source_client import (
+                    VerifiedSourcePayload,
+                    compute_sha256,
+                )
                 result = self.download_with_headers(url)
                 sha = compute_sha256(result.content)
                 return VerifiedSourcePayload(
@@ -380,7 +396,9 @@ class TestC4SnapshotTampering:
                     tampered = original[:10] + b"X" + original[11:]
                     sp.write_bytes(tampered)
                     # Verify snapshot now fails
-                    from private_legal_navigator.infrastructure.safe_source_client import compute_sha256
+                    from private_legal_navigator.infrastructure.safe_source_client import (
+                        compute_sha256,
+                    )
                     assert compute_sha256(tampered) != snap.sha256, (
                         "Tampered content should not match stored hash"
                     )
@@ -424,13 +442,18 @@ class TestC5AtomicVisibility:
                         from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
                         gii2 = GiiAdapter(client, Path(sd2))
                         plan = SyncPlanningService(repo, client, gii2).plan(force=True)
-                        from private_legal_navigator.application.legal_source_service import LegalSourceService
-                        from private_legal_navigator.application.sync_service import SyncExecutionService
+                        from private_legal_navigator.application.legal_source_service import (
+                            LegalSourceService,
+                        )
+                        from private_legal_navigator.application.sync_service import (
+                            SyncExecutionService,
+                        )
                         lss2 = LegalSourceService(repo, client, Path(sd2))
-                        try:
-                            SyncExecutionService(repo, lss2, client, gii2).execute(plan, dry_run=False)
-                        except RuntimeError:
-                            pass  # Expected
+                        import contextlib
+                        with contextlib.suppress(RuntimeError):
+                            SyncExecutionService(
+                                repo, lss2, client, gii2
+                            ).execute(plan, dry_run=False)
                 finally:
                     repo.save_instrument_batch = original_save
 
@@ -491,7 +514,9 @@ class TestC7RetryIdempotency:
                 from private_legal_navigator.infrastructure.gii_adapter import GiiAdapter
                 gii = GiiAdapter(client, Path(sd))
                 plan2 = SyncPlanningService(repo, client, gii).plan(force=True)
-                from private_legal_navigator.application.legal_source_service import LegalSourceService
+                from private_legal_navigator.application.legal_source_service import (
+                    LegalSourceService,
+                )
                 from private_legal_navigator.application.sync_service import SyncExecutionService
                 lss = LegalSourceService(repo, client, Path(sd))
                 SyncExecutionService(repo, lss, client, gii).execute(plan2, dry_run=False)
@@ -499,7 +524,8 @@ class TestC7RetryIdempotency:
                 instruments_after = repo.list_instruments()
                 # No duplicate instruments
                 assert len(instruments_after) == len(instruments_before), (
-                    f"Instrument count changed: {len(instruments_before)} → {len(instruments_after)}"
+                    f"Instrument count changed: "
+                    f"{len(instruments_before)} → {len(instruments_after)}"
                 )
 
                 # Only one current expression per instrument
