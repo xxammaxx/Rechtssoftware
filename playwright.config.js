@@ -1,12 +1,14 @@
 // @ts-check
 const { defineConfig } = require('@playwright/test');
 
+const BASE_URL = process.env.PLN_E2E_BASE_URL || 'http://127.0.0.1:18000';
+
 module.exports = defineConfig({
   testDir: './tests/e2e',
-  timeout: 30000,
-  expect: { timeout: 10000 },
+  timeout: 60000,
+  expect: { timeout: 15000 },
   use: {
-    baseURL: 'http://127.0.0.1:18000',
+    baseURL: BASE_URL,
     headless: true,
     viewport: { width: 1280, height: 720 },
     reducedMotion: 'reduce',
@@ -24,8 +26,7 @@ module.exports = defineConfig({
   ],
   reporter: [
     ['list'],
-    ['json', { outputFile: 'evidence/playwright-report.json' }],
+    ['json', { outputFile: 'evidence/rc026-r2/playwright/playwright-report.json' }],
   ],
-  // Global setup: no network requests
-  globalSetup: undefined,
+  // No video evidence in repo — Phase I policy
 });

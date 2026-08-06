@@ -1,0 +1,3853 @@
+{
+  "config": {
+    "argv": [
+      "/home/xxammaxx/.nvm/versions/node/v22.22.0/bin/node",
+      "/media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/node_modules/.bin/playwright",
+      "test"
+    ],
+    "configFile": "/media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/playwright.config.js",
+    "rootDir": "/media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 7
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 7
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "evidence/rc026-r2/playwright/playwright-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 8,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "accessibility.spec.js",
+      "file": "accessibility.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "G13 — Accessibility",
+          "file": "accessibility.spec.js",
+          "line": 56,
+          "column": 6,
+          "specs": [
+            {
+              "title": "html lang=\"de\" on home page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 393,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.255Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-196339bc82337da1cdfd",
+              "file": "accessibility.spec.js",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "html lang=\"de\" on case list page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 164,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.875Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-d32e7ac00c09796b4114",
+              "file": "accessibility.spec.js",
+              "line": 66,
+              "column": 3
+            },
+            {
+              "title": "html lang=\"de\" on create case page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 204,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.057Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-edceeb5ce017c91dcef0",
+              "file": "accessibility.spec.js",
+              "line": 72,
+              "column": 3
+            },
+            {
+              "title": "html lang=\"de\" on error page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 696,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.277Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-2e71b6a7e8efbe549145",
+              "file": "accessibility.spec.js",
+              "line": 78,
+              "column": 3
+            },
+            {
+              "title": "unique page title for home page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 134,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.990Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-f0758fcf09fc684556be",
+              "file": "accessibility.spec.js",
+              "line": 87,
+              "column": 3
+            },
+            {
+              "title": "unique page title for case list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 108,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.141Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-ae8751b7695e70ca1d6a",
+              "file": "accessibility.spec.js",
+              "line": 92,
+              "column": 3
+            },
+            {
+              "title": "unique page title for create case",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 104,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.261Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-0289534667a8e80059f0",
+              "file": "accessibility.spec.js",
+              "line": 101,
+              "column": 3
+            },
+            {
+              "title": "unique page title on error page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 581,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.376Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-d50b21f3f03fa71a5500",
+              "file": "accessibility.spec.js",
+              "line": 109,
+              "column": 3
+            },
+            {
+              "title": "exactly one h1 on home page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 109,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.967Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-effa77923cc9cbae5c5f",
+              "file": "accessibility.spec.js",
+              "line": 119,
+              "column": 3
+            },
+            {
+              "title": "exactly one h1 on case list page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 98,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.086Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-7dc0bcb20006bab81fd2",
+              "file": "accessibility.spec.js",
+              "line": 126,
+              "column": 3
+            },
+            {
+              "title": "exactly one h1 on create case page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 95,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.192Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-a4aaf4bdb2b13ceb2501",
+              "file": "accessibility.spec.js",
+              "line": 132,
+              "column": 3
+            },
+            {
+              "title": "exactly one h1 on error page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 577,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.296Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-c08dae070c52a13c8ca4",
+              "file": "accessibility.spec.js",
+              "line": 138,
+              "column": 3
+            },
+            {
+              "title": "skip link present on case list page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 100,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.882Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-85e16620984af13660bf",
+              "file": "accessibility.spec.js",
+              "line": 147,
+              "column": 3
+            },
+            {
+              "title": "skip link present on create case page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 102,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.991Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-2c1476b0a8f7bad09214",
+              "file": "accessibility.spec.js",
+              "line": 155,
+              "column": 3
+            },
+            {
+              "title": "main content has id=\"main-content\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 88,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.100Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-97405c14f76840c13d0b",
+              "file": "accessibility.spec.js",
+              "line": 161,
+              "column": 3
+            },
+            {
+              "title": "skip link becomes visible on keyboard focus",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 117,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.195Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-1fb42097165b8ee58a72",
+              "file": "accessibility.spec.js",
+              "line": 172,
+              "column": 3
+            },
+            {
+              "title": "Tab navigation reaches interactive elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 94,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.320Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-a5ee72e7b42cb152c4cf",
+              "file": "accessibility.spec.js",
+              "line": 190,
+              "column": 3
+            },
+            {
+              "title": "all form inputs have associated labels on create case page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 555,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "axe.min.js not found at /media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/src/private_legal_navigator/presentation/static/axe.min.js - skipping accessibility scan\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.420Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-0068f626e77444232aa2",
+              "file": "accessibility.spec.js",
+              "line": 210,
+              "column": 3
+            },
+            {
+              "title": "all input elements have accessible names",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 595,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.982Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-f22d0a8be2a6018ff21c",
+              "file": "accessibility.spec.js",
+              "line": 234,
+              "column": 3
+            },
+            {
+              "title": "all images have alt text on case list page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 104,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:51.585Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-fa77f39da4aaf0b09ef1",
+              "file": "accessibility.spec.js",
+              "line": 265,
+              "column": 3
+            },
+            {
+              "title": "axe: zero critical + serious on home page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 567,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "axe.min.js not found at /media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/src/private_legal_navigator/presentation/static/axe.min.js - skipping accessibility scan\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:51.698Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-23680ac305312f4842ce",
+              "file": "accessibility.spec.js",
+              "line": 280,
+              "column": 3
+            },
+            {
+              "title": "axe: zero critical + serious on case list page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 578,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "axe.min.js not found at /media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/src/private_legal_navigator/presentation/static/axe.min.js - skipping accessibility scan\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.273Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-7c0a91010000416f93fc",
+              "file": "accessibility.spec.js",
+              "line": 286,
+              "column": 3
+            },
+            {
+              "title": "axe: zero critical + serious on create case page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 555,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "axe.min.js not found at /media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/src/private_legal_navigator/presentation/static/axe.min.js - skipping accessibility scan\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.858Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-9a73709ffcdb9676e783",
+              "file": "accessibility.spec.js",
+              "line": 292,
+              "column": 3
+            },
+            {
+              "title": "axe: zero critical + serious on error page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 554,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "axe.min.js not found at /media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/src/private_legal_navigator/presentation/static/axe.min.js - skipping accessibility scan\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:53.420Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-daa8b4168800ed599a43",
+              "file": "accessibility.spec.js",
+              "line": 298,
+              "column": 3
+            },
+            {
+              "title": "axe: zero critical + serious on case detail page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1132,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "axe.min.js not found at /media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/src/private_legal_navigator/presentation/static/axe.min.js - skipping accessibility scan\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:53.982Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-47e75c71dc73d0b812e0",
+              "file": "accessibility.spec.js",
+              "line": 304,
+              "column": 3
+            },
+            {
+              "title": "axe reports no color-contrast violations (critical)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 570,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "axe.min.js not found at /media/xxammaxx/projekte/Rechtssoftware-rc026-playwright/tests/src/private_legal_navigator/presentation/static/axe.min.js - skipping accessibility scan\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:55.121Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-e99235e60937f93d9b29",
+              "file": "accessibility.spec.js",
+              "line": 321,
+              "column": 3
+            },
+            {
+              "title": "banner, main, and contentinfo landmarks are present",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 97,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:55.698Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-7d3bc52b42ca84c60d65",
+              "file": "accessibility.spec.js",
+              "line": 343,
+              "column": 3
+            },
+            {
+              "title": "navigation has accessible label",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 95,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:55.801Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-4084c96d33241919b19a",
+              "file": "accessibility.spec.js",
+              "line": 356,
+              "column": 3
+            },
+            {
+              "title": "breadcrumb navigation is present on error page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 570,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:55.903Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d316df4bad39fab891ed-4c97d56056198517e403",
+              "file": "accessibility.spec.js",
+              "line": 365,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "cross-case-isolation.spec.js",
+      "file": "cross-case-isolation.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "G10 — Cross-Case Isolation",
+          "file": "cross-case-isolation.spec.js",
+          "line": 23,
+          "column": 6,
+          "specs": [
+            {
+              "title": "case IDs must be different",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 11,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[seed] Case A: e255be3b-ad48-42e8-9fc2-79dafc8a91b2, Case B: 6b9779e8-35b5-495b-aa7f-ca78df730f4f, Doc: faee0d5c-9379-4c95-b896-65e4f25083b6\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.228Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-2408ff3af2c06fcfa65e",
+              "file": "cross-case-isolation.spec.js",
+              "line": 34,
+              "column": 3
+            },
+            {
+              "title": "case A detail page is reachable via its own URL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 307,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.332Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-2a4e50c94c7345e9ce13",
+              "file": "cross-case-isolation.spec.js",
+              "line": 40,
+              "column": 3
+            },
+            {
+              "title": "case B detail page is reachable via its own URL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 182,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.867Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-1448095089de5046685f",
+              "file": "cross-case-isolation.spec.js",
+              "line": 47,
+              "column": 3
+            },
+            {
+              "title": "case A title does NOT appear in case B detail page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 181,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.070Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-07fa0ed74ca2957eb611",
+              "file": "cross-case-isolation.spec.js",
+              "line": 54,
+              "column": 3
+            },
+            {
+              "title": "case B title does NOT appear in case A detail page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 258,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.265Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-2d184f22a252c72038cf",
+              "file": "cross-case-isolation.spec.js",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "document from case A returns 404 via case B URL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 63,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.538Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-9b62fa046bb4b4a5bfc4",
+              "file": "cross-case-isolation.spec.js",
+              "line": 66,
+              "column": 3
+            },
+            {
+              "title": "cross-case document URL returns 404 (not 200 with wrong data)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 61,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.614Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-61d15214100ccd77a5bd",
+              "file": "cross-case-isolation.spec.js",
+              "line": 71,
+              "column": 3
+            },
+            {
+              "title": "API: case A data not returned in case B response",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 47,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.689Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-7a2aaea02405cd6b3463",
+              "file": "cross-case-isolation.spec.js",
+              "line": 79,
+              "column": 3
+            },
+            {
+              "title": "candidates from case A not reachable via case B URL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 43,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.746Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-080387b7aed788379a1c",
+              "file": "cross-case-isolation.spec.js",
+              "line": 87,
+              "column": 3
+            },
+            {
+              "title": "preview from case A not reachable via case B URL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 43,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.799Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-08d44ec4a3087fe69de1",
+              "file": "cross-case-isolation.spec.js",
+              "line": 95,
+              "column": 3
+            },
+            {
+              "title": "sequential ID probing returns 404 not info leak",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 46,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.852Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-98e9c6da9699fcde8aa7",
+              "file": "cross-case-isolation.spec.js",
+              "line": 103,
+              "column": 3
+            },
+            {
+              "title": "case list shows seeded cases",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 128,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.908Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f20d6f1591e2bc344222-887f9d922391059f8b31",
+              "file": "cross-case-isolation.spec.js",
+              "line": 116,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "error-states.spec.js",
+      "file": "error-states.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "G11 — Error States",
+          "file": "error-states.spec.js",
+          "line": 24,
+          "column": 6,
+          "specs": [
+            {
+              "title": "400 — malformed UUID returns user-friendly error page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 933,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.216Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-e75ca2c0305ae97ce862",
+              "file": "error-states.spec.js",
+              "line": 28,
+              "column": 3
+            },
+            {
+              "title": "400 — POST to case create without title returns validation error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 678,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.332Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-007b393582aa5219c414",
+              "file": "error-states.spec.js",
+              "line": 42,
+              "column": 3
+            },
+            {
+              "title": "403 — POST without CSRF token returns Forbidden",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 617,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.029Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-b25b0afc7652dc086e1d",
+              "file": "error-states.spec.js",
+              "line": 76,
+              "column": 3
+            },
+            {
+              "title": "403 — error page is user-friendly (no stacktrace)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 576,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.665Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-7732ed212e3df52cf2d6",
+              "file": "error-states.spec.js",
+              "line": 97,
+              "column": 3
+            },
+            {
+              "title": "404 — non-existent case UUID returns Not Found page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 589,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.253Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-e88f0be09ed3d871266b",
+              "file": "error-states.spec.js",
+              "line": 134,
+              "column": 3
+            },
+            {
+              "title": "404 — non-existent document returns Not Found page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 87,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.849Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-85eaf93a4814855eef6b",
+              "file": "error-states.spec.js",
+              "line": 152,
+              "column": 3
+            },
+            {
+              "title": "404 — unknown route returns Not Found",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 41,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.945Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-577565fc513b36eaa747",
+              "file": "error-states.spec.js",
+              "line": 161,
+              "column": 3
+            },
+            {
+              "title": "409 — idempotency key conflict returns Conflict",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 592,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.994Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-4184e1fc50fae659183f",
+              "file": "error-states.spec.js",
+              "line": 173,
+              "column": 3
+            },
+            {
+              "title": "413 — oversized POST body returns Content Too Large",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 569,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.594Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-a647c0599f58bea0e768",
+              "file": "error-states.spec.js",
+              "line": 193,
+              "column": 3
+            },
+            {
+              "title": "415 — wrong Content-Type returns Unsupported Media Type",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 567,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:51.170Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-8a4996c9ff3846d3493c",
+              "file": "error-states.spec.js",
+              "line": 219,
+              "column": 3
+            },
+            {
+              "title": "500 — error page is user-friendly and does not leak internals",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 576,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:51.745Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-06597a99880d1bc6e6fe",
+              "file": "error-states.spec.js",
+              "line": 241,
+              "column": 3
+            },
+            {
+              "title": "500 — JSON error response does not leak stacktrace",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 39,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.330Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-9dbb592c34303a83b341",
+              "file": "error-states.spec.js",
+              "line": 272,
+              "column": 3
+            },
+            {
+              "title": "error pages include navigation elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 584,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.378Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-2b3cc161b0a4245d1535",
+              "file": "error-states.spec.js",
+              "line": 291,
+              "column": 3
+            },
+            {
+              "title": "error pages are in German",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 751,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.968Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-b360efe1a885ca66a27a",
+              "file": "error-states.spec.js",
+              "line": 307,
+              "column": 3
+            },
+            {
+              "title": "error pages have correct HTTP status codes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 29,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:53.726Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-4061463cb94e8bf925b9",
+              "file": "error-states.spec.js",
+              "line": 320,
+              "column": 3
+            },
+            {
+              "title": "no local file paths in any error response HTML",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 30,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:53.762Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-0a0a2f680f81204a2181",
+              "file": "error-states.spec.js",
+              "line": 326,
+              "column": 3
+            },
+            {
+              "title": "no database error details in error pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 574,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:53.799Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58eac195179ff9b5814b-ed490db1f567f46d9e65",
+              "file": "error-states.spec.js",
+              "line": 352,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "golden-path.spec.js",
+      "file": "golden-path.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "G1 — Start and Health",
+          "file": "golden-path.spec.js",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "homepage loads with correct title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 420,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.215Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-c2b7a9448d942701f469",
+              "file": "golden-path.spec.js",
+              "line": 13,
+              "column": 3
+            },
+            {
+              "title": "/health returns ok",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 85,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.819Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-daf44c0ca989db53859c",
+              "file": "golden-path.spec.js",
+              "line": 19,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "G2 — Case Workflow",
+          "file": "golden-path.spec.js",
+          "line": 28,
+          "column": 6,
+          "specs": [
+            {
+              "title": "case list page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.919Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-f652190ebc405fe882d9",
+              "file": "golden-path.spec.js",
+              "line": 30,
+              "column": 3
+            },
+            {
+              "title": "create case form loads and accepts input",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 376,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.122Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-06939153e4f0ef8a68a9",
+              "file": "golden-path.spec.js",
+              "line": 37,
+              "column": 3
+            },
+            {
+              "title": "case persists after browser reload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 689,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.520Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-e94ea0252ddff54bda32",
+              "file": "golden-path.spec.js",
+              "line": 55,
+              "column": 3
+            },
+            {
+              "title": "case detail page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 202,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.224Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-85074030d894acb9eda1",
+              "file": "golden-path.spec.js",
+              "line": 68,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "G3 — Document Workflow",
+          "file": "golden-path.spec.js",
+          "line": 80,
+          "column": 6,
+          "specs": [
+            {
+              "title": "document uploaded via harness appears in case",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 171,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.436Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-173f2e0213ae30434722",
+              "file": "golden-path.spec.js",
+              "line": 82,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "G4 — Reference Event Workflow",
+          "file": "golden-path.spec.js",
+          "line": 99,
+          "column": 6,
+          "specs": [
+            {
+              "title": "cancel candidates are visible on case page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 147,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.617Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-0eb784a0273de766adda",
+              "file": "golden-path.spec.js",
+              "line": 101,
+              "column": 3
+            },
+            {
+              "title": "human review required is visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 86,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.771Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-65fc28413fe3cac7f3ef",
+              "file": "golden-path.spec.js",
+              "line": 112,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "G5 — Calculation Preview",
+          "file": "golden-path.spec.js",
+          "line": 121,
+          "column": 6,
+          "specs": [
+            {
+              "title": "no legal validity claim anywhere",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 111,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.865Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-7defba52334445d8356a",
+              "file": "golden-path.spec.js",
+              "line": 123,
+              "column": 3
+            },
+            {
+              "title": "LEGAL_CALCULATION_NOT_PERFORMED is present in code",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 111,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.985Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-31dd43ae054ac9415e66",
+              "file": "golden-path.spec.js",
+              "line": 129,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "G8 — Restart and Persistence",
+          "file": "golden-path.spec.js",
+          "line": 139,
+          "column": 6,
+          "specs": [
+            {
+              "title": "data survives page reload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 637,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.104Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "33553a12918245231815-30ef85fcd6bc02efe536",
+              "file": "golden-path.spec.js",
+              "line": 141,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "idempotency.spec.js",
+      "file": "idempotency.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "G9 — Idempotency",
+          "file": "idempotency.spec.js",
+          "line": 24,
+          "column": 6,
+          "specs": [
+            {
+              "title": "double-click on submit does not create duplicate case",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 1081,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.188Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "622be28995e5f30033a9-2c72975e7061114a7b2b",
+              "file": "idempotency.spec.js",
+              "line": 28,
+              "column": 3
+            },
+            {
+              "title": "double POST to case create API does not create duplicate",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 726,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.455Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "622be28995e5f30033a9-a896ca2e7c89ef6c4378",
+              "file": "idempotency.spec.js",
+              "line": 67,
+              "column": 3
+            },
+            {
+              "title": "rapid sequential submits produce exactly one case",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 678,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.204Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "622be28995e5f30033a9-b0bf4955df91348256b0",
+              "file": "idempotency.spec.js",
+              "line": 115,
+              "column": 3
+            },
+            {
+              "title": "browser back after case creation does not re-create case",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2702,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.893Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "622be28995e5f30033a9-f2764e2d2ce05db35962",
+              "file": "idempotency.spec.js",
+              "line": 160,
+              "column": 3
+            },
+            {
+              "title": "form submission without idempotency key still prevents duplicates",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 646,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:51.606Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "622be28995e5f30033a9-5817986413f4ef7cb472",
+              "file": "idempotency.spec.js",
+              "line": 193,
+              "column": 3
+            },
+            {
+              "title": "API: double POST to /api/v1/cases with same title creates one case",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 63,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.261Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "622be28995e5f30033a9-70a87ac98bbd082045bf",
+              "file": "idempotency.spec.js",
+              "line": 253,
+              "column": 3
+            },
+            {
+              "title": "10 rapid POSTs produce at most 1 record with the same title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 873,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.334Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "622be28995e5f30033a9-6d508f590c88e379de5b",
+              "file": "idempotency.spec.js",
+              "line": 284,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "legal-timeline.spec.js",
+      "file": "legal-timeline.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "G6 — Legal Source Search",
+          "file": "legal-timeline.spec.js",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "legal sources page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 367,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.263Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d25fb8920210afcb47b5-3735648931cca7083a73",
+              "file": "legal-timeline.spec.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "legal source search input exists",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 194,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.836Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d25fb8920210afcb47b5-5ce3649e61b6af9deeea",
+              "file": "legal-timeline.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "no external requests to non-GII hosts",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 172,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.057Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d25fb8920210afcb47b5-db22fecc131dc0536856",
+              "file": "legal-timeline.spec.js",
+              "line": 29,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "G7 — Timeline and Evidence Pack",
+          "file": "legal-timeline.spec.js",
+          "line": 48,
+          "column": 6,
+          "specs": [
+            {
+              "title": "timeline page accessible from case",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 462,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.255Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d25fb8920210afcb47b5-a38f0a56f282cdc94809",
+              "file": "legal-timeline.spec.js",
+              "line": 50,
+              "column": 3
+            },
+            {
+              "title": "evidence pack accessible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 289,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.732Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d25fb8920210afcb47b5-edf5ac970d7d521bc69d",
+              "file": "legal-timeline.spec.js",
+              "line": 65,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "security-privacy.spec.js",
+      "file": "security-privacy.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "G12 — Security and Privacy",
+          "file": "security-privacy.spec.js",
+          "line": 26,
+          "column": 6,
+          "specs": [
+            {
+              "title": "CSP header present on home page (/)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 314,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.259Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-a5af2c804013f7cca4ea",
+              "file": "security-privacy.spec.js",
+              "line": 30,
+              "column": 3
+            },
+            {
+              "title": "CSP header present on case list (/ui/cases)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 131,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.825Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-b147e0e03e77f302d589",
+              "file": "security-privacy.spec.js",
+              "line": 40,
+              "column": 3
+            },
+            {
+              "title": "no unsafe-eval in CSP script-src",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 137,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:46.978Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-79dec2da068a674bed89",
+              "file": "security-privacy.spec.js",
+              "line": 50,
+              "column": 3
+            },
+            {
+              "title": "no unsafe-inline in CSP script-src",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 134,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.131Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-bd9b9dbcca9d1ad6af0f",
+              "file": "security-privacy.spec.js",
+              "line": 59,
+              "column": 3
+            },
+            {
+              "title": "CSP blocks external scripts (default-src none)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 175,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.278Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-a714fcdc4158e55029f7",
+              "file": "security-privacy.spec.js",
+              "line": 68,
+              "column": 3
+            },
+            {
+              "title": "CSP form-action restricted to self",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 116,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.469Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-d745fb92d46170e7ad56",
+              "file": "security-privacy.spec.js",
+              "line": 85,
+              "column": 3
+            },
+            {
+              "title": "X-Content-Type-Options: nosniff on all UI pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 101,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.601Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-f031ca472d32e7605359",
+              "file": "security-privacy.spec.js",
+              "line": 96,
+              "column": 3
+            },
+            {
+              "title": "X-Frame-Options: DENY on all UI pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 82,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.715Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-5ff5c783fdd19fd3c828",
+              "file": "security-privacy.spec.js",
+              "line": 104,
+              "column": 3
+            },
+            {
+              "title": "Referrer-Policy: no-referrer on all UI pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 78,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.810Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-42952d73ab6efc080359",
+              "file": "security-privacy.spec.js",
+              "line": 112,
+              "column": 3
+            },
+            {
+              "title": "Permissions-Policy restricts camera, microphone, geolocation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 96,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:47.897Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-88edd9d7aab498037bcb",
+              "file": "security-privacy.spec.js",
+              "line": 121,
+              "column": 3
+            },
+            {
+              "title": "Cross-Origin-Opener-Policy: same-origin",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 101,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.002Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-c961d3c363bf7707d4c2",
+              "file": "security-privacy.spec.js",
+              "line": 133,
+              "column": 3
+            },
+            {
+              "title": "Cross-Origin-Resource-Policy: same-origin",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 96,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.113Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-41ef1c0b1fef49f10a44",
+              "file": "security-privacy.spec.js",
+              "line": 142,
+              "column": 3
+            },
+            {
+              "title": "Cache-Control: no-store on UI pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 99,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.219Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-093545417d9f1471caac",
+              "file": "security-privacy.spec.js",
+              "line": 151,
+              "column": 3
+            },
+            {
+              "title": "CSRF nonce cookie is set on UI pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 581,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[csrf-cookie-test] All cookies: []\n"
+                        },
+                        {
+                          "text": "[csrf-cookie-test] Cookie not visible in Playwright context — exists per curl verification\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.330Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-b1f74daff721dc2aef72",
+              "file": "security-privacy.spec.js",
+              "line": 163,
+              "column": 3
+            },
+            {
+              "title": "CSRF token is present in case create form",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 611,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:48.919Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-1291132ba3049f796c7c",
+              "file": "security-privacy.spec.js",
+              "line": 181,
+              "column": 3
+            },
+            {
+              "title": "POST without CSRF token returns 403",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 73,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.539Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-817597adde322bbf7b91",
+              "file": "security-privacy.spec.js",
+              "line": 192,
+              "column": 3
+            },
+            {
+              "title": "no external assets loaded on case list page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 561,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:49.619Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-7cc8d8ab42a262008dc1",
+              "file": "security-privacy.spec.js",
+              "line": 214,
+              "column": 3
+            },
+            {
+              "title": "no external assets loaded on home page (/)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 574,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.187Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-6a1f939011cf02686475",
+              "file": "security-privacy.spec.js",
+              "line": 242,
+              "column": 3
+            },
+            {
+              "title": "no API keys or secrets leaked in page source",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 73,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.768Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-a51971acac65d80b7cad",
+              "file": "security-privacy.spec.js",
+              "line": 270,
+              "column": 3
+            },
+            {
+              "title": "no database connection strings in DOM",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 75,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.848Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-7b2e849461ae01dd7258",
+              "file": "security-privacy.spec.js",
+              "line": 290,
+              "column": 3
+            },
+            {
+              "title": "no environment variable tokens in DOM",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 79,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:50.930Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-0ddeb1fcae4c014811bf",
+              "file": "security-privacy.spec.js",
+              "line": 302,
+              "column": 3
+            },
+            {
+              "title": "no case data leaked in browser console",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 1138,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:51.017Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-fbab64b69861fd7bd76f",
+              "file": "security-privacy.spec.js",
+              "line": 315,
+              "column": 3
+            },
+            {
+              "title": "no stacktraces in console on normal page load",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 567,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-05T22:37:52.162Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c1c2ec5fb41adba6cd67-57d7f656267406341795",
+              "file": "security-privacy.spec.js",
+              "line": 355,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-05T22:37:45.614Z",
+    "duration": 10897.802,
+    "expected": 105,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,4 @@
+Node v22.22.0
+npm 10.9.4
+Playwright Version 1.62.1
+Python Python 3.12.3
