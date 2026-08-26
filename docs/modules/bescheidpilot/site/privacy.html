@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Local-only Zielarchitektur, Datenschutzgrenzen und aktueller Nachweisstatus von BescheidPilot.">
+  <title>Local-only & Datenschutz — BescheidPilot</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body data-page="privacy">
+  <a class="skip-link" href="#main">Zum Inhalt</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html"><span class="brand-mark">BP</span>BescheidPilot</a>
+      <nav class="site-nav" aria-label="Hauptnavigation">
+        <a data-nav="home" href="index.html">Start</a><a data-nav="privacy" href="privacy.html">Local-only</a><a data-nav="roadmap" href="roadmap.html">Roadmap</a><a data-nav="evidence" href="evidence.html">Evidence</a><a data-nav="demo" href="demo.html">Demo</a><a data-nav="investor" href="investor.html">Investoren</a><a data-nav="status" href="status.html">Status</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Datenschutz als Architekturgrenze</p>
+        <h1>Der Bescheid verlässt das Gerät nicht.</h1>
+        <p class="lead">BescheidPilot ist auf eine Local-only-Architektur ausgelegt. Der aktuelle Nachweisstatus wird auf der Evidence-Seite dokumentiert.</p>
+        <div class="kicker-row"><span class="status-pill yellow">Status: Yellow</span><span class="status-pill">Zielarchitektur dokumentiert</span></div>
+      </div>
+    </section>
+
+    <section class="section compact">
+      <div class="container notice">
+        <strong>Aktuelle Grenze:</strong> Es gibt noch keine implementierte Produktpipeline. Daher sind Zero-upload, Offline-Betrieb und Schutz vor sensiblen Logs noch nicht durch ausführbare Tests bewiesen.
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <div><p class="eyebrow">Zielvertrag</p><h2>Was die Architektur ausschließen muss.</h2></div>
+          <p>Jede neue Komponente muss diese Grenzen erfüllen, bevor sie Teil des Golden Path werden darf.</p>
+        </div>
+        <div class="grid-3">
+          <article class="card"><h3>Keine Uploads</h3><p>Bescheide, Bilder, OCR-Texte, Fristen, Zusammenfassungen und Entwürfe sollen im lokalen Prozess bleiben.</p></article>
+          <article class="card"><h3>Keine Cloud-KI</h3><p>Keine Remote-Modelle, Provider-SDKs oder versteckten Fallbacks im Dokumentpfad.</p></article>
+          <article class="card"><h3>Keine Cloud-OCR</h3><p>Bildverarbeitung und Texterkennung sollen auf dem Gerät ausgeführt werden.</p></article>
+          <article class="card"><h3>Keine sensiblen Logs</h3><p>Dokumentinhalt und abgeleitete Informationen dürfen nicht in Telemetrie oder Crashdaten erscheinen.</p></article>
+          <article class="card"><h3>Expliziter Export</h3><p>Eine Ausgabe soll erst nach Nutzerprüfung an ein lokal gewähltes Ziel geschrieben werden.</p></article>
+          <article class="card"><h3>Human Review</h3><p>BescheidPilot trifft keine automatische Rechtsentscheidung und sendet nichts an Behörden.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container grid-2">
+        <article class="card accent">
+          <h2>Geplante Datenlinie</h2>
+          <ol>
+            <li>Lokale Eingabe</li>
+            <li>Lokale OCR oder Textverarbeitung</li>
+            <li>Lokale Extraktion mit Fundstellen</li>
+            <li>Lokaler Entwurf</li>
+            <li>Menschliche Prüfung</li>
+            <li>Expliziter lokaler Export</li>
+          </ol>
+        </article>
+        <article class="card">
+          <h2>Offene Nachweise</h2>
+          <ul class="plain-list">
+            <li>Network-Deny-Test</li>
+            <li>Offline Golden Path</li>
+            <li>Provider- und Cloud-OCR-Dependency-Gate</li>
+            <li>Test gegen sensible Logausgabe</li>
+            <li>Storage- und Export-Audit</li>
+            <li>Geräte- und Bedrohungsmodell</li>
+          </ul>
+          <a class="button secondary" href="evidence.html">Evidence im Detail</a>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div><strong>BescheidPilot</strong><p class="fine-print">Local-only ist ein prüfbarer Produktvertrag, kein unbelegtes Gütesiegel.</p><p class="fine-print">© <span data-year>2026</span></p></div>
+      <div class="footer-links"><a href="evidence.html">Evidence</a><a href="roadmap.html">Roadmap</a><a href="status.html">Status</a></div>
+    </div>
+  </footer>
+</body>
+</html>

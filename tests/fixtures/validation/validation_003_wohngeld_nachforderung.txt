@@ -1,0 +1,22 @@
+VALIDIERUNGSFIXTURE — KEIN ORIGINALDOKUMENT — KEINE ECHTEN PERSONENDATEN
+Diese Datei ist synthetisch rekonstruiert und enthält keine echten personenbezogenen Daten.
+
+Wohngeldstelle Neustadt
+Rathausplatz 1
+[ORT]
+
+Datum: [DATUM_SYNTHETISCH]
+Aktenzeichen: [AKTENZEICHEN]
+
+Nachforderung fehlender Unterlagen
+
+Sehr geehrte Damen und Herren,
+
+Ihr Wohngeldantrag kann noch nicht bewilligt werden. Folgende
+Unterlagen fehlen:
+
+- Einkommensnachweis der letzten 6 Monate
+- Mietbescheinigung des Vermieters
+
+Bitte reichen Sie die fehlenden Unterlagen spätestens zum
+01.10.2026 ein. Bei Versäumnis muss der Antrag abgelehnt werden.

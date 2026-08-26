@@ -1,0 +1,31 @@
+SYNTHETISCHE TESTDATEI — KEIN ECHTER BESCHEID
+
+Sozialamt Musterstadt
+Sozialstraße 10
+99999 Musterstadt
+
+Datum: 10.06.2026
+Aktenzeichen: SA-MST-5566/2026
+
+Bescheid über fehlende Unterlagen
+
+Sehr geehrte Damen und Herren,
+
+Ihr Antrag auf Leistungen kann derzeit nicht abschließend bearbeitet
+werden, da folgende Unterlagen noch fehlen:
+
+- Einkommensnachweis der letzten 6 Monate
+- Mietbescheinigung des Vermieters
+- Krankenversicherungsnachweis
+- Geburtsurkunde
+- Personalausweis (Kopie)
+
+Bitte reichen Sie die fehlenden Unterlagen spätestens zum
+01.08.2026 nach. Bei Nichtvorlage kann Ihr Antrag abgelehnt werden.
+
+Mit freundlichen Grüßen
+Sozialamt Musterstadt
+
+---
+Dieser Text ist ein synthetisches Fixture für Testzwecke.
+Er enthält keine echten personenbezogenen Daten.

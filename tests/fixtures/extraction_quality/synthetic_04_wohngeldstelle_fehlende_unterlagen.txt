@@ -1,0 +1,21 @@
+SYNTHETISCHE TESTDATEI — KEIN ECHTER BESCHEID
+Diese Datei enthält frei erfundene Beispieldaten und keine echten personenbezogenen Daten.
+
+Wohngeldstelle Beispielstadt
+Rathausplatz 1
+99999 Beispielstadt
+
+Datum: 15.06.2026
+Aktenzeichen: WG-BSP-4444/2026
+
+Fehlende Unterlagen für Wohngeldantrag
+
+Sehr geehrte Damen und Herren,
+
+Ihr Wohngeldantrag kann derzeit nicht bewilligt werden. Bitte reichen Sie folgende Unterlagen ein:
+
+- Einkommensnachweis der letzten 12 Monate
+- Mietvertrag
+- letzter Bewilligungsbescheid über Wohngeld
+
+Frist bis 15.08.2026. Bei Versäumnis muss der Antrag abgelehnt werden.

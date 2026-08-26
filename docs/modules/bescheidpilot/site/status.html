@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Aktueller Build-, Deploy-, Local-only-, MVP- und Blockerstatus von BescheidPilot.">
+  <title>Projektstatus — BescheidPilot</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body data-page="status">
+  <a class="skip-link" href="#main">Zum Inhalt</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html"><span class="brand-mark">BP</span>BescheidPilot</a>
+      <nav class="site-nav" aria-label="Hauptnavigation">
+        <a data-nav="home" href="index.html">Start</a><a data-nav="privacy" href="privacy.html">Local-only</a><a data-nav="roadmap" href="roadmap.html">Roadmap</a><a data-nav="evidence" href="evidence.html">Evidence</a><a data-nav="demo" href="demo.html">Demo</a><a data-nav="investor" href="investor.html">Investoren</a><a data-nav="status" href="status.html">Status</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Stand 2026-06-07</p>
+        <h1>GREEN_PARTIAL — Web-UI-Demo gehaertet. Outreach Welle 1 manuell versendet.</h1>
+        <p class="lead">284 Tests bestehen (252 Basis + 32 Web-UI-Hardening). 5 externe anonymisierte Dokumenttests: 3 PASS, 2 LIMIT, 0 Critical Errors. Demo-Skript, Fact Sheet, Feedbackformular, Scoring-Matrix, Interview-Template, Target List (5 konkrete recherchierte Organisationen), Outreach-Message (3 Varianten), Outreach Tracking, Outreach Send Plan und Meeting Invite Text liegen vor. Web-UI-Dry-Run und Demo-Hardening erfolgreich. Outreach Welle 1 (T-002 BAG Schuldnerberatung, T-004 Caritas, T-003 AWO) wurde manuell versendet. Es liegt noch kein dokumentiertes Feedbackgespräch vor. Keine Originaldokumente oder personenbezogenen Daten committed. BescheidPilot bleibt ein lokaler MVP-Demonstrator.</p>
+        <div class="kicker-row"><span class="status-pill yellow">GREEN_PARTIAL</span><span class="status-pill yellow">Local-only: GREEN_PARTIAL</span><span class="status-pill yellow">Demo: Ready for conversation</span></div>
+      </div>
+    </section>
+
+    <section class="section compact">
+      <div class="container status-grid">
+        <article class="card">
+          <h2>Live-Projektstatus</h2>
+          <div data-status>
+            <dl>
+              <div class="status-row"><dt>Gesamtstatus</dt><dd>GREEN_PARTIAL</dd></div>
+              <div class="status-row"><dt>MVP-Phase</dt><dd>Advisor Demo &amp; Feedback</dd></div>
+              <div class="status-row"><dt>Local-only</dt><dd>GREEN_PARTIAL</dd></div>
+              <div class="status-row"><dt>Externe Tests</dt><dd>5 Tests: 3 PASS, 2 LIMIT, 0 Critical Errors</dd></div>
+              <div class="status-row"><dt>Demo-Kit</dt><dd>Bereit, Dry-Run bestanden, Outreach Welle 1 versendet (Issue #53)</dd></div>
+              <div class="status-row"><dt>Deploy</dt><dd>Durch privaten Repository-Plan blockiert</dd></div>
+            </dl>
+          </div>
+        </article>
+        <aside class="card accent">
+          <p class="eyebrow">Nächster Beweis</p>
+          <h2>Local-only Guardrails</h2>
+          <p>Network-Deny und Offline Mode sind für den initialen Harness teilbelegt. Provider-Gates, Schutz vor sensiblen Logs und der echte Offline-Golden-Path sind die nächste risikorelevante Stufe.</p>
+          <a class="button" href="roadmap.html">Roadmap öffnen</a>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container grid-3">
+        <article class="card"><h3>Build</h3><p>Website-Quellcode und Validierung sind lokal vorhanden. App-Build existiert nicht.</p></article>
+        <article class="card"><h3>Deploy</h3><p>Remote-Validierung ist erfolgreich. GitHub Pages ist für dieses private Repository im aktuellen Plan nicht verfügbar.</p></article>
+        <article class="card"><h3>Evidence</h3><p>Project-Setup sowie initiale Network-Deny- und Offline-Harness-Tests sind nachweisbar. Produkt- und Pilotclaims bleiben offen.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div><strong>BescheidPilot Status</strong><p class="fine-print">Statusdaten werden versioniert in <code>data/project-status.json</code> gepflegt.</p></div>
+      <div class="footer-links"><a href="evidence.html">Evidence</a><a href="roadmap.html">Roadmap</a><a href="privacy.html">Local-only</a></div>
+    </div>
+  </footer>
+</body>
+</html>
