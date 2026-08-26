@@ -1,0 +1,107 @@
+Listing tests:
+  [chromium] › accessibility.spec.js:60:3 › G13 — Accessibility › html lang="de" on home page
+  [chromium] › accessibility.spec.js:66:3 › G13 — Accessibility › html lang="de" on case list page
+  [chromium] › accessibility.spec.js:72:3 › G13 — Accessibility › html lang="de" on create case page
+  [chromium] › accessibility.spec.js:78:3 › G13 — Accessibility › html lang="de" on error page
+  [chromium] › accessibility.spec.js:87:3 › G13 — Accessibility › unique page title for home page
+  [chromium] › accessibility.spec.js:92:3 › G13 — Accessibility › unique page title for case list
+  [chromium] › accessibility.spec.js:101:3 › G13 — Accessibility › unique page title for create case
+  [chromium] › accessibility.spec.js:109:3 › G13 — Accessibility › unique page title on error page
+  [chromium] › accessibility.spec.js:119:3 › G13 — Accessibility › exactly one h1 on home page
+  [chromium] › accessibility.spec.js:126:3 › G13 — Accessibility › exactly one h1 on case list page
+  [chromium] › accessibility.spec.js:132:3 › G13 — Accessibility › exactly one h1 on create case page
+  [chromium] › accessibility.spec.js:138:3 › G13 — Accessibility › exactly one h1 on error page
+  [chromium] › accessibility.spec.js:147:3 › G13 — Accessibility › skip link present on case list page
+  [chromium] › accessibility.spec.js:155:3 › G13 — Accessibility › skip link present on create case page
+  [chromium] › accessibility.spec.js:161:3 › G13 — Accessibility › main content has id="main-content"
+  [chromium] › accessibility.spec.js:172:3 › G13 — Accessibility › skip link becomes visible on keyboard focus
+  [chromium] › accessibility.spec.js:190:3 › G13 — Accessibility › Tab navigation reaches interactive elements
+  [chromium] › accessibility.spec.js:210:3 › G13 — Accessibility › all form inputs have associated labels on create case page
+  [chromium] › accessibility.spec.js:234:3 › G13 — Accessibility › all input elements have accessible names
+  [chromium] › accessibility.spec.js:265:3 › G13 — Accessibility › all images have alt text on case list page
+  [chromium] › accessibility.spec.js:280:3 › G13 — Accessibility › axe: zero critical + serious on home page
+  [chromium] › accessibility.spec.js:286:3 › G13 — Accessibility › axe: zero critical + serious on case list page
+  [chromium] › accessibility.spec.js:292:3 › G13 — Accessibility › axe: zero critical + serious on create case page
+  [chromium] › accessibility.spec.js:298:3 › G13 — Accessibility › axe: zero critical + serious on error page
+  [chromium] › accessibility.spec.js:304:3 › G13 — Accessibility › axe: zero critical + serious on case detail page
+  [chromium] › accessibility.spec.js:324:3 › G13 — Accessibility › axe reports no color-contrast violations (critical)
+  [chromium] › accessibility.spec.js:346:3 › G13 — Accessibility › banner, main, and contentinfo landmarks are present
+  [chromium] › accessibility.spec.js:359:3 › G13 — Accessibility › navigation has accessible label
+  [chromium] › accessibility.spec.js:368:3 › G13 — Accessibility › breadcrumb navigation is present on error page
+  [chromium] › cross-case-isolation.spec.js:34:3 › G10 — Cross-Case Isolation › case IDs must be different
+  [chromium] › cross-case-isolation.spec.js:40:3 › G10 — Cross-Case Isolation › case A detail page is reachable via its own URL
+  [chromium] › cross-case-isolation.spec.js:47:3 › G10 — Cross-Case Isolation › case B detail page is reachable via its own URL
+  [chromium] › cross-case-isolation.spec.js:54:3 › G10 — Cross-Case Isolation › case A title does NOT appear in case B detail page
+  [chromium] › cross-case-isolation.spec.js:60:3 › G10 — Cross-Case Isolation › case B title does NOT appear in case A detail page
+  [chromium] › cross-case-isolation.spec.js:66:3 › G10 — Cross-Case Isolation › document from case A returns 404 via case B URL
+  [chromium] › cross-case-isolation.spec.js:71:3 › G10 — Cross-Case Isolation › cross-case document URL returns 404 (not 200 with wrong data)
+  [chromium] › cross-case-isolation.spec.js:79:3 › G10 — Cross-Case Isolation › API: case A data not returned in case B response
+  [chromium] › cross-case-isolation.spec.js:87:3 › G10 — Cross-Case Isolation › candidates from case A not reachable via case B URL
+  [chromium] › cross-case-isolation.spec.js:95:3 › G10 — Cross-Case Isolation › preview from case A not reachable via case B URL
+  [chromium] › cross-case-isolation.spec.js:103:3 › G10 — Cross-Case Isolation › sequential ID probing returns 404 not info leak
+  [chromium] › cross-case-isolation.spec.js:116:3 › G10 — Cross-Case Isolation › case list shows seeded cases
+  [chromium] › error-states.spec.js:28:3 › G11 — Error States › 400 — malformed UUID returns user-friendly error page
+  [chromium] › error-states.spec.js:42:3 › G11 — Error States › 400 — POST to case create without title returns validation error
+  [chromium] › error-states.spec.js:76:3 › G11 — Error States › 403 — POST without CSRF token returns Forbidden
+  [chromium] › error-states.spec.js:97:3 › G11 — Error States › 403 — error page is user-friendly (no stacktrace)
+  [chromium] › error-states.spec.js:134:3 › G11 — Error States › 404 — non-existent case UUID returns Not Found page
+  [chromium] › error-states.spec.js:152:3 › G11 — Error States › 404 — non-existent document returns Not Found page
+  [chromium] › error-states.spec.js:161:3 › G11 — Error States › 404 — unknown route returns Not Found
+  [chromium] › error-states.spec.js:173:3 › G11 — Error States › 409 — idempotency key conflict returns Conflict
+  [chromium] › error-states.spec.js:196:3 › G11 — Error States › 413 — oversized POST body returns Content Too Large
+  [chromium] › error-states.spec.js:222:3 › G11 — Error States › 415 — wrong Content-Type returns Unsupported Media Type
+  [chromium] › error-states.spec.js:244:3 › G11 — Error States › 500 — error page is user-friendly and does not leak internals
+  [chromium] › error-states.spec.js:275:3 › G11 — Error States › 500 — JSON error response does not leak stacktrace
+  [chromium] › error-states.spec.js:294:3 › G11 — Error States › error pages include navigation elements
+  [chromium] › error-states.spec.js:310:3 › G11 — Error States › error pages are in German
+  [chromium] › error-states.spec.js:323:3 › G11 — Error States › error pages have correct HTTP status codes
+  [chromium] › error-states.spec.js:329:3 › G11 — Error States › no local file paths in any error response HTML
+  [chromium] › error-states.spec.js:355:3 › G11 — Error States › no database error details in error pages
+  [chromium] › golden-path.spec.js:13:3 › G1 — Start and Health › homepage loads with correct title
+  [chromium] › golden-path.spec.js:19:3 › G1 — Start and Health › /health returns ok
+  [chromium] › golden-path.spec.js:30:3 › G2 — Case Workflow › case list page loads
+  [chromium] › golden-path.spec.js:37:3 › G2 — Case Workflow › create new synthetic case via UI
+  [chromium] › golden-path.spec.js:61:3 › G2 — Case Workflow › case persists after browser reload
+  [chromium] › golden-path.spec.js:74:3 › G2 — Case Workflow › case detail page loads
+  [chromium] › golden-path.spec.js:88:3 › G3 — Document Workflow › document uploaded via harness appears in case
+  [chromium] › golden-path.spec.js:107:3 › G4 — Reference Event Workflow › cancel candidates are visible on case page
+  [chromium] › golden-path.spec.js:118:3 › G4 — Reference Event Workflow › human review required is visible
+  [chromium] › golden-path.spec.js:129:3 › G5 — Calculation Preview › no legal validity claim anywhere
+  [chromium] › golden-path.spec.js:135:3 › G5 — Calculation Preview › LEGAL_CALCULATION_NOT_PERFORMED is present in code
+  [chromium] › golden-path.spec.js:147:3 › G8 — Restart and Persistence › data survives page reload
+  [chromium] › idempotency.spec.js:28:3 › G9 — Idempotency › double-click on submit does not create duplicate case
+  [chromium] › idempotency.spec.js:60:3 › G9 — Idempotency › double POST to case create API does not create duplicate
+  [chromium] › idempotency.spec.js:107:3 › G9 — Idempotency › rapid sequential submits produce exactly one case
+  [chromium] › idempotency.spec.js:151:3 › G9 — Idempotency › browser back after case creation does not re-create case
+  [chromium] › idempotency.spec.js:184:3 › G9 — Idempotency › form submission without idempotency key still prevents duplicates
+  [chromium] › idempotency.spec.js:241:3 › G9 — Idempotency › API: double POST to /api/v1/cases with same title creates one case
+  [chromium] › idempotency.spec.js:271:3 › G9 — Idempotency › 10 rapid POSTs produce at most 1 record with the same title
+  [chromium] › legal-timeline.spec.js:14:3 › G6 — Legal Source Search › legal sources page loads
+  [chromium] › legal-timeline.spec.js:20:3 › G6 — Legal Source Search › legal source search input exists
+  [chromium] › legal-timeline.spec.js:29:3 › G6 — Legal Source Search › no external requests to non-GII hosts
+  [chromium] › legal-timeline.spec.js:50:3 › G7 — Timeline and Evidence Pack › timeline page accessible from case
+  [chromium] › legal-timeline.spec.js:68:3 › G7 — Timeline and Evidence Pack › evidence pack accessible
+  [chromium] › security-privacy.spec.js:30:3 › G12 — Security and Privacy › CSP header present on home page (/)
+  [chromium] › security-privacy.spec.js:40:3 › G12 — Security and Privacy › CSP header present on case list (/ui/cases)
+  [chromium] › security-privacy.spec.js:50:3 › G12 — Security and Privacy › no unsafe-eval in CSP script-src
+  [chromium] › security-privacy.spec.js:59:3 › G12 — Security and Privacy › no unsafe-inline in CSP script-src
+  [chromium] › security-privacy.spec.js:68:3 › G12 — Security and Privacy › CSP blocks external scripts (default-src none)
+  [chromium] › security-privacy.spec.js:85:3 › G12 — Security and Privacy › CSP form-action restricted to self
+  [chromium] › security-privacy.spec.js:96:3 › G12 — Security and Privacy › X-Content-Type-Options: nosniff on all UI pages
+  [chromium] › security-privacy.spec.js:104:3 › G12 — Security and Privacy › X-Frame-Options: DENY on all UI pages
+  [chromium] › security-privacy.spec.js:112:3 › G12 — Security and Privacy › Referrer-Policy: no-referrer on all UI pages
+  [chromium] › security-privacy.spec.js:121:3 › G12 — Security and Privacy › Permissions-Policy restricts camera, microphone, geolocation
+  [chromium] › security-privacy.spec.js:133:3 › G12 — Security and Privacy › Cross-Origin-Opener-Policy: same-origin
+  [chromium] › security-privacy.spec.js:142:3 › G12 — Security and Privacy › Cross-Origin-Resource-Policy: same-origin
+  [chromium] › security-privacy.spec.js:151:3 › G12 — Security and Privacy › Cache-Control: no-store on UI pages
+  [chromium] › security-privacy.spec.js:163:3 › G12 — Security and Privacy › CSRF nonce cookie is set on UI pages
+  [chromium] › security-privacy.spec.js:176:3 › G12 — Security and Privacy › CSRF token is present in case create form
+  [chromium] › security-privacy.spec.js:187:3 › G12 — Security and Privacy › POST without CSRF token returns 403
+  [chromium] › security-privacy.spec.js:209:3 › G12 — Security and Privacy › no external assets loaded on case list page
+  [chromium] › security-privacy.spec.js:237:3 › G12 — Security and Privacy › no external assets loaded on home page (/)
+  [chromium] › security-privacy.spec.js:265:3 › G12 — Security and Privacy › no API keys or secrets leaked in page source
+  [chromium] › security-privacy.spec.js:285:3 › G12 — Security and Privacy › no database connection strings in DOM
+  [chromium] › security-privacy.spec.js:297:3 › G12 — Security and Privacy › no environment variable tokens in DOM
+  [chromium] › security-privacy.spec.js:310:3 › G12 — Security and Privacy › no case data leaked in browser console
+  [chromium] › security-privacy.spec.js:350:3 › G12 — Security and Privacy › no stacktraces in console on normal page load
+Total: 105 tests in 7 files

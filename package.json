@@ -1,0 +1,16 @@
+{
+  "name": "private-legal-navigator-e2e",
+  "version": "1.0.0-rc.2",
+  "private": true,
+  "description": "Playwright E2E test suite for PrivateLegalNavigator v1.0.0-rc.2",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:repeat": "npx playwright test --repeat-each=3 --workers=1",
+    "report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "axe-core": "4.10.3"
+  }
+}
