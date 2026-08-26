@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Aktueller Demo-Status und geplante Funktionen des BescheidPilot Vertical Slice.">
+  <title>Demo-Status — BescheidPilot</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body data-page="demo">
+  <a class="skip-link" href="#main">Zum Inhalt</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html"><span class="brand-mark">BP</span>BescheidPilot</a>
+      <nav class="site-nav" aria-label="Hauptnavigation">
+        <a data-nav="home" href="index.html">Start</a><a data-nav="privacy" href="privacy.html">Local-only</a><a data-nav="roadmap" href="roadmap.html">Roadmap</a><a data-nav="evidence" href="evidence.html">Evidence</a><a data-nav="demo" href="demo.html">Demo</a><a data-nav="investor" href="investor.html">Investoren</a><a data-nav="status" href="status.html">Status</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Demo verfuegbar — Web-UI gehaertet — Outreach Welle 1 manuell versendet</p>
+        <h1>Lokale CLI- und Web-UI-Demo lauffaehig. Web-UI fuer Beratergespraeche verstaendlicher strukturiert.</h1>
+        <p class="lead">284 Tests bestehen (252 Basis + 32 Web-UI-Hardening). 5 externe anonymisierte Dokumenttests: 3 PASS, 2 LIMIT, 0 Critical Errors. Demo-Skript, Fact Sheet, Feedbackformular, Scoring-Matrix, Interview-Template, Target List (5 konkrete Organisationen: Der Paritätische, BAG Schuldnerberatung, AWO Bundesverband, Caritas, Prototype Fund), Outreach-Message (3 Varianten), Outreach Tracking, Outreach Send Plan und Meeting Invite Text sind vorbereitet. Web-UI-Dry-Run erfolgreich. Web-UI-Hardening abgeschlossen (Local-only-Banner, Status-Karten, Beispielauswahl, Copy-Buttons, Grenzen-Section). Outreach Welle 1 (T-002 BAG Schuldnerberatung, T-004 Caritas, T-003 AWO) wurde manuell versendet. Es liegt noch kein dokumentiertes Feedbackgespräch vor.</p>
+      </div>
+    </section>
+
+    <section class="section compact">
+      <div class="container demo-shell" aria-label="Demo-Platzhalter">
+        <div class="demo-toolbar"><span></span><span></span><span></span></div>
+        <div class="demo-body">
+          <div>
+            <span class="status-pill yellow">GREEN_PARTIAL</span>
+            <strong>CLI- und Web-UI-Demo laufen lokal — Web-UI gehaertet — Outreach Welle 1 versendet — Feedback-Kit bereit</strong>
+            <p>Start: <code>python -m src.web.server</code> (http://127.0.0.1:8765). Features: Demo-Banner, Status-Karten, 5 Beispiel-Fixtures, Copy-Buttons, Grenzen-Section. Demo-Unterlagen: docs/demo/. Outreach: docs/demo/OUTREACH_SEND_PLAN.md. Erstes Beratergespraech: Issue #53.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <div><p class="eyebrow">Feature-Status</p><h2>Geplant ist nicht implementiert.</h2></div>
+          <p>Die Karten werden aus <code>data/features.json</code> geladen und benötigen Evidence, bevor ihr Status steigt.</p>
+        </div>
+        <div class="data-grid" data-features>
+          <article class="data-card" data-status="planned"><p class="meta">Geplant</p><h3>Lokale Texteingabe</h3><p>Issue #18, noch ohne Implementierung.</p></article>
+          <article class="data-card" data-status="planned"><p class="meta">Geplant</p><h3>Frist und Handlung</h3><p>Issue #19, noch ohne Extraktionsnachweis.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container grid-2">
+        <article class="card">
+          <h2>Die erste Demo muss können</h2>
+          <ul class="check-list">
+            <li>synthetischen Bescheid lokal einlesen</li>
+            <li>5 Beispiel-Fixtures per Dropdown auswählen</li>
+            <li>Frist, Handlung und Fundstelle anzeigen</li>
+            <li>Unsicherheit sichtbar machen</li>
+            <li>einen lokalen Entwurf vorbereiten</li>
+            <li>Human Review vor Export erzwingen</li>
+            <li>Export und Entwurf per Copy-Button kopieren</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>Sie wird nicht behaupten</h2>
+          <ul class="plain-list">
+            <li>rechtliche Richtigkeit</li>
+            <li>vollständige Fristerkennung</li>
+            <li>automatische Behördenkommunikation</li>
+            <li>Produktions- oder Pilotreife ohne Gate</li>
+            <li>Erfolg mit realen Bescheiden ohne Validierungsbericht</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div><strong>BescheidPilot Demo</strong><p class="fine-print">Screenshots und Fähigkeiten werden erst nach verlinkter Evidence veröffentlicht.</p></div>
+      <div class="footer-links"><a href="roadmap.html">Roadmap</a><a href="evidence.html">Evidence</a><a href="status.html">Status</a></div>
+    </div>
+  </footer>
+</body>
+</html>

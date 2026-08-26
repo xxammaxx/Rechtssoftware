@@ -1,0 +1,128 @@
+{
+  "fixtures": [
+    {
+      "fixture": "validation_001_jobcenter_mitwirkung.txt",
+      "source_type": "reconstructed",
+      "document_family": "jobcenter",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Mitwirkung",
+        "deadline_contains": "15.09.2026",
+        "required_action_contains": "Unterlagen",
+        "missing_documents_contains": ["Kontoauszüge", "Mietvertrag", "Lohnabrechnung"]
+      },
+      "must_have_evidence_for": ["authority", "deadline", "required_action"],
+      "critical_error_if": ["invented_deadline", "final_decision_true"]
+    },
+    {
+      "fixture": "validation_002_anhoerung_stellungnahme.txt",
+      "source_type": "reconstructed",
+      "document_family": "jobcenter",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Anhörung",
+        "deadline_contains": "30",
+        "required_action_contains": "Stellungnahme"
+      },
+      "must_have_evidence_for": ["authority", "document_type"],
+      "critical_error_if": ["final_decision_true"]
+    },
+    {
+      "fixture": "validation_003_wohngeld_nachforderung.txt",
+      "source_type": "reconstructed",
+      "document_family": "wohngeld",
+      "expected": {
+        "authority": "Wohngeldstelle",
+        "deadline_contains": "01.10.2026",
+        "missing_documents_contains": ["Einkommensnachweis", "Mietbescheinigung"]
+      },
+      "must_have_evidence_for": ["deadline"],
+      "critical_error_if": ["final_decision_true"]
+    },
+    {
+      "fixture": "validation_004_sozialamt_unterlagen.txt",
+      "source_type": "reconstructed",
+      "document_family": "sozialamt",
+      "expected": {
+        "authority": "Sozialamt",
+        "deadline_contains": "31.10.2026",
+        "missing_documents_contains": ["Rentenbescheid", "Mietbescheinigung"]
+      },
+      "must_have_evidence_for": ["deadline"],
+      "critical_error_if": ["final_decision_true"]
+    },
+    {
+      "fixture": "validation_005_familienkasse_nachweis.txt",
+      "source_type": "reconstructed",
+      "document_family": "familienkasse",
+      "expected": {
+        "authority": "Familienkasse",
+        "deadline_contains": "4 Wochen",
+        "missing_documents_contains": ["Schulbescheinigung", "Immatrikulationsbescheinigung"]
+      },
+      "must_have_evidence_for": ["deadline"],
+      "critical_error_if": ["final_decision_true"]
+    },
+    {
+      "fixture": "validation_006_inkasso_mahnung.txt",
+      "source_type": "reconstructed",
+      "document_family": "inkasso",
+      "expected": {
+        "authority": "Inkasso",
+        "document_type_contains": "Mahnung",
+        "deadline_contains": "20.10.2026",
+        "required_action_contains": "Zahlung"
+      },
+      "must_have_evidence_for": ["deadline", "required_action"],
+      "critical_error_if": ["invented_deadline", "final_decision_true"]
+    },
+    {
+      "fixture": "validation_007_rueckforderung.txt",
+      "source_type": "reconstructed",
+      "document_family": "jobcenter",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Rückforderung",
+        "required_action_contains": "Widerspruch"
+      },
+      "must_have_evidence_for": ["authority", "document_type"],
+      "critical_error_if": ["final_decision_true"]
+    },
+    {
+      "fixture": "validation_008_ablehnung_widerspruch.txt",
+      "source_type": "reconstructed",
+      "document_family": "jobcenter",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Ablehnungsbescheid",
+        "required_action_contains": "Widerspruch"
+      },
+      "must_have_evidence_for": ["authority", "document_type"],
+      "critical_error_if": ["final_decision_true"]
+    },
+    {
+      "fixture": "validation_009_terminaufforderung.txt",
+      "source_type": "reconstructed",
+      "document_family": "agentur_arbeit",
+      "expected": {
+        "authority": "Agentur für Arbeit",
+        "document_type_contains": "Termin",
+        "missing_documents_contains": ["Personalausweis", "Lohnabrechnung"]
+      },
+      "known_limits": ["Termin-Datum ohne 'Termin'-Keyword"],
+      "critical_error_if": ["final_decision_true"]
+    },
+    {
+      "fixture": "validation_010_info_keine_frist.txt",
+      "source_type": "reconstructed",
+      "document_family": "finanzamt",
+      "expected": {
+        "authority": "Finanzamt",
+        "deadline": null,
+        "required_action": null
+      },
+      "must_have_evidence_for": ["authority"],
+      "critical_error_if": ["invented_deadline", "final_decision_true"]
+    }
+  ]
+}

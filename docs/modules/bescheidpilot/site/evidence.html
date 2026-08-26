@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Evidence-Seite von BescheidPilot mit Local-only-Nachweis, Tests, offenen Risiken und Grenzen.">
+  <title>Evidence — BescheidPilot</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body data-page="evidence">
+  <a class="skip-link" href="#main">Zum Inhalt</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html"><span class="brand-mark">BP</span>BescheidPilot</a>
+      <nav class="site-nav" aria-label="Hauptnavigation">
+        <a data-nav="home" href="index.html">Start</a><a data-nav="privacy" href="privacy.html">Local-only</a><a data-nav="roadmap" href="roadmap.html">Roadmap</a><a data-nav="evidence" href="evidence.html">Evidence</a><a data-nav="demo" href="demo.html">Demo</a><a data-nav="investor" href="investor.html">Investoren</a><a data-nav="status" href="status.html">Status</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Claims → Evidence → Grenze</p>
+        <h1>Was ist belegt — und was noch nicht?</h1>
+        <p class="lead">Diese Seite ist die öffentliche Kontrollfläche für Produktclaims. Dokumentation, Implementierung, Tests und Deployments werden getrennt bewertet.</p>
+        <div class="kicker-row"><span class="status-pill yellow">Evidence: Partial</span><span class="status-pill red">MVP: Not proven</span></div>
+      </div>
+    </section>
+
+    <section class="section compact">
+      <div class="container notice">
+        <strong>Öffentliche Prüfbarkeit:</strong> Das Repository ist derzeit privat. Verlinkte GitHub-Issues und Dateien sind für externe Besucher erst nach einer bewussten Zugriffs- oder Veröffentlichungsentscheidung einsehbar.
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <table class="evidence-table">
+          <thead><tr><th>Aussage</th><th>Status</th><th>Evidence</th><th>Offene Grenze</th></tr></thead>
+          <tbody data-evidence>
+            <tr><td data-label="Aussage">Local-only Zielarchitektur ist dokumentiert.</td><td data-label="Status">Dokumentiert</td><td data-label="Evidence">docs/LOCAL_ONLY_ARCHITECTURE.md</td><td data-label="Offene Grenze">Nur ein minimaler Harness, noch keine Produktpipeline.</td></tr>
+            <tr><td data-label="Aussage">Initialer Network-Deny-Harness ist vorhanden und bestanden.</td><td data-label="Status">Teilnachweis</td><td data-label="Evidence">docs/audits/ISSUE_11_NETWORK_DENY_TEST_REPORT.md</td><td data-label="Offene Grenze">Noch kein vollständiger Golden Path oder native App-Laufzeit.</td></tr>
+            <tr><td data-label="Aussage">Initialer Offline-Mode-Harness läuft ohne API-Keys oder Remote-Konfiguration.</td><td data-label="Status">Teilnachweis</td><td data-label="Evidence">docs/audits/OFFLINE_MODE_TEST_REPORT.md</td><td data-label="Offene Grenze">Nur strukturelle Textanalyse, kein vollständiger Produktpfad.</td></tr>
+            <tr><td data-label="Aussage">Initialer No-Remote-LLM-Harness blockiert Provider, API-Keys und Fallbacks.</td><td data-label="Status">Teilnachweis</td><td data-label="Evidence">docs/audits/NO_REMOTE_LLM_TEST_REPORT.md</td><td data-label="Offene Grenze">Kein echtes lokales KI-Modell oder Antwortentwurf implementiert.</td></tr>
+            <tr><td data-label="Aussage">Initialer No-Cloud-OCR-Harness blockiert Provider, API-Keys und Dokument-Uploads.</td><td data-label="Status">Teilnachweis</td><td data-label="Evidence">docs/audits/NO_CLOUD_OCR_TEST_REPORT.md</td><td data-label="Offene Grenze">Kein lokales OCR-Modul implementiert; keine Bild-/PDF-Verarbeitung vorhanden.</td></tr>
+            <tr><td data-label="Aussage">Initialer No-Sensitive-Logs-Harness redigiert und blockiert sensible Ausgaben.</td><td data-label="Status">Teilnachweis</td><td data-label="Evidence">docs/audits/NO_SENSITIVE_LOGS_TEST_REPORT.md</td><td data-label="Offene Grenze">Kein echter Produkt-Logging-Pfad zum Testen; Regex-basierte Redaction, kein NLP.</td></tr>
+            <tr><td data-label="Aussage">Der Golden Path funktioniert offline.</td><td data-label="Status">Fehlt</td><td data-label="Evidence">Issues #12 und #17–#22</td><td data-label="Offene Grenze">Noch kein Vertical Slice.</td></tr>
+            <tr><td data-label="Aussage">Externe anonymisierte Dokumenttests wurden lokal durchgefuehrt und aggregiert dokumentiert.</td><td data-label="Status">Teilnachweis</td><td data-label="Evidence">docs/audits/EXTERNAL_DOCUMENT_TEST_REPORT.md</td><td data-label="Offene Grenze">Nur 5 Tests; geringe Datensatzgroesse; noch keine Produktreife.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container grid-3">
+        <article class="card"><h3>GREEN</h3><p>Nur bei konkretem, reproduzierbarem Nachweis für den vollständigen Claim.</p></article>
+        <article class="card"><h3>YELLOW</h3><p>Absicht oder Teilnachweis vorhanden; zentrale Tests oder Grenzen fehlen.</p></article>
+        <article class="card"><h3>RED</h3><p>Widerspruch, riskanter Datenfluss oder fehlende Grundlage für eine öffentliche Aussage.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div><strong>BescheidPilot Evidence</strong><p class="fine-print">Kein GREEN-Status ohne Test, Audit, Demo, Release oder überprüfbare Codefundstelle.</p></div>
+      <div class="footer-links"><a href="privacy.html">Local-only</a><a href="roadmap.html">Roadmap</a><a href="status.html">Status</a></div>
+    </div>
+  </footer>
+</body>
+</html>

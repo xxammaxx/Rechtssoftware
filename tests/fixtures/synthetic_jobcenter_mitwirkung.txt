@@ -1,0 +1,31 @@
+SYNTHETISCHE TESTDATEI — KEIN ECHTER BESCHEID
+
+Jobcenter Musterstadt
+Musterstraße 1
+99999 Musterstadt
+
+Datum: 15.06.2026
+Aktenzeichen: JC-MST-12345/2026
+
+Aufforderung zur Mitwirkung
+
+Sehr geehrte Damen und Herren,
+
+Sie beziehen Leistungen nach dem SGB II. Für die weitere Bewilligung
+Ihrer Leistungen benötigen wir folgende Unterlagen von Ihnen:
+
+- Kontoauszüge der letzten drei Monate
+- Mietvertrag
+- aktuelle Lohnabrechnung
+
+Bitte reichen Sie die Unterlagen bis zum 15.07.2026 bei uns ein.
+
+Wenn Sie die Unterlagen nicht fristgerecht einreichen, kann die
+Leistung versagt werden.
+
+Mit freundlichen Grüßen
+Ihr Jobcenter Musterstadt
+
+---
+Dieser Text ist ein synthetisches Fixture für Testzwecke.
+Er enthält keine echten personenbezogenen Daten.

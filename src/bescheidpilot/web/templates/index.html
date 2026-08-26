@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BescheidPilot — Local Demo</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; max-width: 960px; margin: 0 auto; padding: 20px; }
+
+.demo-banner {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  padding: 14px 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.demo-banner h3 {
+  font-size: 1.1em;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+.demo-banner p {
+  font-size: 0.85em;
+  color: #92400e;
+  margin: 2px 0;
+}
+
+header { background: #1a365d; color: white; padding: 20px; border-radius: 8px; margin-bottom: 16px; }
+header h1 { font-size: 1.5em; margin-bottom: 4px; }
+header .subtitle { font-size: 0.85em; opacity: 0.85; margin-bottom: 2px; }
+header .local { font-size: 0.8em; opacity: 0.7; }
+
+.warning-banner { background: #fef3c7; border: 1px solid #f59e0b; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; font-size: 0.95em; }
+
+.status-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.status-card {
+  flex: 1;
+  min-width: 140px;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  text-align: center;
+}
+.status-card .status-label {
+  font-size: 0.8em;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.status-card .status-value {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #1a365d;
+}
+.status-card .status-value.positive { color: #16a34a; }
+.status-card .status-value.caution { color: #d97706; }
+.status-card .status-value.neutral { color: #6b7280; }
+
+.flow-steps {
+  background: #f0f4ff;
+  border: 1px solid #dbeafe;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.flow-steps h3 { font-size: 0.9em; color: #1e40af; margin-bottom: 6px; }
+.flow-steps ol {
+  display: flex;
+  gap: 4px 0;
+  flex-wrap: wrap;
+  list-style: none;
+  counter-reset: step;
+  font-size: 0.88em;
+  color: #334155;
+}
+.flow-steps ol li {
+  counter-increment: step;
+  margin-right: 18px;
+  white-space: nowrap;
+}
+.flow-steps ol li::before {
+  content: counter(step) ". ";
+  font-weight: 700;
+  color: #1e40af;
+}
+.flow-steps ol li:last-child::after { content: ''; }
+
+.card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.card h2 { font-size: 1.1em; margin-bottom: 12px; color: #1a365d; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
+
+.fixture-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.fixture-row select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9em;
+  background: white;
+}
+.fixture-row button {
+  background: #475569;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+.fixture-row button:hover { background: #64748b; }
+
+textarea { width: 100%; min-height: 200px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: monospace; font-size: 0.9em; resize: vertical; }
+.controls { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+button { background: #1a365d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.95em; }
+button:hover { background: #2a4a7f; }
+button:disabled { background: #94a3b8; cursor: not-allowed; }
+label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+.result-section { margin-bottom: 12px; }
+.result-item { padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+.result-item strong { display: inline-block; min-width: 140px; }
+
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+.tag-high { background: #fee2e2; color: #991b1b; }
+.tag-medium { background: #fef3c7; color: #92400e; }
+.tag-low { background: #dbeafe; color: #1e40af; }
+.tag-unknown { background: #f3f4f6; color: #6b7280; }
+
+.evidence-item { background: #f8fafc; padding: 8px; margin: 4px 0; border-radius: 4px; font-size: 0.9em; }
+.evidence-quote { color: #64748b; font-style: italic; margin-top: 4px; }
+
+.draft-box { background: #fef3c7; border: 1px solid #f59e0b; padding: 12px; border-radius: 6px; margin: 8px 0; white-space: pre-wrap; font-family: monospace; font-size: 0.85em; max-height: 400px; overflow-y: auto; }
+.export-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; margin: 8px 0; white-space: pre-wrap; font-family: monospace; font-size: 0.85em; max-height: 400px; overflow-y: auto; }
+
+.copy-btn {
+  background: #475569;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  margin-top: 8px;
+}
+.copy-btn:hover { background: #64748b; }
+.copy-btn.copied { background: #16a34a; }
+
+.limits-list {
+  list-style: none;
+  padding: 0;
+}
+.limits-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.92em;
+  color: #475569;
+}
+.limits-list li::before {
+  content: "— ";
+  color: #94a3b8;
+}
+
+footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 0.85em; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: #1a365d; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<div class="demo-banner">
+  <h3>BESCHEIDPILOT LOCAL DEMO</h3>
+  <p>Der Bescheid verlässt das Gerät nicht.</p>
+  <p>Keine Uploads. Keine Cloud-KI. Keine Cloud-OCR.</p>
+</div>
+
+<header>
+  <h1>BescheidPilot — Web UI Demo</h1>
+  <div class="subtitle">Lokale Bescheidanalyse für Berater- und Fördergespräche</div>
+  <div class="local">Der Bescheid verlässt das Gerät nicht. Keine Uploads. Keine Cloud-KI. Keine Cloud-OCR.</div>
+</header>
+
+<div class="warning-banner">
+  &#9888;&#65039; PRÜFUNG ERFORDERLICH — Diese Analyse ersetzt keine Rechtsberatung.
+  Alle Ergebnisse müssen durch einen Menschen geprüft werden.
+</div>
+
+<div class="status-cards">
+  <div class="status-card">
+    <div class="status-label">Local-only</div>
+    <div class="status-value positive">aktiv</div>
+  </div>
+  <div class="status-card">
+    <div class="status-label">Review</div>
+    <div class="status-value caution">erforderlich</div>
+  </div>
+  <div class="status-card">
+    <div class="status-label">Remote-KI</div>
+    <div class="status-value neutral">nicht verwendet</div>
+  </div>
+  <div class="status-card">
+    <div class="status-label">Cloud-OCR</div>
+    <div class="status-value neutral">nicht verwendet</div>
+  </div>
+</div>
+
+<div class="flow-steps">
+  <h3>Demo-Ablauf:</h3>
+  <ol>
+    <li>Beispiel wählen oder Text einfügen</li>
+    <li>Lokal analysieren</li>
+    <li>Fundstellen prüfen</li>
+    <li>Export oder Entwurf ansehen</li>
+    <li>Feedback erfassen</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>Bescheidtext eingeben</h2>
+  <div class="fixture-row">
+    <select id="fixture-select">
+      <option value="">-- Beispiel auswählen --</option>
+      <option value="jobcenter_mitwirkung">Jobcenter — Mitwirkung</option>
+      <option value="anhoerung_stellungnahme">Anhörung — Stellungnahme</option>
+      <option value="sozialamt_nachforderung">Sozialamt — Nachforderung</option>
+      <option value="inkasso_mahnung">Inkasso — Mahnung</option>
+      <option value="aenderungsbescheid">Änderungsbescheid</option>
+    </select>
+    <button id="load-fixture-btn" onclick="loadFixture()">Beispiel laden</button>
+  </div>
+  <textarea id="input-text" placeholder="Bescheidtext hier einfügen..."></textarea>
+  <div class="controls">
+    <button id="analyze-btn" onclick="analyze()">Lokal analysieren</button>
+    <label><input type="checkbox" id="include-draft"> Antwortentwurf einschließen</label>
+    <div id="spinner" style="display:none;"><span class="spinner"></span>Analysiere...</div>
+  </div>
+</div>
+
+<div id="results" style="display:none;">
+  <div class="card" id="status-card"></div>
+  <div class="card" id="data-card"></div>
+  <div class="card" id="review-card"></div>
+  <div class="card" id="evidence-card"></div>
+  <div class="card" id="warnings-card"></div>
+  <div class="card" id="draft-card"></div>
+  <div class="card" id="export-card"></div>
+  <div class="card" id="limits-card">
+    <h2>Grenzen</h2>
+    <ul class="limits-list">
+      <li>Kein OCR/PDF — Nur Texteingabe</li>
+      <li>Keine Speicherung — Session-local only</li>
+      <li>Keine Cloud-Sync — Der Bescheid verlässt das Gerät nicht</li>
+      <li>Keine Rechtsberatung — Menschliche Prüfung bleibt erforderlich</li>
+      <li>Keine automatische Behördenkommunikation</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  BescheidPilot — Local-only Text MVP Demo &middot; Keine Rechtsberatung &middot; Menschliche Prüfung erforderlich
+</footer>
+
+<script>
+function loadFixture() {
+  var select = document.getElementById('fixture-select');
+  var id = select.value;
+  if (!id) {
+    alert('Bitte ein Beispiel auswählen.');
+    return;
+  }
+  var btn = document.getElementById('load-fixture-btn');
+  btn.disabled = true;
+  btn.textContent = 'Lade...';
+  fetch('/demo-fixture/' + encodeURIComponent(id))
+    .then(function(r) {
+      if (!r.ok) {
+        throw new Error('Fehler beim Laden');
+      }
+      return r.json();
+    })
+    .then(function(data) {
+      document.getElementById('input-text').value = data.text;
+      btn.disabled = false;
+      btn.textContent = 'Beispiel laden';
+    })
+    .catch(function(err) {
+      alert('Beispiel konnte nicht geladen werden: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = 'Beispiel laden';
+    });
+}
+
+function analyze() {
+  var text = document.getElementById('input-text').value.trim();
+  if (!text) { alert('Bitte Bescheidtext eingeben.'); return; }
+
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('analyze-btn').disabled = true;
+  document.getElementById('results').style.display = 'none';
+
+  fetch('/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text: text,
+      include_draft: document.getElementById('include-draft').checked
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('analyze-btn').disabled = false;
+
+    if (data.error) {
+      showError(data.error);
+      return;
+    }
+    showResults(data);
+  })
+  .catch(function(err) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('analyze-btn').disabled = false;
+    showError('Analyse fehlgeschlagen.');
+  });
+}
+
+function showError(msg) {
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('status-card').innerHTML = '<h2>Fehler</h2><div class="error">' + msg + '</div>';
+  var ids = ['data-card','review-card','evidence-card','warnings-card','draft-card','export-card'];
+  ids.forEach(function(id) {
+    document.getElementById(id).innerHTML = '';
+  });
+}
+
+function copyText(btnId, textContainerId) {
+  var textEl = document.getElementById(textContainerId);
+  var text = textEl.textContent || textEl.innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById(btnId);
+    var orig = btn.textContent;
+    btn.textContent = 'Kopiert!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(function() {
+    alert('Kopieren fehlgeschlagen.');
+  });
+}
+
+function showResults(d) {
+  document.getElementById('results').style.display = 'block';
+
+  // Card 1: Status
+  var status = '<h2>Status</h2>';
+  status += '<div class="result-item"><strong>Review:</strong> ' + (d.review_required ? 'ERFORDERLICH' : 'Empfohlen') + '</div>';
+  status += '<div class="result-item"><strong>Finale Entscheidung:</strong> ' + (d.final_decision ? 'JA' : 'NEIN') + '</div>';
+  status += '<div class="result-item"><strong>Risiko:</strong> <span class="tag tag-' + (d.risk_level || 'unknown') + '">' + (d.risk_level || 'unknown').toUpperCase() + '</span></div>';
+  document.getElementById('status-card').innerHTML = status;
+
+  // Card 2: Erkannte Daten
+  var data = '<h2>Erkannte Daten</h2>';
+  data += '<div class="result-item"><strong>Behörde:</strong> ' + (d.authority || 'nicht erkannt') + '</div>';
+  data += '<div class="result-item"><strong>Dokumenttyp:</strong> ' + (d.document_type || 'nicht erkannt') + '</div>';
+  data += '<div class="result-item"><strong>Frist:</strong> ' + (d.deadline || 'keine erkannt') + '</div>';
+  data += '<div class="result-item"><strong>Handlung:</strong> ' + (d.required_action || 'keine erkannt') + '</div>';
+  if (d.missing_documents && d.missing_documents.length) {
+    data += '<div class="result-item"><strong>Fehlende Unterlagen:</strong><ul>';
+    d.missing_documents.forEach(function(doc) { data += '<li>' + doc + '</li>'; });
+    data += '</ul></div>';
+  }
+  document.getElementById('data-card').innerHTML = data;
+
+  // Card 3: Review-Pflicht
+  if (d.review_items && d.review_items.length) {
+    var review = '<h2>Review-Pflicht</h2>';
+    d.review_items.forEach(function(ri) {
+      var sevClass = 'tag-' + (ri.severity || 'medium').toLowerCase();
+      review += '<div class="result-item">';
+      review += '<strong>' + ri.field + ':</strong> ';
+      review += '<span class="tag ' + sevClass + '">' + ri.severity + '</span> ';
+      review += ri.status + ' | Evidence: ' + (ri.evidence_present ? '✓' : '✗');
+      if (ri.reason) review += '<br><em>' + ri.reason + '</em>';
+      review += '</div>';
+    });
+    document.getElementById('review-card').innerHTML = review;
+  } else {
+    document.getElementById('review-card').innerHTML = '';
+  }
+
+  // Card 4: Fundstellen
+  if (d.evidence && d.evidence.length) {
+    var ev = '<h2>Fundstellen</h2>';
+    d.evidence.slice(0, 8).forEach(function(e) {
+      ev += '<div class="evidence-item">';
+      ev += '<strong>' + e.field + ':</strong> ' + e.value;
+      ev += ' [Confidence: ' + Math.round(e.confidence * 100) + '%]';
+      if (e.quote) ev += '<div class="evidence-quote">"' + e.quote + '"</div>';
+      ev += '</div>';
+    });
+    document.getElementById('evidence-card').innerHTML = ev;
+  } else {
+    document.getElementById('evidence-card').innerHTML = '';
+  }
+
+  // Card 5: Warnungen
+  if (d.warnings && d.warnings.length) {
+    var warn = '<h2>Warnungen</h2>';
+    d.warnings.forEach(function(w) { warn += '<div class="result-item">⚠ ' + w + '</div>'; });
+    document.getElementById('warnings-card').innerHTML = warn;
+  } else {
+    document.getElementById('warnings-card').innerHTML = '';
+  }
+
+  // Card 6: Antwortentwurf (only when include_draft is checked)
+  if (d.draft) {
+    var draftId = 'draft-body-' + Date.now();
+    var btnId = 'copy-draft-' + Date.now();
+    var draft = '<h2>Antwortentwurf (prüfpflichtig)</h2>';
+    draft += '<div class="draft-box" id="' + draftId + '">' + d.draft.body + '</div>';
+    draft += '<button class="copy-btn" id="' + btnId + '" onclick="copyText(\'' + btnId + '\',\'' + draftId + '\')">📋 Kopieren</button>';
+    document.getElementById('draft-card').innerHTML = draft;
+  } else {
+    document.getElementById('draft-card').innerHTML = '';
+  }
+
+  // Card 7: Exporttext
+  var expId = 'export-body-' + Date.now();
+  var expBtnId = 'copy-export-' + Date.now();
+  var exp = '<h2>Exporttext</h2>';
+  exp += '<div class="export-box" id="' + expId + '">' + d.export_text + '</div>';
+  exp += '<button class="copy-btn" id="' + expBtnId + '" onclick="copyText(\'' + expBtnId + '\',\'' + expId + '\')">📋 Kopieren</button>';
+  document.getElementById('export-card').innerHTML = exp;
+}
+
+// Pre-fill with the default validation fixture
+document.getElementById('input-text').value =
+  'VALIDIERUNGSFIXTURE — KEIN ORIGINALDOKUMENT\n' +
+  'Jobcenter Neustadt\nDatum: 15.06.2026\n\n' +
+  'Aufforderung zur Mitwirkung\n\n' +
+  'Bitte reichen Sie bis zum 15.09.2026 folgende Unterlagen ein:\n' +
+  '- Kontoauszüge der letzten drei Monate\n' +
+  '- Mietvertrag\n\n' +
+  'Bei Nichtvorlage kann die Leistung versagt werden.';
+</script>
+</body>
+</html>

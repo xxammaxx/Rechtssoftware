@@ -1,0 +1,131 @@
+{
+  "fixtures": [
+    {
+      "fixture": "synthetic_01_jobcenter_mitwirkung_kontoauszuege.txt",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Mitwirkung",
+        "deadline_contains": "10.08.2026",
+        "required_action_contains": "Unterlagen",
+        "missing_documents_contains": ["Kontoauszüge", "Mietvertrag"],
+        "risk_level_min": "medium"
+      },
+      "must_have_evidence_for": ["authority", "document_type", "deadline", "required_action", "missing_documents"]
+    },
+    {
+      "fixture": "synthetic_02_jobcenter_anhoerung_stellungnahme.txt",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Anhörung",
+        "deadline_contains": "30",
+        "required_action_contains": "Stellungnahme"
+      }
+    },
+    {
+      "fixture": "synthetic_03_sozialamt_nachforderung_mietvertrag.txt",
+      "expected": {
+        "authority": "Sozialamt",
+        "deadline_contains": "20.08.2026",
+        "missing_documents_contains": ["Mietbescheinigung", "Rentenbescheid"]
+      }
+    },
+    {
+      "fixture": "synthetic_04_wohngeldstelle_fehlende_unterlagen.txt",
+      "expected": {
+        "authority": "Wohngeldstelle",
+        "deadline_contains": "15.08.2026",
+        "missing_documents_contains": ["Einkommensnachweis", "Mietvertrag"],
+        "risk_level_min": "medium"
+      }
+    },
+    {
+      "fixture": "synthetic_05_familienkasse_kindergeld_nachweis.txt",
+      "expected": {
+        "authority": "Familienkasse",
+        "deadline_contains": "4 Wochen",
+        "missing_documents_contains": ["Schulbescheinigung", "Immatrikulationsbescheinigung"]
+      }
+    },
+    {
+      "fixture": "synthetic_06_agentur_arbeit_terminaufforderung.txt",
+      "expected": {
+        "authority": "Agentur für Arbeit",
+        "document_type_contains": "Termin",
+        "missing_documents_contains": ["Personalausweis", "Lohnabrechnung"]
+      },
+      "known_limitation": "Deadline 'am 15.07.2026' ohne vorangestelltes 'Termin' wird nicht erkannt (Pattern-Limit)"
+    },
+    {
+      "fixture": "synthetic_07_inkasso_mahnung_zahlungsfrist.txt",
+      "expected": {
+        "authority": "Inkasso",
+        "document_type_contains": "Mahnung",
+        "deadline_contains": "20.07.2026",
+        "required_action_contains": "Zahlung"
+      }
+    },
+    {
+      "fixture": "synthetic_08_rueckforderung_bescheid.txt",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Rückforderung",
+        "required_action_contains": "Widerspruch"
+      }
+    },
+    {
+      "fixture": "synthetic_09_aenderungsbescheid_ohne_frist.txt",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Änderungsbescheid",
+        "deadline": null
+      }
+    },
+    {
+      "fixture": "synthetic_10_ablehnungsbescheid_widerspruch.txt",
+      "expected": {
+        "authority": "Jobcenter",
+        "document_type_contains": "Ablehnungsbescheid",
+        "required_action_contains": "Widerspruch"
+      }
+    },
+    {
+      "fixture": "synthetic_11_unklare_frist.txt",
+      "expected": {
+        "authority": "Amtsgericht",
+        "deadline": null
+      }
+    },
+    {
+      "fixture": "synthetic_12_mehrere_datumsangaben.txt",
+      "expected": {
+        "authority": "Sozialamt",
+        "deadline_contains": "30.06.2026"
+      },
+      "known_limitation": "Bei mehreren Datumsangaben kann die falsche Deadline erkannt werden (Pattern-Ordnung)"
+    },
+    {
+      "fixture": "synthetic_13_missing_docs_bescheinigungen.txt",
+      "expected": {
+        "authority": "Jobcenter",
+        "deadline_contains": "01.10.2026",
+        "missing_documents_contains": ["Kontoauszüge", "Arbeitsvertrag", "Vollmacht"]
+      }
+    },
+    {
+      "fixture": "synthetic_14_relative_frist_14_tage.txt",
+      "expected": {
+        "authority": "Sozialamt",
+        "deadline_contains": "14",
+        "missing_documents_contains": ["Einkommensnachweis", "Geburtsurkunde"]
+      }
+    },
+    {
+      "fixture": "synthetic_15_no_action_no_deadline.txt",
+      "expected": {
+        "authority": "Finanzamt",
+        "deadline": null,
+        "required_action": null
+      }
+    }
+  ]
+}

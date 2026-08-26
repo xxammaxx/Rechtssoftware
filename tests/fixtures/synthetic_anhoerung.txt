@@ -1,0 +1,27 @@
+SYNTHETISCHE TESTDATEI — KEIN ECHTER BESCHEID
+
+Amtsgericht Musterstadt
+Abteilung für Mahnverfahren
+Gerichtsstraße 5
+99999 Musterstadt
+
+Datum: 01.06.2026
+Aktenzeichen: AG-MST-9876/2026
+
+Anhörung
+
+Sehr geehrte Damen und Herren,
+
+in dem Verfahren gegen Sie wird Ihnen Gelegenheit zur Stellungnahme
+gegeben. Bitte nehmen Sie innerhalb von 14 Tagen schriftlich Stellung
+zu den erhobenen Vorwürfen.
+
+Sie können sich zu dem Vorwurf äußern und Beweismittel vorlegen.
+Andernfalls kann ein Versäumnisurteil gegen Sie ergehen.
+
+Mit freundlichen Grüßen
+Amtsgericht Musterstadt
+
+---
+Dieser Text ist ein synthetisches Fixture für Testzwecke.
+Er enthält keine echten personenbezogenen Daten.
