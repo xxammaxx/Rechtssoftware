@@ -97,5 +97,5 @@ Programmdateien und virtuelle Umgebung werden entfernt. Nutzerdaten bleiben erha
 
 ## Support
 
-- GitHub: https://github.com/xxammaxx/Rechtssoftware
-- Issues: https://github.com/xxammaxx/Rechtssoftware/issues
+- GitHub: https://github.com/Mueller-Systems-Lab/Rechtssoftware
+- Issues: https://github.com/Mueller-Systems-Lab/Rechtssoftware/issues

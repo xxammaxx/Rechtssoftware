@@ -172,7 +172,7 @@ class VerifiedSourcePayload:
 
 DEFAULT_ALLOWED_HOSTS: tuple[str, ...] = ("gesetze-im-internet.de",)
 DEFAULT_ALLOWED_SCHEMES: tuple[str, ...] = ("https",)
-DEFAULT_USER_AGENT = f"PrivateLegalNavigator/{_pkg_version('private-legal-navigator')} (+https://github.com/xxammaxx/Rechtssoftware)"
+DEFAULT_USER_AGENT = f"PrivateLegalNavigator/{_pkg_version('private-legal-navigator')} (+https://github.com/Mueller-Systems-Lab/Rechtssoftware)"
 
 
 class SourceClientConfig:

@@ -56,4 +56,4 @@ WICHTIG:
    - Nur PDF-Dokumente, kein OCR fuer Scans
 
 Dokumentation: docs\user\
-GitHub: https://github.com/xxammaxx/Rechtssoftware
+GitHub: https://github.com/Mueller-Systems-Lab/Rechtssoftware
