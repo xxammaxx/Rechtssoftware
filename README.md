@@ -3,6 +3,8 @@
 Lokale, datenschutzorientierte Unterstützung bei eigenen rechtlichen und
 behördlichen Angelegenheiten.
 
+Entwickelt von [Mueller-Systems-Lab](https://github.com/Mueller-Systems-Lab). PrivateLegalNavigator bleibt eine eigenständige Produktidentität.
+
 ## Status
 
 **M7-A — Legal Source Foundation + Case Legal Timeline (v1.0.0rc2)** — implementiert.
@@ -97,7 +99,7 @@ Siehe [ADR-001](docs/architecture/adr-001-local-modular-monolith.md) und
 # Voraussetzungen: Python 3.11+, Git
 
 # Repository klonen
-git clone https://github.com/xxammaxx/Rechtssoftware.git
+git clone https://github.com/Mueller-Systems-Lab/Rechtssoftware.git
 cd Rechtssoftware
 
 # Virtuelle Umgebung erstellen
