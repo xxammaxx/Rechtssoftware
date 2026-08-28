@@ -43,7 +43,7 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/xxammaxx/Rechtssoftware"
+Repository = "https://github.com/Mueller-Systems-Lab/Rechtssoftware"
 
 [project.scripts]
 private-legal-navigator = "private_legal_navigator.__main__:main"
